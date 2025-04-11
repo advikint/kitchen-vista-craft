@@ -1,6 +1,7 @@
 
 import { useRef, useEffect, useState } from "react";
 import { useKitchenStore, Cabinet, Appliance, Wall, Door, Window } from "@/store/kitchenStore";
+import { toast } from "sonner";
 
 const TopView = () => {
   const { 

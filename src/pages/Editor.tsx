@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useKitchenStore, ViewMode, ToolMode } from "@/store/kitchenStore";
 import { Button } from "@/components/ui/button";
@@ -7,7 +6,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Save, Home, Undo, Redo, Grid3X3, Ruler, Download, 
   PanelLeft, List, LayoutGrid, Box, Layers, ChevronsDown, 
-  ChevronsUp, Maximize2, Pen, Vector, DoorOpen, Blinds, Cabinet
+  ChevronsUp, Maximize2, Pen, Square, DoorOpen, Blinds, PackageOpen
 } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
