@@ -86,9 +86,9 @@ const PropertiesPanel = () => {
     } else if (itemType === "window") {
       updateWindow(currentItem.id, { [field]: value });
     } else if (itemType === "cabinet") {
-      updateCabinet(currentItem.id, { [field]: value });
+      updateCabinet(currentItem.id, { [field]: field === 'rotation' ? value : value });
     } else if (itemType === "appliance") {
-      updateAppliance(currentItem.id, { [field]: value });
+      updateAppliance(currentItem.id, { [field]: field === 'rotation' ? value : value });
     }
   };
   
