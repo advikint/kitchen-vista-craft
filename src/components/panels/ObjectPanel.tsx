@@ -1,8 +1,8 @@
-
 import { useState } from "react";
 import { useKitchenStore, CabinetType, CabinetCategory, ApplianceType } from "@/store/kitchenStore";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 
 const ObjectPanel = () => {
@@ -11,6 +11,8 @@ const ObjectPanel = () => {
     addCabinet,
     addAppliance
   } = useKitchenStore();
+  
+  const [activeTab, setActiveTab] = useState("base");
   
   const [defaultCabinet] = useState({
     width: 60,
@@ -35,13 +37,34 @@ const ObjectPanel = () => {
       return;
     }
     
-    // In a real app, this would place the cabinet preview on the cursor
-    // Here we'll just add it at the center of the room
+    let cabinetDimensions = { ...defaultCabinet };
+    
+    switch (type) {
+      case 'base':
+        cabinetDimensions = { ...cabinetDimensions, height: 80, depth: 60 };
+        break;
+      case 'wall':
+        cabinetDimensions = { ...cabinetDimensions, height: 70, depth: 35 };
+        break;
+      case 'tall':
+        cabinetDimensions = { ...cabinetDimensions, height: 210, depth: 60 };
+        break;
+      case 'loft':
+        cabinetDimensions = { ...cabinetDimensions, height: 40, depth: 35 };
+        break;
+      case 'island':
+        cabinetDimensions = { ...cabinetDimensions, height: 80, depth: 65 };
+        break;
+      case 'corner':
+        cabinetDimensions = { ...cabinetDimensions, height: 80, depth: 60 };
+        break;
+    }
+    
     addCabinet({
       type,
       category,
       position: { x: 0, y: 0 },
-      ...defaultCabinet
+      ...cabinetDimensions
     });
     
     toast.success(`Added ${type} ${category} cabinet`);
@@ -53,11 +76,38 @@ const ObjectPanel = () => {
       return;
     }
     
-    // In a real app, this would place the appliance preview on the cursor
+    let applianceDimensions = { ...defaultAppliance };
+    
+    switch (type) {
+      case 'sink':
+        applianceDimensions = { ...applianceDimensions, width: 80, height: 20, depth: 60 };
+        break;
+      case 'stove':
+        applianceDimensions = { ...applianceDimensions, width: 60, height: 5, depth: 60 };
+        break;
+      case 'oven':
+        applianceDimensions = { ...applianceDimensions, width: 60, height: 60, depth: 60 };
+        break;
+      case 'fridge':
+        applianceDimensions = { ...applianceDimensions, width: 75, height: 180, depth: 65 };
+        break;
+      case 'dishwasher':
+        applianceDimensions = { ...applianceDimensions, width: 60, height: 80, depth: 60 };
+        break;
+      case 'microwave':
+        applianceDimensions = { ...applianceDimensions, width: 50, height: 30, depth: 40 };
+        break;
+      case 'hood':
+      case 'chimney':
+        applianceDimensions = { ...applianceDimensions, width: 60, height: 15, depth: 50 };
+        break;
+    }
+    
     addAppliance({
       type,
       position: { x: 0, y: 0 },
-      ...defaultAppliance
+      ...applianceDimensions,
+      model: `Standard ${type.charAt(0).toUpperCase() + type.slice(1)}`
     });
     
     toast.success(`Added ${type}`);
@@ -69,22 +119,27 @@ const ObjectPanel = () => {
         <AccordionItem value="cabinets">
           <AccordionTrigger className="text-sm font-medium">Cabinets</AccordionTrigger>
           <AccordionContent>
-            <div className="grid grid-cols-2 gap-2 mt-2">
-              <div>
-                <h4 className="text-xs font-medium mb-2 text-gray-500">Base Cabinets</h4>
-                <div className="space-y-1">
+            <Tabs defaultValue="base" value={activeTab} onValueChange={setActiveTab} className="mt-2">
+              <TabsList className="grid grid-cols-3 mb-2">
+                <TabsTrigger value="base">Base</TabsTrigger>
+                <TabsTrigger value="wall">Wall</TabsTrigger>
+                <TabsTrigger value="other">Other</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="base" className="mt-0">
+                <div className="grid grid-cols-2 gap-2">
                   <div
-                    className="cabinet-item text-xs"
+                    className="cabinet-item text-xs border rounded p-2 cursor-pointer hover:bg-gray-50"
                     onClick={() => handleAddCabinet('base', 'shutter')}
                   >
                     <div className="h-8 bg-gray-100 mb-1 flex items-end justify-center">
                       <div className="w-full h-6 bg-white border border-gray-200"></div>
                     </div>
-                    <p>Base Cabinet</p>
+                    <p className="text-center">Base Cabinet</p>
                   </div>
                   
                   <div
-                    className="cabinet-item text-xs"
+                    className="cabinet-item text-xs border rounded p-2 cursor-pointer hover:bg-gray-50"
                     onClick={() => handleAddCabinet('base', 'drawer')}
                   >
                     <div className="h-8 bg-gray-100 mb-1 flex items-end justify-center">
@@ -94,86 +149,138 @@ const ObjectPanel = () => {
                         <div className="h-2 bg-white border border-gray-200"></div>
                       </div>
                     </div>
-                    <p>Drawer Unit</p>
+                    <p className="text-center">Drawer Unit</p>
                   </div>
                   
                   <div
-                    className="cabinet-item text-xs"
-                    onClick={() => handleAddCabinet('base', 'corner')}
+                    className="cabinet-item text-xs border rounded p-2 cursor-pointer hover:bg-gray-50"
+                    onClick={() => handleAddCabinet('base', 'pullout')}
+                  >
+                    <div className="h-8 bg-gray-100 mb-1 flex items-end justify-center">
+                      <div className="w-full h-6 bg-white border border-gray-200 relative">
+                        <div className="absolute inset-y-0 left-1/2 w-0.5 bg-gray-300"></div>
+                      </div>
+                    </div>
+                    <p className="text-center">Pull-out Unit</p>
+                  </div>
+                  
+                  <div
+                    className="cabinet-item text-xs border rounded p-2 cursor-pointer hover:bg-gray-50"
+                    onClick={() => handleAddCabinet('corner', 'corner')}
                   >
                     <div className="h-8 bg-gray-100 mb-1 flex items-end justify-center">
                       <div className="w-6 h-6 bg-white border border-gray-200 transform rotate-45 translate-x-1"></div>
                     </div>
-                    <p>Corner Cabinet</p>
+                    <p className="text-center">Corner Unit</p>
+                  </div>
+                  
+                  <div
+                    className="cabinet-item text-xs border rounded p-2 cursor-pointer hover:bg-gray-50"
+                    onClick={() => handleAddCabinet('base', 'magic-corner')}
+                  >
+                    <div className="h-8 bg-gray-100 mb-1 flex items-end justify-center">
+                      <div className="relative">
+                        <div className="w-6 h-6 bg-white border border-gray-200 transform rotate-45 translate-x-1"></div>
+                        <div className="absolute top-0 left-0 w-3 h-3 bg-gray-300 rounded-full"></div>
+                      </div>
+                    </div>
+                    <p className="text-center">Magic Corner</p>
+                  </div>
+                  
+                  <div
+                    className="cabinet-item text-xs border rounded p-2 cursor-pointer hover:bg-gray-50"
+                    onClick={() => handleAddCabinet('base', 'carousel')}
+                  >
+                    <div className="h-8 bg-gray-100 mb-1 flex items-end justify-center">
+                      <div className="w-6 h-6 bg-white border border-gray-200 rounded-full"></div>
+                    </div>
+                    <p className="text-center">Carousel Unit</p>
                   </div>
                 </div>
-              </div>
+              </TabsContent>
               
-              <div>
-                <h4 className="text-xs font-medium mb-2 text-gray-500">Wall Cabinets</h4>
-                <div className="space-y-1">
+              <TabsContent value="wall" className="mt-0">
+                <div className="grid grid-cols-2 gap-2">
                   <div
-                    className="cabinet-item text-xs"
+                    className="cabinet-item text-xs border rounded p-2 cursor-pointer hover:bg-gray-50"
                     onClick={() => handleAddCabinet('wall', 'shutter')}
                   >
                     <div className="h-8 bg-gray-100 mb-1 flex items-start justify-center">
                       <div className="w-full h-6 bg-white border border-gray-200"></div>
                     </div>
-                    <p>Wall Cabinet</p>
+                    <p className="text-center">Wall Cabinet</p>
                   </div>
                   
                   <div
-                    className="cabinet-item text-xs"
+                    className="cabinet-item text-xs border rounded p-2 cursor-pointer hover:bg-gray-50"
                     onClick={() => handleAddCabinet('wall', 'open')}
                   >
                     <div className="h-8 bg-gray-100 mb-1 flex items-start justify-center">
                       <div className="w-full h-6 bg-white border border-gray-200 border-t-0"></div>
                     </div>
-                    <p>Open Shelf</p>
+                    <p className="text-center">Open Shelf</p>
                   </div>
                   
                   <div
-                    className="cabinet-item text-xs"
+                    className="cabinet-item text-xs border rounded p-2 cursor-pointer hover:bg-gray-50"
                     onClick={() => handleAddCabinet('wall', 'corner')}
                   >
                     <div className="h-8 bg-gray-100 mb-1 flex items-start justify-center">
                       <div className="w-6 h-6 bg-white border border-gray-200 transform rotate-45 translate-y-1"></div>
                     </div>
-                    <p>Corner Wall</p>
+                    <p className="text-center">Corner Wall</p>
+                  </div>
+                  
+                  <div
+                    className="cabinet-item text-xs border rounded p-2 cursor-pointer hover:bg-gray-50"
+                    onClick={() => handleAddCabinet('loft', 'shutter')}
+                  >
+                    <div className="h-8 bg-gray-100 mb-1 flex items-start justify-center pt-1">
+                      <div className="w-full h-3 bg-white border border-gray-200"></div>
+                    </div>
+                    <p className="text-center">Loft Cabinet</p>
                   </div>
                 </div>
-              </div>
+              </TabsContent>
               
-              <div>
-                <h4 className="text-xs font-medium mb-2 text-gray-500">Tall Cabinets</h4>
-                <div className="space-y-1">
+              <TabsContent value="other" className="mt-0">
+                <div className="grid grid-cols-2 gap-2">
                   <div
-                    className="cabinet-item text-xs"
+                    className="cabinet-item text-xs border rounded p-2 cursor-pointer hover:bg-gray-50"
                     onClick={() => handleAddCabinet('tall', 'shutter')}
                   >
                     <div className="h-8 bg-gray-100 mb-1 flex items-center justify-center">
                       <div className="w-full h-8 bg-white border border-gray-200"></div>
                     </div>
-                    <p>Tall Cabinet</p>
+                    <p className="text-center">Tall Cabinet</p>
                   </div>
-                </div>
-              </div>
-              
-              <div>
-                <h4 className="text-xs font-medium mb-2 text-gray-500">Island Units</h4>
-                <div className="space-y-1">
+                  
                   <div
-                    className="cabinet-item text-xs"
+                    className="cabinet-item text-xs border rounded p-2 cursor-pointer hover:bg-gray-50"
                     onClick={() => handleAddCabinet('island', 'shutter')}
                   >
                     <div className="h-8 bg-gray-100 mb-1 flex items-end justify-center">
                       <div className="w-full h-6 bg-white border border-gray-200"></div>
                     </div>
-                    <p>Island Unit</p>
+                    <p className="text-center">Island Unit</p>
+                  </div>
+                  
+                  <div
+                    className="cabinet-item text-xs border rounded p-2 cursor-pointer hover:bg-gray-50"
+                    onClick={() => handleAddCabinet('island', 'drawer')}
+                  >
+                    <div className="h-8 bg-gray-100 mb-1 flex items-end justify-center">
+                      <div className="w-full flex flex-col">
+                        <div className="h-2 bg-white border border-gray-200"></div>
+                        <div className="h-2 bg-white border border-gray-200"></div>
+                        <div className="h-2 bg-white border border-gray-200"></div>
+                      </div>
+                    </div>
+                    <p className="text-center">Island Drawers</p>
                   </div>
                 </div>
-              </div>
-            </div>
+              </TabsContent>
+            </Tabs>
           </AccordionContent>
         </AccordionItem>
         
@@ -182,7 +289,7 @@ const ObjectPanel = () => {
           <AccordionContent>
             <div className="grid grid-cols-2 gap-2 mt-2">
               <div
-                className="cabinet-item text-xs"
+                className="cabinet-item text-xs border rounded p-2 cursor-pointer hover:bg-gray-50"
                 onClick={() => handleAddAppliance('sink')}
               >
                 <div className="h-8 bg-gray-100 mb-1 flex items-center justify-center text-gray-400">
@@ -193,11 +300,11 @@ const ObjectPanel = () => {
                     <path d="M8 17H16" stroke="currentColor" strokeWidth="2"/>
                   </svg>
                 </div>
-                <p>Sink</p>
+                <p className="text-center">Sink</p>
               </div>
               
               <div
-                className="cabinet-item text-xs"
+                className="cabinet-item text-xs border rounded p-2 cursor-pointer hover:bg-gray-50"
                 onClick={() => handleAddAppliance('stove')}
               >
                 <div className="h-8 bg-gray-100 mb-1 flex items-center justify-center text-gray-400">
@@ -209,11 +316,11 @@ const ObjectPanel = () => {
                     <circle cx="16" cy="14" r="1" fill="currentColor"/>
                   </svg>
                 </div>
-                <p>Stove</p>
+                <p className="text-center">Stove</p>
               </div>
               
               <div
-                className="cabinet-item text-xs"
+                className="cabinet-item text-xs border rounded p-2 cursor-pointer hover:bg-gray-50"
                 onClick={() => handleAddAppliance('oven')}
               >
                 <div className="h-8 bg-gray-100 mb-1 flex items-center justify-center text-gray-400">
@@ -224,11 +331,11 @@ const ObjectPanel = () => {
                     <path d="M7 16H17" stroke="currentColor" strokeWidth="2"/>
                   </svg>
                 </div>
-                <p>Oven</p>
+                <p className="text-center">Oven</p>
               </div>
               
               <div
-                className="cabinet-item text-xs"
+                className="cabinet-item text-xs border rounded p-2 cursor-pointer hover:bg-gray-50"
                 onClick={() => handleAddAppliance('fridge')}
               >
                 <div className="h-8 bg-gray-100 mb-1 flex items-center justify-center text-gray-400">
@@ -239,11 +346,11 @@ const ObjectPanel = () => {
                     <path d="M15 16L15 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
                   </svg>
                 </div>
-                <p>Refrigerator</p>
+                <p className="text-center">Refrigerator</p>
               </div>
               
               <div
-                className="cabinet-item text-xs"
+                className="cabinet-item text-xs border rounded p-2 cursor-pointer hover:bg-gray-50"
                 onClick={() => handleAddAppliance('dishwasher')}
               >
                 <div className="h-8 bg-gray-100 mb-1 flex items-center justify-center text-gray-400">
@@ -256,11 +363,11 @@ const ObjectPanel = () => {
                     <path d="M12 13V16" stroke="currentColor" strokeWidth="2"/>
                   </svg>
                 </div>
-                <p>Dishwasher</p>
+                <p className="text-center">Dishwasher</p>
               </div>
               
               <div
-                className="cabinet-item text-xs"
+                className="cabinet-item text-xs border rounded p-2 cursor-pointer hover:bg-gray-50"
                 onClick={() => handleAddAppliance('microwave')}
               >
                 <div className="h-8 bg-gray-100 mb-1 flex items-center justify-center text-gray-400">
@@ -270,7 +377,40 @@ const ObjectPanel = () => {
                     <circle cx="9" cy="12" r="3" stroke="currentColor" strokeWidth="2"/>
                   </svg>
                 </div>
-                <p>Microwave</p>
+                <p className="text-center">Microwave</p>
+              </div>
+              
+              <div
+                className="cabinet-item text-xs border rounded p-2 cursor-pointer hover:bg-gray-50"
+                onClick={() => handleAddAppliance('chimney')}
+              >
+                <div className="h-8 bg-gray-100 mb-1 flex items-center justify-center text-gray-400">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="5" y="4" width="14" height="4" stroke="currentColor" strokeWidth="2"/>
+                    <path d="M7 8V12" stroke="currentColor" strokeWidth="2"/>
+                    <path d="M17 8V12" stroke="currentColor" strokeWidth="2"/>
+                    <rect x="5" y="12" width="14" height="6" stroke="currentColor" strokeWidth="2"/>
+                    <path d="M10 18V20" stroke="currentColor" strokeWidth="2"/>
+                    <path d="M14 18V20" stroke="currentColor" strokeWidth="2"/>
+                  </svg>
+                </div>
+                <p className="text-center">Chimney</p>
+              </div>
+              
+              <div
+                className="cabinet-item text-xs border rounded p-2 cursor-pointer hover:bg-gray-50"
+                onClick={() => handleAddAppliance('water-purifier')}
+              >
+                <div className="h-8 bg-gray-100 mb-1 flex items-center justify-center text-gray-400">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="6" y="4" width="12" height="16" rx="1" stroke="currentColor" strokeWidth="2"/>
+                    <path d="M10 8H14" stroke="currentColor" strokeWidth="2"/>
+                    <path d="M9 12L15 12" stroke="currentColor" strokeWidth="2"/>
+                    <path d="M10 16H14" stroke="currentColor" strokeWidth="2"/>
+                    <path d="M12 4V2" stroke="currentColor" strokeWidth="2"/>
+                  </svg>
+                </div>
+                <p className="text-center">Water Purifier</p>
               </div>
             </div>
           </AccordionContent>
@@ -280,7 +420,7 @@ const ObjectPanel = () => {
           <AccordionTrigger className="text-sm font-medium">Materials & Finishes</AccordionTrigger>
           <AccordionContent>
             <div className="grid grid-cols-3 gap-2 mt-2">
-              {['White', 'Oak', 'Walnut', 'Grey', 'Black', 'Navy'].map((color) => (
+              {['White', 'Oak', 'Walnut', 'Grey', 'Black', 'Navy', 'Beige', 'High Gloss', 'Matte'].map((color) => (
                 <Button 
                   key={color} 
                   variant="outline" 
@@ -299,7 +439,6 @@ const ObjectPanel = () => {
   );
 };
 
-// Helper to get the Tailwind color class
 const getColorClass = (color: string): string => {
   switch (color.toLowerCase()) {
     case 'white': return 'bg-white border border-gray-200';
@@ -308,6 +447,9 @@ const getColorClass = (color: string): string => {
     case 'grey': return 'bg-gray-400';
     case 'black': return 'bg-gray-900';
     case 'navy': return 'bg-blue-900';
+    case 'beige': return 'bg-amber-100';
+    case 'high gloss': return 'bg-gray-200 bg-opacity-70';
+    case 'matte': return 'bg-gray-300';
     default: return 'bg-gray-200';
   }
 };

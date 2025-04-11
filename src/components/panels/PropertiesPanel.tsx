@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useKitchenStore, Wall, Door, Window, Cabinet, Appliance } from "@/store/kitchenStore";
 import { Input } from "@/components/ui/input";
@@ -23,7 +22,6 @@ const PropertiesPanel = () => {
   const [itemType, setItemType] = useState<string | null>(null);
   const [currentItem, setCurrentItem] = useState<any>(null);
   
-  // When the selected item changes, find and set the current item
   useEffect(() => {
     if (!selectedItemId) {
       setItemType(null);
@@ -37,7 +35,6 @@ const PropertiesPanel = () => {
       return;
     }
     
-    // Check walls
     const wall = walls.find(w => w.id === selectedItemId);
     if (wall) {
       setItemType("wall");
@@ -45,7 +42,6 @@ const PropertiesPanel = () => {
       return;
     }
     
-    // Check doors
     const door = doors.find(d => d.id === selectedItemId);
     if (door) {
       setItemType("door");
@@ -53,7 +49,6 @@ const PropertiesPanel = () => {
       return;
     }
     
-    // Check windows
     const window = windows.find(w => w.id === selectedItemId);
     if (window) {
       setItemType("window");
@@ -61,7 +56,6 @@ const PropertiesPanel = () => {
       return;
     }
     
-    // Check cabinets
     const cabinet = cabinets.find(c => c.id === selectedItemId);
     if (cabinet) {
       setItemType("cabinet");
@@ -69,7 +63,6 @@ const PropertiesPanel = () => {
       return;
     }
     
-    // Check appliances
     const appliance = appliances.find(a => a.id === selectedItemId);
     if (appliance) {
       setItemType("appliance");
@@ -77,7 +70,6 @@ const PropertiesPanel = () => {
       return;
     }
     
-    // If nothing found
     setItemType(null);
     setCurrentItem(null);
   }, [selectedItemId, room, walls, doors, windows, cabinets, appliances]);
@@ -167,7 +159,6 @@ const PropertiesPanel = () => {
         )}
       </div>
       
-      {/* Room Properties */}
       {itemType === "room" && (
         <div className="space-y-4">
           <div className="space-y-2">
@@ -176,7 +167,7 @@ const PropertiesPanel = () => {
               id="room-width"
               type="number"
               value={room.width}
-              onChange={(e) => handleInputChange('width', e.target.value)}
+              onChange={(e) => handleInputChange('width', parseFloat(e.target.value))}
             />
           </div>
           <div className="space-y-2">
@@ -185,13 +176,23 @@ const PropertiesPanel = () => {
               id="room-height"
               type="number"
               value={room.height}
-              onChange={(e) => handleInputChange('height', e.target.value)}
+              onChange={(e) => handleInputChange('height', parseFloat(e.target.value))}
             />
           </div>
+          {room.roomHeight && (
+            <div className="space-y-2">
+              <Label htmlFor="room-room-height">Room Height (cm)</Label>
+              <Input
+                id="room-room-height"
+                type="number"
+                value={room.roomHeight}
+                onChange={(e) => handleInputChange('roomHeight', parseFloat(e.target.value))}
+              />
+            </div>
+          )}
         </div>
       )}
       
-      {/* Wall Properties */}
       {itemType === "wall" && currentItem && (
         <div className="space-y-4">
           <div className="space-y-2">
@@ -248,7 +249,6 @@ const PropertiesPanel = () => {
         </div>
       )}
       
-      {/* Door Properties */}
       {itemType === "door" && currentItem && (
         <div className="space-y-4">
           <div className="space-y-2">
@@ -286,7 +286,6 @@ const PropertiesPanel = () => {
         </div>
       )}
       
-      {/* Window Properties */}
       {itemType === "window" && currentItem && (
         <div className="space-y-4">
           <div className="space-y-2">
@@ -334,7 +333,6 @@ const PropertiesPanel = () => {
         </div>
       )}
       
-      {/* Cabinet Properties */}
       {itemType === "cabinet" && currentItem && (
         <div className="space-y-4">
           <div className="space-y-2">
@@ -351,6 +349,8 @@ const PropertiesPanel = () => {
                 <SelectItem value="wall">Wall</SelectItem>
                 <SelectItem value="tall">Tall</SelectItem>
                 <SelectItem value="island">Island</SelectItem>
+                <SelectItem value="corner">Corner</SelectItem>
+                <SelectItem value="loft">Loft</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -369,6 +369,9 @@ const PropertiesPanel = () => {
                 <SelectItem value="drawer">Drawer</SelectItem>
                 <SelectItem value="open">Open</SelectItem>
                 <SelectItem value="corner">Corner</SelectItem>
+                <SelectItem value="pullout">Pull-out</SelectItem>
+                <SelectItem value="magic-corner">Magic Corner</SelectItem>
+                <SelectItem value="carousel">Carousel</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -451,6 +454,9 @@ const PropertiesPanel = () => {
                 <SelectItem value="veneer">Veneer</SelectItem>
                 <SelectItem value="solid">Solid Wood</SelectItem>
                 <SelectItem value="acrylic">Acrylic</SelectItem>
+                <SelectItem value="pvc">PVC</SelectItem>
+                <SelectItem value="membrane">Membrane</SelectItem>
+                <SelectItem value="glass">Glass</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -469,13 +475,18 @@ const PropertiesPanel = () => {
                 <SelectItem value="brown">Brown</SelectItem>
                 <SelectItem value="black">Black</SelectItem>
                 <SelectItem value="grey">Grey</SelectItem>
+                <SelectItem value="beige">Beige</SelectItem>
+                <SelectItem value="blue">Blue</SelectItem>
+                <SelectItem value="green">Green</SelectItem>
+                <SelectItem value="red">Red</SelectItem>
+                <SelectItem value="yellow">Yellow</SelectItem>
+                <SelectItem value="woodgrain">Wood Grain</SelectItem>
               </SelectContent>
             </Select>
           </div>
         </div>
       )}
       
-      {/* Appliance Properties */}
       {itemType === "appliance" && currentItem && (
         <div className="space-y-4">
           <div className="space-y-2">
@@ -495,6 +506,9 @@ const PropertiesPanel = () => {
                 <SelectItem value="dishwasher">Dishwasher</SelectItem>
                 <SelectItem value="microwave">Microwave</SelectItem>
                 <SelectItem value="hood">Hood</SelectItem>
+                <SelectItem value="chimney">Chimney</SelectItem>
+                <SelectItem value="mixer-grinder">Mixer Grinder</SelectItem>
+                <SelectItem value="water-purifier">Water Purifier</SelectItem>
               </SelectContent>
             </Select>
           </div>

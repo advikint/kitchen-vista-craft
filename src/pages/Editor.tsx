@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useKitchenStore, ViewMode, ToolMode } from "@/store/kitchenStore";
 import { Button } from "@/components/ui/button";
@@ -13,6 +14,7 @@ import { Link } from "react-router-dom";
 import RoomDesigner from "@/components/designer/RoomDesigner";
 import ObjectPanel from "@/components/panels/ObjectPanel";
 import PropertiesPanel from "@/components/panels/PropertiesPanel";
+import CreateRoomDialog from "@/components/dialogs/CreateRoomDialog";
 
 const Editor = () => {
   const { 
@@ -25,13 +27,18 @@ const Editor = () => {
   
   const [leftPanelOpen, setLeftPanelOpen] = useState(true);
   const [rightPanelOpen, setRightPanelOpen] = useState(true);
+  const [createRoomDialogOpen, setCreateRoomDialogOpen] = useState(false);
   
   const handleViewModeChange = (value: string) => {
     setViewMode(value as ViewMode);
   };
   
   const handleToolSelect = (tool: ToolMode) => {
-    setToolMode(tool);
+    if (tool === 'room') {
+      setCreateRoomDialogOpen(true);
+    } else {
+      setToolMode(tool);
+    }
   };
   
   const handleExportBOQ = () => {
@@ -132,20 +139,11 @@ const Editor = () => {
               <Button 
                 variant="ghost" 
                 size="sm" 
-                className={`flex flex-col py-3 h-auto items-center justify-center ${currentToolMode === 'room' ? 'bg-kitchen-100 text-kitchen-800' : ''}`} 
+                className="flex flex-col py-3 h-auto items-center justify-center bg-kitchen-50 text-kitchen-700" 
                 onClick={() => handleToolSelect('room')}
               >
                 <Square className="h-5 w-5 mb-1" />
                 <span className="text-xs">Room</span>
-              </Button>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className={`flex flex-col py-3 h-auto items-center justify-center ${currentToolMode === 'wall' ? 'bg-kitchen-100 text-kitchen-800' : ''}`} 
-                onClick={() => handleToolSelect('wall')}
-              >
-                <Layers className="h-5 w-5 mb-1" />
-                <span className="text-xs">Wall</span>
               </Button>
               <Button 
                 variant="ghost" 
@@ -249,6 +247,12 @@ const Editor = () => {
           </Button>
         </div>
       </div>
+      
+      {/* Room Creation Dialog */}
+      <CreateRoomDialog
+        open={createRoomDialogOpen}
+        onOpenChange={setCreateRoomDialogOpen}
+      />
     </div>
   );
 };

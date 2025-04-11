@@ -4,7 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 // Types
 export type ViewMode = '2d-top' | '2d-elevation' | '3d';
-export type ToolMode = 'select' | 'room' | 'wall' | 'door' | 'window' | 'cabinet' | 'appliance';
+export type ToolMode = 'select' | 'room' | 'door' | 'window' | 'cabinet' | 'appliance';
 
 export interface Point {
   x: number;
@@ -14,6 +14,7 @@ export interface Point {
 export interface Room {
   width: number;
   height: number;
+  roomHeight?: number; // Height of the room in cm
 }
 
 export interface Wall {
@@ -40,8 +41,8 @@ export interface Window {
   sillHeight: number;
 }
 
-export type CabinetType = 'base' | 'wall' | 'tall' | 'island';
-export type CabinetCategory = 'drawer' | 'shutter' | 'open' | 'corner';
+export type CabinetType = 'base' | 'wall' | 'tall' | 'island' | 'corner' | 'loft';
+export type CabinetCategory = 'drawer' | 'shutter' | 'open' | 'corner' | 'pullout' | 'magic-corner' | 'carousel';
 
 export interface Cabinet {
   id: string;
@@ -56,7 +57,7 @@ export interface Cabinet {
   color: string;
 }
 
-export type ApplianceType = 'sink' | 'stove' | 'oven' | 'fridge' | 'dishwasher' | 'microwave' | 'hood';
+export type ApplianceType = 'sink' | 'stove' | 'oven' | 'fridge' | 'dishwasher' | 'microwave' | 'hood' | 'chimney' | 'mixer-grinder' | 'water-purifier';
 
 export interface Appliance {
   id: string;
@@ -97,6 +98,7 @@ export interface KitchenStore {
   
   setProjectName: (name: string) => void;
   setRoom: (room: Room) => void;
+  resetWalls: () => void; // New function to reset walls
   addWall: (wall: Omit<Wall, 'id'>) => void;
   updateWall: (id: string, updates: Partial<Wall>) => void;
   removeWall: (id: string) => void;
@@ -152,6 +154,8 @@ export const useKitchenStore = create<KitchenStore>((set) => ({
   
   setProjectName: (name) => set({ projectName: name }),
   setRoom: (room) => set({ room }),
+  
+  resetWalls: () => set({ walls: [] }),
   
   addWall: (wall) => set((state) => ({ 
     walls: [...state.walls, { ...wall, id: uuidv4() }] 
