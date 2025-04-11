@@ -135,7 +135,7 @@ const Editor = () => {
                 className={`flex flex-col py-3 h-auto items-center justify-center ${currentToolMode === 'room' ? 'bg-kitchen-100 text-kitchen-800' : ''}`} 
                 onClick={() => handleToolSelect('room')}
               >
-                <Vector className="h-5 w-5 mb-1" />
+                <Square className="h-5 w-5 mb-1" />
                 <span className="text-xs">Room</span>
               </Button>
               <Button 
@@ -171,7 +171,7 @@ const Editor = () => {
                 className={`flex flex-col py-3 h-auto items-center justify-center ${currentToolMode === 'cabinet' ? 'bg-kitchen-100 text-kitchen-800' : ''}`} 
                 onClick={() => handleToolSelect('cabinet')}
               >
-                <Cabinet className="h-5 w-5 mb-1" />
+                <PackageOpen className="h-5 w-5 mb-1" />
                 <span className="text-xs">Cabinet</span>
               </Button>
               <Button 
@@ -255,7 +255,6 @@ const Editor = () => {
 
 export default Editor;
 
-// Arrow icons for the panel toggle buttons
 const ChevronsLeft = ({ className }: { className?: string }) => (
   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
     <path d="m11 17-5-5 5-5" />
