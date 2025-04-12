@@ -45,9 +45,9 @@ export interface Window {
 }
 
 // Base cabinet types inspired by Livspace and Homelane
-export type CabinetType = 'base' | 'wall' | 'tall' | 'corner' | 'island' | 'loft';
+export type CabinetType = 'base' | 'wall' | 'tall' | 'corner' | 'island' | 'loft' | 'specialty';
 
-// Cabinet categories (subtypes)
+// Cabinet categories (subtypes) - Added "drawer" and "shutter" to fix type errors
 export type CabinetCategory = 
   // Base cabinets
   'drawer-base' | 'sink-base' | 'corner-base' | 'blind-corner-base' | 'cooktop-base' | 'appliance-base' | 'standard-base' |
@@ -56,7 +56,9 @@ export type CabinetCategory =
   // Tall cabinets
   'pantry-tall' | 'oven-tall' | 'fridge-tall' | 'broom-tall' | 'appliance-tall' |
   // Specialty cabinets
-  'magic-corner' | 'pullout' | 'carousel' | 'open' | 'wine-rack';
+  'magic-corner' | 'pullout' | 'carousel' | 'open' | 'wine-rack' |
+  // Added these to fix type errors
+  'drawer' | 'shutter';
 
 // Cabinet door/drawer types
 export type CabinetFrontType = 'shutter' | 'drawer' | 'open' | 'glass' | 'flap-up' | 'bi-fold';

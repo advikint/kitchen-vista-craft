@@ -96,7 +96,7 @@ const PropertiesPanel = () => {
     if (!currentItem || !['cabinet', 'appliance'].includes(itemType || '')) return;
     
     const newPosition = { ...currentItem.position };
-    newPosition[axis] = parseFloat(value) || 0;
+    newPosition[axis] = parseFloat(String(value)) || 0;
     
     if (itemType === "cabinet") {
       updateCabinet(currentItem.id, { position: newPosition });
