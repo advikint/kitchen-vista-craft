@@ -17,6 +17,7 @@ const TopView = () => {
   const [startPos, setStartPos] = useState({ x: 0, y: 0 });
   const [scale, setScale] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const [snapEnabled, setSnapEnabled] = useState(true);
   
   // Handle resize
   useEffect(() => {
@@ -39,7 +40,7 @@ const TopView = () => {
   // Redraw when data changes
   useEffect(() => {
     draw();
-  }, [room, walls, doors, windows, cabinets, appliances, scale, offset, showDimensions, selectedItemId]);
+  }, [room, walls, doors, windows, cabinets, appliances, scale, offset, showDimensions, selectedItemId, snapEnabled]);
   
   const draw = () => {
     const canvas = canvasRef.current;
@@ -403,6 +404,201 @@ const TopView = () => {
     ctx.restore();
   };
   
+  // Convert screen coordinates to world coordinates
+  const screenToWorld = (screenX: number, screenY: number) => {
+    if (!canvasRef.current) return { x: 0, y: 0 };
+    
+    const canvas = canvasRef.current;
+    const worldX = (screenX - canvas.width / 2 - offset.x) / scale;
+    const worldY = (screenY - canvas.height / 2 - offset.y) / scale;
+    
+    return { x: worldX, y: worldY };
+  };
+  
+  // Find nearest wall to point for placing doors and windows
+  const findNearestWall = (point: { x: number, y: number }) => {
+    let nearestWall = null;
+    let minDistance = Number.MAX_VALUE;
+    let position = 0;
+    
+    walls.forEach(wall => {
+      const { distance, t } = pointToLineDistance(
+        point, 
+        { x: wall.start.x, y: wall.start.y },
+        { x: wall.end.x, y: wall.end.y }
+      );
+      
+      if (distance < minDistance && t >= 0 && t <= 1) {
+        minDistance = distance;
+        nearestWall = wall;
+        position = t;
+      }
+    });
+    
+    return { wall: nearestWall, distance: minDistance, position };
+  };
+  
+  // Utility function to calculate distance from point to line segment
+  const pointToLineDistance = (
+    point: { x: number, y: number },
+    lineStart: { x: number, y: number },
+    lineEnd: { x: number, y: number }
+  ) => {
+    const dx = lineEnd.x - lineStart.x;
+    const dy = lineEnd.y - lineStart.y;
+    const l2 = dx * dx + dy * dy;
+    
+    if (l2 === 0) {
+      // Line segment is actually a point
+      return {
+        distance: Math.sqrt(
+          (point.x - lineStart.x) * (point.x - lineStart.x) +
+          (point.y - lineStart.y) * (point.y - lineStart.y)
+        ),
+        t: 0
+      };
+    }
+    
+    // Calculate projection of point onto line
+    const t = Math.max(0, Math.min(1, ((point.x - lineStart.x) * dx + (point.y - lineStart.y) * dy) / l2));
+    const projX = lineStart.x + t * dx;
+    const projY = lineStart.y + t * dy;
+    
+    // Calculate distance to projection
+    const distance = Math.sqrt(
+      (point.x - projX) * (point.x - projX) +
+      (point.y - projY) * (point.y - projY)
+    );
+    
+    return { distance, t };
+  };
+  
+  // Check if a point is inside a cabinet
+  const isPointInCabinet = (point: { x: number, y: number }, cabinet: Cabinet) => {
+    // Translate point to cabinet-local coordinates
+    const dx = point.x - cabinet.position.x;
+    const dy = point.y - cabinet.position.y;
+    
+    // Rotate point opposite to cabinet rotation
+    const angle = -cabinet.rotation * Math.PI / 180;
+    const rx = dx * Math.cos(angle) - dy * Math.sin(angle);
+    const ry = dx * Math.sin(angle) + dy * Math.cos(angle);
+    
+    // Check if point is inside cabinet bounds
+    return (
+      rx >= -cabinet.width / 2 &&
+      rx <= cabinet.width / 2 &&
+      ry >= -cabinet.depth / 2 &&
+      ry <= cabinet.depth / 2
+    );
+  };
+  
+  // Find nearest cabinet for snapping
+  const findNearestCabinet = (point: { x: number, y: number }, excludeId?: string) => {
+    let nearestCabinet = null;
+    let minDistance = 50; // Maximum snap distance in cm
+    
+    for (const cabinet of cabinets) {
+      if (excludeId && cabinet.id === excludeId) continue;
+      
+      // Calculate distance from point to cabinet center
+      const dx = point.x - cabinet.position.x;
+      const dy = point.y - cabinet.position.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      
+      if (distance < minDistance) {
+        minDistance = distance;
+        nearestCabinet = cabinet;
+      }
+    }
+    
+    return { cabinet: nearestCabinet, distance: minDistance };
+  };
+  
+  // Find item at position for selection
+  const findItemAtPosition = (worldPoint: { x: number, y: number }) => {
+    // Check if point is on room
+    const { width, height } = room;
+    if (
+      worldPoint.x >= -width / 2 && worldPoint.x <= width / 2 &&
+      worldPoint.y >= -height / 2 && worldPoint.y <= height / 2
+    ) {
+      // Check appliances (checked first as they are typically smaller)
+      for (const appliance of appliances) {
+        if (isPointInCabinet(worldPoint, appliance)) {
+          return { id: appliance.id, type: 'appliance' };
+        }
+      }
+      
+      // Check cabinets
+      for (const cabinet of cabinets) {
+        if (isPointInCabinet(worldPoint, cabinet)) {
+          return { id: cabinet.id, type: 'cabinet' };
+        }
+      }
+      
+      // Check doors
+      for (const door of doors) {
+        const wall = walls.find(w => w.id === door.wallId);
+        if (!wall) continue;
+        
+        const dx = wall.end.x - wall.start.x;
+        const dy = wall.end.y - wall.start.y;
+        const doorPos = {
+          x: wall.start.x + dx * door.position,
+          y: wall.start.y + dy * door.position
+        };
+        
+        const doorDx = worldPoint.x - doorPos.x;
+        const doorDy = worldPoint.y - doorPos.y;
+        const doorDistance = Math.sqrt(doorDx * doorDx + doorDy * doorDy);
+        
+        if (doorDistance <= door.width / 2) {
+          return { id: door.id, type: 'door' };
+        }
+      }
+      
+      // Check windows
+      for (const window of windows) {
+        const wall = walls.find(w => w.id === window.wallId);
+        if (!wall) continue;
+        
+        const dx = wall.end.x - wall.start.x;
+        const dy = wall.end.y - wall.start.y;
+        const windowPos = {
+          x: wall.start.x + dx * window.position,
+          y: wall.start.y + dy * window.position
+        };
+        
+        const windowDx = worldPoint.x - windowPos.x;
+        const windowDy = worldPoint.y - windowPos.y;
+        const windowDistance = Math.sqrt(windowDx * windowDx + windowDy * windowDy);
+        
+        if (windowDistance <= window.width / 2) {
+          return { id: window.id, type: 'window' };
+        }
+      }
+      
+      // Check walls
+      for (const wall of walls) {
+        const { distance } = pointToLineDistance(
+          worldPoint, 
+          { x: wall.start.x, y: wall.start.y },
+          { x: wall.end.x, y: wall.end.y }
+        );
+        
+        if (distance <= 10) { // Wall selection tolerance
+          return { id: wall.id, type: 'wall' };
+        }
+      }
+      
+      // If nothing else, select the room
+      return { id: 'room', type: 'room' };
+    }
+    
+    return null;
+  };
+  
   const handleMouseDown = (e: React.MouseEvent) => {
     if (!canvasRef.current) return;
     
@@ -413,68 +609,149 @@ const TopView = () => {
     setIsDragging(true);
     setStartPos({ x, y });
     
+    const worldPoint = screenToWorld(x, y);
+    
     // Handle object selection or creation based on current tool
     if (currentToolMode === 'select') {
-      // TODO: Implement object selection logic
+      const item = findItemAtPosition(worldPoint);
+      if (item) {
+        setSelectedItemId(item.id);
+      } else {
+        setSelectedItemId(null);
+      }
     } else if (currentToolMode === 'door') {
       if (walls.length === 0) {
         toast.warning("Add walls before placing doors");
         return;
       }
       
-      // Example: Place a door on the first wall
-      addDoor({
-        wallId: walls[0].id,
-        position: 0.5, // Middle of the wall
-        width: 80,
-        height: 200
-      });
+      const { wall, distance, position } = findNearestWall(worldPoint);
+      
+      if (wall && distance < 20) { // 20cm snap distance
+        addDoor({
+          wallId: wall.id,
+          position: position,
+          width: 80,
+          height: 200
+        });
+        toast.success("Door added");
+      } else {
+        toast.warning("Click near a wall to place a door");
+      }
     } else if (currentToolMode === 'window') {
       if (walls.length === 0) {
         toast.warning("Add walls before placing windows");
         return;
       }
       
-      // Example: Place a window on the first wall
-      addWindow({
-        wallId: walls[0].id,
-        position: 0.3, // 30% along the wall
-        width: 100,
-        height: 120,
-        sillHeight: 90
-      });
-    } else if (currentToolMode === 'cabinet') {
-      const worldX = (x - canvasRef.current.width / 2 - offset.x) / scale;
-      const worldY = (y - canvasRef.current.height / 2 - offset.y) / scale;
+      const { wall, distance, position } = findNearestWall(worldPoint);
       
-      // Add a base cabinet with all required properties
+      if (wall && distance < 20) { // 20cm snap distance
+        addWindow({
+          wallId: wall.id,
+          position: position,
+          width: 100,
+          height: 120,
+          sillHeight: 90
+        });
+        toast.success("Window added");
+      } else {
+        toast.warning("Click near a wall to place a window");
+      }
+    } else if (currentToolMode === 'cabinet') {
+      // Determine if near a wall for auto-alignment
+      const { wall, distance, position } = findNearestWall(worldPoint);
+      let cabinetPosition = { x: worldPoint.x, y: worldPoint.y };
+      let rotation = 0;
+      
+      // If near a wall, align cabinet to wall
+      if (snapEnabled && wall && distance < 40) { // 40cm snap distance
+        const dx = wall.end.x - wall.start.x;
+        const dy = wall.end.y - wall.start.y;
+        const wallLength = Math.sqrt(dx * dx + dy * dy);
+        const wallAngle = Math.atan2(dy, dx);
+        
+        // Position the cabinet along the wall
+        const cabinetPos = {
+          x: wall.start.x + dx * position,
+          y: wall.start.y + dy * position
+        };
+        
+        // Offset cabinet by its depth/2 perpendicular to the wall
+        const perpAngle = wallAngle + Math.PI / 2;
+        cabinetPosition = {
+          x: cabinetPos.x + Math.cos(perpAngle) * 30, // 30cm offset (half depth)
+          y: cabinetPos.y + Math.sin(perpAngle) * 30
+        };
+        
+        // Rotate cabinet to face the wall
+        rotation = (wallAngle * 180 / Math.PI + 90) % 360;
+      } else {
+        // Check for snapping to existing cabinets
+        const { cabinet: nearestCabinet } = findNearestCabinet(worldPoint);
+        if (snapEnabled && nearestCabinet) {
+          cabinetPosition = {
+            x: nearestCabinet.position.x + 60, // Place next to existing cabinet
+            y: nearestCabinet.position.y
+          };
+          rotation = nearestCabinet.rotation;
+        }
+      }
+      
+      // Add a cabinet with all required properties
       addCabinet({
         type: 'base',
         category: 'shutter',
-        frontType: 'shutter', // Adding missing required property
-        finish: 'laminate',   // Adding missing required property
-        position: { x: worldX, y: worldY },
+        frontType: 'shutter',
+        finish: 'laminate',
+        position: cabinetPosition,
         width: 60,
         height: 85,
         depth: 60,
-        rotation: 0,
+        rotation: rotation,
         material: 'laminate',
         color: 'white'
       });
+      toast.success("Cabinet added");
     } else if (currentToolMode === 'appliance') {
-      const worldX = (x - canvasRef.current.width / 2 - offset.x) / scale;
-      const worldY = (y - canvasRef.current.height / 2 - offset.y) / scale;
+      const { wall, distance, position } = findNearestWall(worldPoint);
+      let appliancePosition = { x: worldPoint.x, y: worldPoint.y };
+      let rotation = 0;
       
-      // Example: Place a sink
+      // If near a wall, align appliance to wall
+      if (snapEnabled && wall && distance < 40) { // 40cm snap distance
+        const dx = wall.end.x - wall.start.x;
+        const dy = wall.end.y - wall.start.y;
+        const wallLength = Math.sqrt(dx * dx + dy * dy);
+        const wallAngle = Math.atan2(dy, dx);
+        
+        // Position the appliance along the wall
+        const appliancePos = {
+          x: wall.start.x + dx * position,
+          y: wall.start.y + dy * position
+        };
+        
+        // Offset appliance by its depth/2 perpendicular to the wall
+        const perpAngle = wallAngle + Math.PI / 2;
+        appliancePosition = {
+          x: appliancePos.x + Math.cos(perpAngle) * 30, // 30cm offset (half depth)
+          y: appliancePos.y + Math.sin(perpAngle) * 30
+        };
+        
+        // Rotate appliance to face the wall
+        rotation = (wallAngle * 180 / Math.PI + 90) % 360;
+      }
+      
       addAppliance({
         type: 'sink',
-        position: { x: worldX, y: worldY },
+        position: appliancePosition,
         width: 80,
         height: 40,
         depth: 60,
-        rotation: 0,
+        rotation: rotation,
         model: 'Standard Sink'
       });
+      toast.success("Sink added");
     }
   };
   
@@ -551,6 +828,13 @@ const TopView = () => {
             <path d="M15 14L19.5528 18.5528" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
             <path d="M9 14L4.44721 18.5528" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
           </svg>
+        </button>
+        <button
+          className={`ml-2 px-2 py-1 rounded ${snapEnabled ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'}`}
+          onClick={() => setSnapEnabled(!snapEnabled)}
+          title="Toggle snapping"
+        >
+          Snap: {snapEnabled ? 'ON' : 'OFF'}
         </button>
       </div>
     </div>

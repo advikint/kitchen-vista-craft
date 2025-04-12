@@ -14,8 +14,7 @@ const ThreeDView = () => {
   useEffect(() => {
     // Clear any existing objects
     while(scene.children.length > 0) { 
-      if (scene.children[0].type === "Scene") break;
-      scene.remove(scene.children[0]); 
+      scene.remove(scene.children[0]);
     }
     
     // Create the room
@@ -36,14 +35,28 @@ const ThreeDView = () => {
     // Create appliances
     appliances.forEach(createAppliance);
     
+    // Add lighting
+    addLighting();
+    
     return () => {
       // Clean up when component unmounts
       while(scene.children.length > 0) { 
-        if (scene.children[0].type === "Scene") break;
-        scene.remove(scene.children[0]); 
+        scene.remove(scene.children[0]);
       }
     };
-  }, [room, walls, doors, windows, cabinets, appliances]);
+  }, [room, walls, doors, windows, cabinets, appliances, scene]);
+  
+  const addLighting = () => {
+    // Add ambient light
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    scene.add(ambientLight);
+    
+    // Add directional light
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    directionalLight.position.set(10, 20, 15);
+    directionalLight.castShadow = true;
+    scene.add(directionalLight);
+  };
   
   const createRoom = () => {
     // Floor
@@ -115,12 +128,13 @@ const ThreeDView = () => {
     const end = new THREE.Vector3(wall.end.x, 0, wall.end.y);
     
     const direction = new THREE.Vector3().subVectors(end, start);
+    const wallLength = direction.length();
     direction.normalize();
     
     // Door position along the wall
     const doorPos = new THREE.Vector3()
       .copy(start)
-      .addScaledVector(direction, door.position * start.distanceTo(end));
+      .addScaledVector(direction, door.position * wallLength);
     
     // Door geometry
     const doorGeometry = new THREE.BoxGeometry(door.width, door.height, 2);
@@ -157,12 +171,13 @@ const ThreeDView = () => {
     const end = new THREE.Vector3(wall.end.x, 0, wall.end.y);
     
     const direction = new THREE.Vector3().subVectors(end, start);
+    const wallLength = direction.length();
     direction.normalize();
     
     // Window position along the wall
     const windowPos = new THREE.Vector3()
       .copy(start)
-      .addScaledVector(direction, window.position * start.distanceTo(end));
+      .addScaledVector(direction, window.position * wallLength);
     
     // Window geometry
     const windowGeometry = new THREE.BoxGeometry(window.width, window.height, 2);
@@ -212,6 +227,7 @@ const ThreeDView = () => {
     if (cabinet.color === 'white') cabinetColor = 0xffffff;
     else if (cabinet.color === 'brown') cabinetColor = 0x8b5a2b;
     else if (cabinet.color === 'black') cabinetColor = 0x1e1e1e;
+    else if (cabinet.color === 'grey') cabinetColor = 0x9ca3af;
     
     const cabinetMaterial = new THREE.MeshStandardMaterial({ 
       color: cabinetColor,
@@ -227,6 +243,7 @@ const ThreeDView = () => {
     );
     cabinetMesh.rotation.y = cabinet.rotation * Math.PI / 180;
     cabinetMesh.castShadow = true;
+    cabinetMesh.receiveShadow = true;
     scene.add(cabinetMesh);
     
     // Add countertop for base cabinets
@@ -248,6 +265,8 @@ const ThreeDView = () => {
         cabinet.position.y
       );
       countertopMesh.rotation.y = cabinet.rotation * Math.PI / 180;
+      countertopMesh.castShadow = true;
+      countertopMesh.receiveShadow = true;
       scene.add(countertopMesh);
     }
     
@@ -318,6 +337,7 @@ const ThreeDView = () => {
     );
     applianceMesh.rotation.y = appliance.rotation * Math.PI / 180;
     applianceMesh.castShadow = true;
+    applianceMesh.receiveShadow = true;
     scene.add(applianceMesh);
     
     // Add specific details based on type

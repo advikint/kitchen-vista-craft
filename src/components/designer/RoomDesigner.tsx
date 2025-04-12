@@ -34,21 +34,23 @@ const RoomDesigner = () => {
       
       {viewMode === '3d' && (
         <Canvas shadows>
-          <ambientLight intensity={0.5} />
+          <color attach="background" args={['#f8fafc']} />
+          <ambientLight intensity={0.6} />
           <directionalLight 
             position={[10, 10, 10]} 
-            intensity={1} 
+            intensity={0.8} 
             castShadow 
             shadow-mapSize-width={2048} 
             shadow-mapSize-height={2048}
           />
-          <PerspectiveCamera makeDefault position={[5, 5, 5]} fov={50} />
+          <PerspectiveCamera makeDefault position={[150, 150, 150]} fov={50} />
           <OrbitControls 
             enablePan={true}
             enableZoom={true}
             enableRotate={true}
             minPolarAngle={0}
             maxPolarAngle={Math.PI / 2}
+            target={[0, 0, 0]}
           />
           <ThreeDView />
         </Canvas>
