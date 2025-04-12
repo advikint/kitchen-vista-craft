@@ -1,3 +1,4 @@
+
 import { useRef, useEffect, useState } from "react";
 import { useKitchenStore, Cabinet, Appliance, Wall, Door, Window } from "@/store/kitchenStore";
 import { toast } from "sonner";
@@ -446,13 +447,15 @@ const TopView = () => {
       const worldX = (x - canvasRef.current.width / 2 - offset.x) / scale;
       const worldY = (y - canvasRef.current.height / 2 - offset.y) / scale;
       
-      // Example: Place a base cabinet
+      // Add a base cabinet with all required properties
       addCabinet({
         type: 'base',
         category: 'shutter',
+        frontType: 'shutter', // Adding missing required property
+        finish: 'laminate',   // Adding missing required property
         position: { x: worldX, y: worldY },
         width: 60,
-        height: 80,
+        height: 85,
         depth: 60,
         rotation: 0,
         material: 'laminate',
