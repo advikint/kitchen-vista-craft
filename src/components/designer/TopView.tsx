@@ -415,19 +415,6 @@ const TopView = () => {
     // Handle object selection or creation based on current tool
     if (currentToolMode === 'select') {
       // TODO: Implement object selection logic
-    } else if (currentToolMode === 'room') {
-      // Room resizing would be implemented here
-    } else if (currentToolMode === 'wall') {
-      // Start wall drawing
-      const worldX = (x - canvasRef.current.width / 2 - offset.x) / scale;
-      const worldY = (y - canvasRef.current.height / 2 - offset.y) / scale;
-      
-      // Example: Create a wall
-      addWall({ 
-        start: { x: worldX, y: worldY }, 
-        end: { x: worldX + 100, y: worldY }, 
-        height: 240 
-      });
     } else if (currentToolMode === 'door') {
       if (walls.length === 0) {
         toast.warning("Add walls before placing doors");

@@ -19,7 +19,7 @@ interface CreateRoomDialogProps {
 }
 
 const CreateRoomDialog = ({ open, onOpenChange }: CreateRoomDialogProps) => {
-  const { setRoom, resetWalls } = useKitchenStore();
+  const { setRoom, resetWalls, addWall } = useKitchenStore();
   const [width, setWidth] = useState(3000);
   const [length, setLength] = useState(4000);
   const [height, setHeight] = useState(2700);
@@ -47,6 +47,34 @@ const CreateRoomDialog = ({ open, onOpenChange }: CreateRoomDialogProps) => {
     // Create walls based on room dimensions
     const halfWidth = widthInCm / 2;
     const halfHeight = lengthInCm / 2;
+
+    // Wall A - Top
+    addWall({
+      start: { x: -halfWidth, y: -halfHeight },
+      end: { x: halfWidth, y: -halfHeight },
+      height: heightInCm
+    });
+
+    // Wall B - Right
+    addWall({
+      start: { x: halfWidth, y: -halfHeight },
+      end: { x: halfWidth, y: halfHeight },
+      height: heightInCm
+    });
+
+    // Wall C - Bottom
+    addWall({
+      start: { x: halfWidth, y: halfHeight },
+      end: { x: -halfWidth, y: halfHeight },
+      height: heightInCm
+    });
+
+    // Wall D - Left
+    addWall({
+      start: { x: -halfWidth, y: halfHeight },
+      end: { x: -halfWidth, y: -halfHeight },
+      height: heightInCm
+    });
 
     toast.success("Room created successfully");
     onOpenChange(false);

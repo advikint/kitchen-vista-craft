@@ -9,16 +9,18 @@ import ThreeDView from "./ThreeDView";
 import ElevationView from "./ElevationView";
 
 const RoomDesigner = () => {
-  const { viewMode, room } = useKitchenStore();
+  const { viewMode, room, walls } = useKitchenStore();
   const containerRef = useRef<HTMLDivElement>(null);
   const [isInitialized, setIsInitialized] = useState(false);
   
   useEffect(() => {
     if (!isInitialized) {
-      toast.info("Designer loaded. Start by defining your room dimensions.");
+      if (walls.length === 0) {
+        toast.info("Click on 'Room' to start by defining your room dimensions.");
+      }
       setIsInitialized(true);
     }
-  }, [isInitialized]);
+  }, [isInitialized, walls]);
   
   return (
     <div ref={containerRef} className="w-full h-full">

@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -22,6 +21,8 @@ export interface Wall {
   start: Point;
   end: Point;
   height: number;
+  label?: string; // Wall label (e.g., "Wall A")
+  thickness?: number; // Wall thickness in cm, default 10cm (100mm)
 }
 
 export interface Door {
@@ -30,6 +31,7 @@ export interface Door {
   position: number; // Position along the wall (0-1)
   width: number;
   height: number;
+  type?: 'standard' | 'sliding' | 'folding' | 'pocket';
 }
 
 export interface Window {
@@ -39,15 +41,35 @@ export interface Window {
   width: number;
   height: number;
   sillHeight: number;
+  type?: 'standard' | 'sliding' | 'louvered' | 'fixed';
 }
 
-export type CabinetType = 'base' | 'wall' | 'tall' | 'island' | 'corner' | 'loft';
-export type CabinetCategory = 'drawer' | 'shutter' | 'open' | 'corner' | 'pullout' | 'magic-corner' | 'carousel';
+// Base cabinet types inspired by Livspace and Homelane
+export type CabinetType = 'base' | 'wall' | 'tall' | 'corner' | 'island' | 'loft';
+
+// Cabinet categories (subtypes)
+export type CabinetCategory = 
+  // Base cabinets
+  'drawer-base' | 'sink-base' | 'corner-base' | 'blind-corner-base' | 'cooktop-base' | 'appliance-base' | 'standard-base' |
+  // Wall cabinets
+  'standard-wall' | 'open-shelf' | 'microwave-wall' | 'corner-wall' | 'blind-corner-wall' | 'glass-wall' | 
+  // Tall cabinets
+  'pantry-tall' | 'oven-tall' | 'fridge-tall' | 'broom-tall' | 'appliance-tall' |
+  // Specialty cabinets
+  'magic-corner' | 'pullout' | 'carousel' | 'open' | 'wine-rack';
+
+// Cabinet door/drawer types
+export type CabinetFrontType = 'shutter' | 'drawer' | 'open' | 'glass' | 'flap-up' | 'bi-fold';
+
+// Cabinet finish types
+export type CabinetFinish = 'matte' | 'gloss' | 'textured' | 'woodgrain' | 'membrane' | 'pvc' | 'acrylic' | 'laminate' | 'veneer' | 'solid';
 
 export interface Cabinet {
   id: string;
   type: CabinetType;
   category: CabinetCategory;
+  frontType: CabinetFrontType;
+  finish: CabinetFinish;
   position: Point;
   width: number;
   height: number;
@@ -55,9 +77,13 @@ export interface Cabinet {
   rotation: number;
   material: string;
   color: string;
+  wallId?: string; // If attached to a wall
+  floorHeight?: number; // Height from floor in cm (for wall cabinets)
 }
 
-export type ApplianceType = 'sink' | 'stove' | 'oven' | 'fridge' | 'dishwasher' | 'microwave' | 'hood' | 'chimney' | 'mixer-grinder' | 'water-purifier';
+export type ApplianceType = 
+  'sink' | 'stove' | 'hob' | 'oven' | 'microwave' | 'fridge' | 'dishwasher' | 
+  'hood' | 'chimney' | 'mixer-grinder' | 'water-purifier' | 'washing-machine';
 
 export interface Appliance {
   id: string;
@@ -68,6 +94,9 @@ export interface Appliance {
   depth: number;
   rotation: number;
   model: string;
+  brand?: string;
+  color?: string;
+  wallId?: string; // If attached to a wall
 }
 
 export interface KitchenStore {
@@ -88,6 +117,14 @@ export interface KitchenStore {
   cabinets: Cabinet[];
   appliances: Appliance[];
   
+  // Global cabinet settings (for consistent sizing)
+  baseCabinetHeight: number;
+  baseCabinetDepth: number;
+  wallCabinetHeight: number;
+  wallCabinetDepth: number;
+  tallCabinetHeight: number;
+  tallCabinetDepth: number;
+  
   // Actions
   setViewMode: (mode: ViewMode) => void;
   setToolMode: (mode: ToolMode) => void;
@@ -98,7 +135,7 @@ export interface KitchenStore {
   
   setProjectName: (name: string) => void;
   setRoom: (room: Room) => void;
-  resetWalls: () => void; // New function to reset walls
+  resetWalls: () => void;
   addWall: (wall: Omit<Wall, 'id'>) => void;
   updateWall: (id: string, updates: Partial<Wall>) => void;
   removeWall: (id: string) => void;
@@ -114,6 +151,11 @@ export interface KitchenStore {
   addCabinet: (cabinet: Omit<Cabinet, 'id'>) => void;
   updateCabinet: (id: string, updates: Partial<Cabinet>) => void;
   removeCabinet: (id: string) => void;
+  
+  // Cabinet global settings
+  updateBaseCabinetDimensions: (height: number, depth: number) => void;
+  updateWallCabinetDimensions: (height: number, depth: number) => void;
+  updateTallCabinetDimensions: (height: number, depth: number) => void;
   
   addAppliance: (appliance: Omit<Appliance, 'id'>) => void;
   updateAppliance: (id: string, updates: Partial<Appliance>) => void;
@@ -139,6 +181,14 @@ const createInitialState = () => ({
   windows: [],
   cabinets: [],
   appliances: [],
+  
+  // Standard dimensions in cm (converted from mm)
+  baseCabinetHeight: 85, // 850mm
+  baseCabinetDepth: 60,  // 600mm
+  wallCabinetHeight: 70, // 700mm
+  wallCabinetDepth: 35,  // 350mm
+  tallCabinetHeight: 210, // 2100mm
+  tallCabinetDepth: 60,   // 600mm
 });
 
 // Create the store
@@ -157,54 +207,159 @@ export const useKitchenStore = create<KitchenStore>((set) => ({
   
   resetWalls: () => set({ walls: [] }),
   
-  addWall: (wall) => set((state) => ({ 
-    walls: [...state.walls, { ...wall, id: uuidv4() }] 
-  })),
+  addWall: (wall) => set((state) => {
+    const wallCount = state.walls.length;
+    const wallLabels = ['Wall A', 'Wall B', 'Wall C', 'Wall D'];
+    const label = wallCount < 4 ? wallLabels[wallCount] : `Wall ${wallCount + 1}`;
+    
+    return { 
+      walls: [...state.walls, { 
+        ...wall, 
+        id: uuidv4(),
+        label,
+        thickness: wall.thickness || 10 // Default 10cm (100mm)
+      }] 
+    };
+  }),
+  
   updateWall: (id, updates) => set((state) => ({
     walls: state.walls.map(wall => wall.id === id ? { ...wall, ...updates } : wall)
   })),
+  
   removeWall: (id) => set((state) => ({
     walls: state.walls.filter(wall => wall.id !== id)
   })),
   
   addDoor: (door) => set((state) => ({ 
-    doors: [...state.doors, { ...door, id: uuidv4() }] 
+    doors: [...state.doors, { ...door, id: uuidv4(), type: door.type || 'standard' }] 
   })),
+  
   updateDoor: (id, updates) => set((state) => ({
     doors: state.doors.map(door => door.id === id ? { ...door, ...updates } : door)
   })),
+  
   removeDoor: (id) => set((state) => ({
     doors: state.doors.filter(door => door.id !== id)
   })),
   
   addWindow: (window) => set((state) => ({ 
-    windows: [...state.windows, { ...window, id: uuidv4() }] 
+    windows: [...state.windows, { 
+      ...window, 
+      id: uuidv4(),
+      type: window.type || 'standard'
+    }] 
   })),
+  
   updateWindow: (id, updates) => set((state) => ({
     windows: state.windows.map(window => window.id === id ? { ...window, ...updates } : window)
   })),
+  
   removeWindow: (id) => set((state) => ({
     windows: state.windows.filter(window => window.id !== id)
   })),
   
-  addCabinet: (cabinet) => set((state) => ({ 
-    cabinets: [...state.cabinets, { ...cabinet, id: uuidv4() }] 
-  })),
+  addCabinet: (cabinet) => set((state) => {
+    // Apply global size settings based on cabinet type
+    let updatedCabinet = { ...cabinet };
+    
+    if (cabinet.type === 'base') {
+      if (!cabinet.height) updatedCabinet.height = state.baseCabinetHeight;
+      if (!cabinet.depth) updatedCabinet.depth = state.baseCabinetDepth;
+      if (!cabinet.floorHeight) updatedCabinet.floorHeight = 0; // Base cabinets start at floor
+    } 
+    else if (cabinet.type === 'wall') {
+      if (!cabinet.height) updatedCabinet.height = state.wallCabinetHeight;
+      if (!cabinet.depth) updatedCabinet.depth = state.wallCabinetDepth;
+      if (!cabinet.floorHeight) updatedCabinet.floorHeight = 145; // 145cm from floor is standard
+    }
+    else if (cabinet.type === 'tall') {
+      if (!cabinet.height) updatedCabinet.height = state.tallCabinetHeight;
+      if (!cabinet.depth) updatedCabinet.depth = state.tallCabinetDepth;
+      if (!cabinet.floorHeight) updatedCabinet.floorHeight = 0; // Tall cabinets start at floor
+    }
+    
+    // Ensure frontType is always set
+    if (!updatedCabinet.frontType) {
+      updatedCabinet.frontType = 'shutter';
+    }
+    
+    // Ensure finish is always set
+    if (!updatedCabinet.finish) {
+      updatedCabinet.finish = 'laminate';
+    }
+    
+    return { 
+      cabinets: [...state.cabinets, { ...updatedCabinet, id: uuidv4() }] 
+    };
+  }),
+  
   updateCabinet: (id, updates) => set((state) => ({
     cabinets: state.cabinets.map(cabinet => cabinet.id === id ? { ...cabinet, ...updates } : cabinet)
   })),
+  
   removeCabinet: (id) => set((state) => ({
     cabinets: state.cabinets.filter(cabinet => cabinet.id !== id)
   })),
   
+  // Update global cabinet dimensions
+  updateBaseCabinetDimensions: (height, depth) => set((state) => {
+    // Update all existing base cabinets to match new dimensions
+    const updatedCabinets = state.cabinets.map(cabinet => {
+      if (cabinet.type === 'base') {
+        return { ...cabinet, height, depth };
+      }
+      return cabinet;
+    });
+    
+    return {
+      baseCabinetHeight: height,
+      baseCabinetDepth: depth,
+      cabinets: updatedCabinets
+    };
+  }),
+  
+  updateWallCabinetDimensions: (height, depth) => set((state) => {
+    // Update all existing wall cabinets to match new dimensions
+    const updatedCabinets = state.cabinets.map(cabinet => {
+      if (cabinet.type === 'wall') {
+        return { ...cabinet, height, depth };
+      }
+      return cabinet;
+    });
+    
+    return {
+      wallCabinetHeight: height,
+      wallCabinetDepth: depth,
+      cabinets: updatedCabinets
+    };
+  }),
+  
+  updateTallCabinetDimensions: (height, depth) => set((state) => {
+    // Update all existing tall cabinets to match new dimensions
+    const updatedCabinets = state.cabinets.map(cabinet => {
+      if (cabinet.type === 'tall') {
+        return { ...cabinet, height, depth };
+      }
+      return cabinet;
+    });
+    
+    return {
+      tallCabinetHeight: height,
+      tallCabinetDepth: depth,
+      cabinets: updatedCabinets
+    };
+  }),
+  
   addAppliance: (appliance) => set((state) => ({ 
     appliances: [...state.appliances, { ...appliance, id: uuidv4() }] 
   })),
+  
   updateAppliance: (id, updates) => set((state) => ({
     appliances: state.appliances.map(appliance => 
       appliance.id === id ? { ...appliance, ...updates } : appliance
     )
   })),
+  
   removeAppliance: (id) => set((state) => ({
     appliances: state.appliances.filter(appliance => appliance.id !== id)
   })),
@@ -219,6 +374,8 @@ export const useKitchenStore = create<KitchenStore>((set) => ({
       id: cabinet.id,
       type: cabinet.type,
       category: cabinet.category,
+      frontType: cabinet.frontType,
+      finish: cabinet.finish,
       dimensions: `${cabinet.width}x${cabinet.height}x${cabinet.depth}`,
       material: cabinet.material,
       color: cabinet.color,
@@ -229,18 +386,18 @@ export const useKitchenStore = create<KitchenStore>((set) => ({
       const items = [];
       
       // Add handles based on cabinet type
-      if (cabinet.category === 'drawer' || cabinet.category === 'shutter') {
+      if (cabinet.frontType === 'drawer' || cabinet.frontType === 'shutter') {
         items.push({
           id: uuidv4(),
           cabinetId: cabinet.id,
           type: 'handle',
-          quantity: cabinet.category === 'drawer' ? 1 : 2,
+          quantity: cabinet.frontType === 'drawer' ? 1 : 2,
           specifications: 'Standard handle'
         });
       }
       
       // Add hinges for shutters
-      if (cabinet.category === 'shutter') {
+      if (cabinet.frontType === 'shutter') {
         items.push({
           id: uuidv4(),
           cabinetId: cabinet.id,
@@ -251,7 +408,7 @@ export const useKitchenStore = create<KitchenStore>((set) => ({
       }
       
       // Add drawer slides
-      if (cabinet.category === 'drawer') {
+      if (cabinet.frontType === 'drawer') {
         items.push({
           id: uuidv4(),
           cabinetId: cabinet.id,
@@ -266,16 +423,17 @@ export const useKitchenStore = create<KitchenStore>((set) => ({
     
     // Shutter BOQ
     const shutterBOQ = state.cabinets
-      .filter(cabinet => cabinet.category === 'shutter' || cabinet.category === 'drawer')
+      .filter(cabinet => cabinet.frontType === 'shutter' || cabinet.frontType === 'drawer')
       .map(cabinet => ({
         id: uuidv4(),
         cabinetId: cabinet.id,
         material: cabinet.material,
+        finish: cabinet.finish,
         color: cabinet.color,
-        dimensions: cabinet.category === 'drawer' 
+        dimensions: cabinet.frontType === 'drawer' 
           ? `${cabinet.width}x${cabinet.height/3}` 
           : `${cabinet.width}x${cabinet.height}`,
-        quantity: cabinet.category === 'drawer' ? 3 : 1,
+        quantity: cabinet.frontType === 'drawer' ? 3 : 1,
       }));
     
     return {

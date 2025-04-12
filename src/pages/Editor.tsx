@@ -6,8 +6,9 @@ import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Save, Home, Undo, Redo, Grid3X3, Ruler, Download, 
-  PanelLeft, List, LayoutGrid, Box, Layers, ChevronsDown, 
-  ChevronsUp, Maximize2, Pen, Square, DoorOpen, Blinds, PackageOpen
+  PanelLeft, List, LayoutGrid, Box, Layers, 
+  Maximize2, Pen, Square, DoorOpen, Blinds, PackageOpen,
+  ChevronsDown, ChevronsUp, ChevronsLeft, ChevronsRight
 } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
@@ -258,17 +259,3 @@ const Editor = () => {
 };
 
 export default Editor;
-
-const ChevronsLeft = ({ className }: { className?: string }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <path d="m11 17-5-5 5-5" />
-    <path d="m18 17-5-5 5-5" />
-  </svg>
-);
-
-const ChevronsRight = ({ className }: { className?: string }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <path d="m6 17 5-5-5-5" />
-    <path d="m13 17 5-5-5-5" />
-  </svg>
-);
