@@ -1,3 +1,4 @@
+
 import { create } from 'zustand';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -165,7 +166,34 @@ export interface KitchenStore {
   
   resetProject: () => void;
   generateBOQ: () => any;
+  
+  // Helper functions
+  checkCabinetOverlap: (cabinet: Cabinet) => Point;
+  isPointInsideCabinet: (point: Point, cabinet: Cabinet) => boolean;
 }
+
+// Helper functions
+const isRectangleOverlap = (
+  r1Pos: Point, r1Width: number, r1Depth: number, r1Rotation: number,
+  r2Pos: Point, r2Width: number, r2Depth: number, r2Rotation: number
+): boolean => {
+  // Simple overlap check for now - can be enhanced for rotated cabinets
+  // We'll check if the bounding boxes overlap
+  const r1Left = r1Pos.x - r1Width / 2;
+  const r1Right = r1Pos.x + r1Width / 2;
+  const r1Top = r1Pos.y - r1Depth / 2;
+  const r1Bottom = r1Pos.y + r1Depth / 2;
+  
+  const r2Left = r2Pos.x - r2Width / 2;
+  const r2Right = r2Pos.x + r2Width / 2;
+  const r2Top = r2Pos.y - r2Depth / 2;
+  const r2Bottom = r2Pos.y + r2Depth / 2;
+  
+  return !(r2Left > r1Right || 
+           r2Right < r1Left || 
+           r2Top > r1Bottom ||
+           r2Bottom < r1Top);
+};
 
 // Initial state
 const createInitialState = () => ({
@@ -194,7 +222,7 @@ const createInitialState = () => ({
 });
 
 // Create the store
-export const useKitchenStore = create<KitchenStore>((set) => ({
+export const useKitchenStore = create<KitchenStore>((set, get) => ({
   ...createInitialState(),
   
   setViewMode: (mode) => set({ viewMode: mode }),
@@ -260,6 +288,60 @@ export const useKitchenStore = create<KitchenStore>((set) => ({
     windows: state.windows.filter(window => window.id !== id)
   })),
   
+  // Check if a cabinet overlaps with existing cabinets and return a new position if it does
+  checkCabinetOverlap: (cabinet) => {
+    const { cabinets } = get();
+    const cabinetType = cabinet.type;
+    
+    // New position to return if overlap is detected
+    let newPosition = { ...cabinet.position };
+    let hasOverlap = false;
+    
+    // Check against all cabinets of the same type
+    for (const existingCabinet of cabinets) {
+      // Only check against same type cabinets and ignore self
+      if (existingCabinet.id === cabinet.id || existingCabinet.type !== cabinetType) {
+        continue;
+      }
+      
+      if (isRectangleOverlap(
+        cabinet.position, cabinet.width, cabinet.depth, cabinet.rotation,
+        existingCabinet.position, existingCabinet.width, existingCabinet.depth, existingCabinet.rotation
+      )) {
+        hasOverlap = true;
+        
+        // Determine which side to move to based on relative positions
+        // For simplicity, we'll move horizontally (could be improved to check both directions)
+        if (cabinet.position.x < existingCabinet.position.x) {
+          // Move left
+          newPosition.x = existingCabinet.position.x - (existingCabinet.width / 2) - (cabinet.width / 2);
+        } else {
+          // Move right
+          newPosition.x = existingCabinet.position.x + (existingCabinet.width / 2) + (cabinet.width / 2);
+        }
+        
+        // For wall cabinets, we might want to adjust Y position as well
+        if (cabinetType === 'wall' && cabinet.position.y === existingCabinet.position.y) {
+          // Maybe adjust vertical position for wall cabinets
+        }
+        
+        break; // Take the first overlap adjustment
+      }
+    }
+    
+    return hasOverlap ? newPosition : cabinet.position;
+  },
+  
+  isPointInsideCabinet: (point, cabinet) => {
+    // Simple check for now, assuming no rotation
+    const left = cabinet.position.x - cabinet.width / 2;
+    const right = cabinet.position.x + cabinet.width / 2;
+    const top = cabinet.position.y - cabinet.depth / 2;
+    const bottom = cabinet.position.y + cabinet.depth / 2;
+    
+    return point.x >= left && point.x <= right && point.y >= top && point.y <= bottom;
+  },
+  
   addCabinet: (cabinet) => set((state) => {
     // Apply global size settings based on cabinet type
     let updatedCabinet = { ...cabinet };
@@ -290,14 +372,39 @@ export const useKitchenStore = create<KitchenStore>((set) => ({
       updatedCabinet.finish = 'laminate';
     }
     
+    const newCabinet = { ...updatedCabinet, id: uuidv4() };
+    
+    // Check for overlaps with existing cabinets before adding
+    const { checkCabinetOverlap } = get();
+    newCabinet.position = checkCabinetOverlap(newCabinet);
+    
     return { 
-      cabinets: [...state.cabinets, { ...updatedCabinet, id: uuidv4() }] 
+      cabinets: [...state.cabinets, newCabinet] 
     };
   }),
   
-  updateCabinet: (id, updates) => set((state) => ({
-    cabinets: state.cabinets.map(cabinet => cabinet.id === id ? { ...cabinet, ...updates } : cabinet)
-  })),
+  updateCabinet: (id, updates) => set((state) => {
+    const { cabinets, checkCabinetOverlap } = get();
+    
+    // Find the cabinet that's being updated
+    const cabinetIndex = cabinets.findIndex(cabinet => cabinet.id === id);
+    if (cabinetIndex === -1) return { cabinets };
+    
+    // Create the updated cabinet
+    const oldCabinet = cabinets[cabinetIndex];
+    const updatedCabinet = { ...oldCabinet, ...updates };
+    
+    // Check if position update causes overlap and adjust if needed
+    if (updates.position) {
+      updatedCabinet.position = checkCabinetOverlap(updatedCabinet);
+    }
+    
+    // Create new cabinet array with the updated cabinet
+    const newCabinets = [...cabinets];
+    newCabinets[cabinetIndex] = updatedCabinet;
+    
+    return { cabinets: newCabinets };
+  }),
   
   removeCabinet: (id) => set((state) => ({
     cabinets: state.cabinets.filter(cabinet => cabinet.id !== id)

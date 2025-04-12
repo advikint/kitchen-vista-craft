@@ -9,7 +9,7 @@ import ThreeDView from "./ThreeDView";
 import ElevationView from "./ElevationView";
 
 const RoomDesigner = () => {
-  const { viewMode, room, walls } = useKitchenStore();
+  const { viewMode, room, walls, setSelectedItemId } = useKitchenStore();
   const containerRef = useRef<HTMLDivElement>(null);
   const [isInitialized, setIsInitialized] = useState(false);
   
@@ -21,9 +21,21 @@ const RoomDesigner = () => {
       setIsInitialized(true);
     }
   }, [isInitialized, walls]);
+
+  // Clear selected item when clicking on empty space
+  const handleCanvasClick = (e: React.MouseEvent) => {
+    // Only clear if clicking directly on the canvas background
+    if (e.target === containerRef.current) {
+      setSelectedItemId(null);
+    }
+  };
   
   return (
-    <div ref={containerRef} className="w-full h-full">
+    <div 
+      ref={containerRef} 
+      className="w-full h-full" 
+      onClick={handleCanvasClick}
+    >
       {viewMode === '2d-top' && (
         <TopView />
       )}

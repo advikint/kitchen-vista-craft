@@ -4,6 +4,7 @@ import { useKitchenStore, ViewMode, ToolMode } from "@/store/kitchenStore";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Switch } from "@/components/ui/switch"; 
 import { 
   Save, Home, Undo, Redo, Grid3X3, Ruler, Download, 
   PanelLeft, List, LayoutGrid, Box, Layers, 
@@ -29,6 +30,7 @@ const Editor = () => {
   const [leftPanelOpen, setLeftPanelOpen] = useState(true);
   const [rightPanelOpen, setRightPanelOpen] = useState(true);
   const [createRoomDialogOpen, setCreateRoomDialogOpen] = useState(false);
+  const [snapToGrid, setSnapToGrid] = useState(true);
   
   const handleViewModeChange = (value: string) => {
     setViewMode(value as ViewMode);
@@ -105,6 +107,15 @@ const Editor = () => {
           </Tabs>
           
           <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-1 mr-2">
+              <span className="text-xs text-gray-500">Snap</span>
+              <Switch 
+                checked={snapToGrid} 
+                onCheckedChange={setSnapToGrid} 
+                size="sm"
+              />
+            </div>
+            
             <Button 
               variant="ghost" 
               size="icon"
@@ -143,7 +154,7 @@ const Editor = () => {
               <Button 
                 variant="ghost" 
                 size="sm" 
-                className={`flex flex-col py-3 h-auto items-center justify-center rounded-md ${currentToolMode === 'select' ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50'}`} 
+                className={`flex flex-col py-3 h-auto items-center justify-center rounded-md ${currentToolMode === 'select' ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700 hover:bg-gray-50'}`} 
                 onClick={() => handleToolSelect('select')}
               >
                 <Pen className="h-5 w-5 mb-1" />
@@ -152,7 +163,7 @@ const Editor = () => {
               <Button 
                 variant="ghost" 
                 size="sm" 
-                className={`flex flex-col py-3 h-auto items-center justify-center rounded-md ${currentToolMode === 'room' ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50'}`} 
+                className={`flex flex-col py-3 h-auto items-center justify-center rounded-md ${currentToolMode === 'room' ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700 hover:bg-gray-50'}`} 
                 onClick={() => handleToolSelect('room')}
               >
                 <Square className="h-5 w-5 mb-1" />
@@ -161,7 +172,7 @@ const Editor = () => {
               <Button 
                 variant="ghost" 
                 size="sm" 
-                className={`flex flex-col py-3 h-auto items-center justify-center rounded-md ${currentToolMode === 'door' ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50'}`} 
+                className={`flex flex-col py-3 h-auto items-center justify-center rounded-md ${currentToolMode === 'door' ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700 hover:bg-gray-50'}`} 
                 onClick={() => handleToolSelect('door')}
               >
                 <DoorOpen className="h-5 w-5 mb-1" />
@@ -170,7 +181,7 @@ const Editor = () => {
               <Button 
                 variant="ghost" 
                 size="sm" 
-                className={`flex flex-col py-3 h-auto items-center justify-center rounded-md ${currentToolMode === 'window' ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50'}`} 
+                className={`flex flex-col py-3 h-auto items-center justify-center rounded-md ${currentToolMode === 'window' ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700 hover:bg-gray-50'}`} 
                 onClick={() => handleToolSelect('window')}
               >
                 <Blinds className="h-5 w-5 mb-1" />
@@ -179,7 +190,7 @@ const Editor = () => {
               <Button 
                 variant="ghost" 
                 size="sm" 
-                className={`flex flex-col py-3 h-auto items-center justify-center rounded-md ${currentToolMode === 'cabinet' ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50'}`} 
+                className={`flex flex-col py-3 h-auto items-center justify-center rounded-md ${currentToolMode === 'cabinet' ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700 hover:bg-gray-50'}`} 
                 onClick={() => handleToolSelect('cabinet')}
               >
                 <PackageOpen className="h-5 w-5 mb-1" />
@@ -188,7 +199,7 @@ const Editor = () => {
               <Button 
                 variant="ghost" 
                 size="sm" 
-                className={`flex flex-col py-3 h-auto items-center justify-center rounded-md ${currentToolMode === 'appliance' ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50'}`} 
+                className={`flex flex-col py-3 h-auto items-center justify-center rounded-md ${currentToolMode === 'appliance' ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700 hover:bg-gray-50'}`} 
                 onClick={() => handleToolSelect('appliance')}
               >
                 <Box className="h-5 w-5 mb-1" />
@@ -207,7 +218,7 @@ const Editor = () => {
                   Layers
                 </TabsTrigger>
               </TabsList>
-              <div className="flex-1 overflow-y-auto p-4">
+              <div className="flex-1 overflow-hidden">
                 <ObjectPanel />
               </div>
             </Tabs>
@@ -242,12 +253,7 @@ const Editor = () => {
         {/* Right panel */}
         <div className={`relative ${rightPanelOpen ? 'w-64' : 'w-0'} transition-all duration-300 border-l bg-white shadow-sm z-10`}>
           <div className={`h-full flex flex-col ${!rightPanelOpen && 'invisible'}`}>
-            <div className="p-4 border-b">
-              <h3 className="font-medium text-gray-800">Properties</h3>
-            </div>
-            <div className="flex-1 overflow-y-auto p-4">
-              <PropertiesPanel />
-            </div>
+            <PropertiesPanel />
           </div>
           
           <Button 
