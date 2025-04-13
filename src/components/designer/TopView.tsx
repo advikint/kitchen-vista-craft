@@ -54,7 +54,7 @@ const TopView = () => {
     };
     
     switch (currentToolMode) {
-      case 'wall' as ToolMode:
+      case 'wall':
         if (!startPoint) {
           setStartPoint(worldPos);
         } else {
@@ -67,7 +67,7 @@ const TopView = () => {
         }
         break;
         
-      case 'door' as ToolMode:
+      case 'door':
         const nearestWall = findNearestWall(worldPos);
         if (nearestWall) {
           const doorTemplateData = getTemplateData('door');
@@ -83,7 +83,7 @@ const TopView = () => {
         }
         break;
         
-      case 'window' as ToolMode:
+      case 'window':
         const nearestWallForWindow = findNearestWall(worldPos);
         if (nearestWallForWindow) {
           const windowTemplateData = getTemplateData('window');
@@ -100,12 +100,12 @@ const TopView = () => {
         }
         break;
         
-      case 'cabinet' as ToolMode:
+      case 'cabinet':
         const cabinetTemplateData = getTemplateData('cabinet');
         addCabinetAtPosition(worldPos, cabinetTemplateData);
         break;
         
-      case 'appliance' as ToolMode:
+      case 'appliance':
         const applianceTemplateData = getTemplateData('appliance');
         addApplianceAtPosition(worldPos, applianceTemplateData);
         break;
@@ -118,7 +118,7 @@ const TopView = () => {
   const addCabinetAtPosition = (position: { x: number; y: number }, templateData: any) => {
     if (!templateData) return;
     
-    const newCabinet = {
+    const newCabinet: Cabinet = {
       type: templateData.type as CabinetType,
       category: templateData.category as CabinetCategory,
       frontType: templateData.frontType as CabinetFrontType,
@@ -139,7 +139,7 @@ const TopView = () => {
   const addApplianceAtPosition = (position: { x: number; y: number }, templateData: any) => {
     if (!templateData) return;
     
-    const newAppliance = {
+    const newAppliance: Appliance = {
       type: templateData.type as ApplianceType,
       width: templateData.width,
       height: templateData.height,
@@ -744,7 +744,7 @@ const TopView = () => {
         {renderCabinets()}
         {renderAppliances()}
         
-        {currentToolMode === ('wall' as ToolMode) && startPoint && (
+        {currentToolMode === 'wall' && startPoint && (
           <Line
             points={[
               startPoint.x,
