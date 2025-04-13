@@ -133,8 +133,7 @@ const TopView = () => {
       rotation: 0
     };
     
-    // Call addCabinet with the cabinet object
-    addCabinet(newCabinet);
+    addCabinet(newCabinet, {});
   };
   
   const addApplianceAtPosition = (position: { x: number; y: number }, templateData: any) => {
@@ -151,8 +150,7 @@ const TopView = () => {
       rotation: 0
     };
     
-    // Call addAppliance with the appliance object
-    addAppliance(newAppliance);
+    addAppliance(newAppliance, {});
   };
   
   const findNearestWall = (point: { x: number; y: number }) => {
