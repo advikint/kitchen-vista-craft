@@ -1,6 +1,5 @@
-
 import { useRef, useEffect, useState } from "react";
-import { useKitchenStore, Cabinet, CabinetType, CabinetCategory, CabinetFrontType, CabinetFinish, Appliance, ApplianceType } from "@/store/kitchenStore";
+import { useKitchenStore, Cabinet, CabinetType, CabinetCategory, CabinetFrontType, CabinetFinish, Appliance, ApplianceType, ToolMode } from "@/store/kitchenStore";
 import { Stage, Layer, Rect, Line, Circle, Group, Text } from "react-konva";
 import { v4 as uuidv4 } from "uuid";
 import { KonvaEventObject } from "konva/lib/Node";
@@ -35,13 +34,11 @@ const TopView = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [startPoint, setStartPoint] = useState<{ x: number; y: number } | null>(null);
   
-  // Get template data from localStorage if available
   const getTemplateData = (type: string) => {
     const data = localStorage.getItem(`template_${type}`);
     return data ? JSON.parse(data) : null;
   };
   
-  // Handle stage click for adding items
   const handleStageClick = (e: KonvaEventObject<MouseEvent>) => {
     if (isDragging) return;
     
@@ -51,19 +48,16 @@ const TopView = () => {
     const pointerPosition = stage.getPointerPosition();
     if (!pointerPosition) return;
     
-    // Convert pointer position to world coordinates
     const worldPos = {
       x: (pointerPosition.x - position.x) / scale,
       y: (pointerPosition.y - position.y) / scale
     };
     
-    // Handle different tool modes
     switch (currentToolMode) {
-      case 'wall':
+      case 'wall' as ToolMode:
         if (!startPoint) {
           setStartPoint(worldPos);
         } else {
-          // Add wall
           addWall({
             start: startPoint,
             end: worldPos,
@@ -73,8 +67,7 @@ const TopView = () => {
         }
         break;
         
-      case 'door':
-        // Find nearest wall
+      case 'door' as ToolMode:
         const nearestWall = findNearestWall(worldPos);
         if (nearestWall) {
           const doorTemplateData = getTemplateData('door');
@@ -90,8 +83,7 @@ const TopView = () => {
         }
         break;
         
-      case 'window':
-        // Find nearest wall
+      case 'window' as ToolMode:
         const nearestWallForWindow = findNearestWall(worldPos);
         if (nearestWallForWindow) {
           const windowTemplateData = getTemplateData('window');
@@ -108,28 +100,25 @@ const TopView = () => {
         }
         break;
         
-      case 'cabinet':
+      case 'cabinet' as ToolMode:
         const cabinetTemplateData = getTemplateData('cabinet');
         addCabinetAtPosition(worldPos, cabinetTemplateData);
         break;
         
-      case 'appliance':
+      case 'appliance' as ToolMode:
         const applianceTemplateData = getTemplateData('appliance');
         addApplianceAtPosition(worldPos, applianceTemplateData);
         break;
         
       default:
-        // Select mode or other modes
         break;
     }
   };
   
-  // Add a cabinet at the specified position
   const addCabinetAtPosition = (position: { x: number; y: number }, templateData: any) => {
     if (!templateData) return;
     
-    // Create a new cabinet with the correct types
-    const newCabinet: Cabinet = {
+    const newCabinet = {
       type: templateData.type as CabinetType,
       category: templateData.category as CabinetCategory,
       frontType: templateData.frontType as CabinetFrontType,
@@ -147,12 +136,10 @@ const TopView = () => {
     addCabinet(newCabinet);
   };
   
-  // Add an appliance at the specified position
   const addApplianceAtPosition = (position: { x: number; y: number }, templateData: any) => {
     if (!templateData) return;
     
-    // Create a new appliance with the correct types
-    const newAppliance: Appliance = {
+    const newAppliance = {
       type: templateData.type as ApplianceType,
       width: templateData.width,
       height: templateData.height,
@@ -166,14 +153,13 @@ const TopView = () => {
     addAppliance(newAppliance);
   };
   
-  // Find the nearest wall to a point
   const findNearestWall = (point: { x: number; y: number }) => {
     let nearestWall = null;
     let minDistance = Infinity;
     
     walls.forEach(wall => {
       const distance = distanceToWall(point, wall);
-      if (distance < minDistance && distance < 50) { // 50 is the threshold in pixels
+      if (distance < minDistance && distance < 50) {
         minDistance = distance;
         nearestWall = wall;
       }
@@ -182,82 +168,65 @@ const TopView = () => {
     return nearestWall;
   };
   
-  // Calculate the distance from a point to a wall
   const distanceToWall = (point: { x: number; y: number }, wall: any) => {
     const { start, end } = wall;
     
-    // Vector from start to end
     const wallVector = {
       x: end.x - start.x,
       y: end.y - start.y
     };
     
-    // Vector from start to point
     const pointVector = {
       x: point.x - start.x,
       y: point.y - start.y
     };
     
-    // Wall length squared
     const wallLengthSq = wallVector.x * wallVector.x + wallVector.y * wallVector.y;
     
-    // If wall length is zero, return distance to start point
     if (wallLengthSq === 0) {
       return Math.sqrt(pointVector.x * pointVector.x + pointVector.y * pointVector.y);
     }
     
-    // Calculate projection of point vector onto wall vector
     const t = (pointVector.x * wallVector.x + pointVector.y * wallVector.y) / wallLengthSq;
     
-    // Clamp t to [0, 1] to get the closest point on the wall segment
     const clampedT = Math.max(0, Math.min(1, t));
     
-    // Calculate the closest point on the wall
     const closestPoint = {
       x: start.x + clampedT * wallVector.x,
       y: start.y + clampedT * wallVector.y
     };
     
-    // Return the distance to the closest point
     return Math.sqrt(
       Math.pow(point.x - closestPoint.x, 2) + 
       Math.pow(point.y - closestPoint.y, 2)
     );
   };
   
-  // Calculate the position of a point along a wall (0 to 1)
   const calculatePositionOnWall = (point: { x: number; y: number }, wall: any) => {
     const { start, end } = wall;
     
-    // Vector from start to end
     const wallVector = {
       x: end.x - start.x,
       y: end.y - start.y
     };
     
-    // Vector from start to point
     const pointVector = {
       x: point.x - start.x,
       y: point.y - start.y
     };
     
-    // Wall length squared
     const wallLengthSq = wallVector.x * wallVector.x + wallVector.y * wallVector.y;
     
-    // Calculate projection of point vector onto wall vector
     const t = (pointVector.x * wallVector.x + pointVector.y * wallVector.y) / wallLengthSq;
     
-    // Clamp t to [0, 1] to get the position along the wall
     return Math.max(0, Math.min(1, t));
   };
   
-  // Handle item selection
   const handleItemSelect = (id: string, e: KonvaEventObject<MouseEvent>) => {
-    e.cancelBubble = true; // Prevent stage click
+    e.cancelBubble = true;
     setSelectedItemId(id);
   };
   
-  // Handle item drag
   const handleItemDrag = (id: string, type: 'cabinet' | 'appliance' | 'door' | 'window', newPosition: { x: number; y: number }) => {
     if (type === 'cabinet') {
       const cabinet = cabinets.find(c => c.id === id);
@@ -298,7 +267,6 @@ const TopView = () => {
     }
   };
   
-  // Find the nearest cabinet to a position
   const nearestCabinet = (position: { x: number; y: number }, cabinets: Cabinet[]) => {
     let nearest = null;
     let minDistance = Infinity;
@@ -315,10 +283,9 @@ const TopView = () => {
       }
     });
     
-    return minDistance < 100 ? nearest : null; // 100 is the threshold in pixels
+    return minDistance < 100 ? nearest : null;
   };
   
-  // Handle wheel event for zooming
   const handleWheel = (e: KonvaEventObject<WheelEvent>) => {
     e.evt.preventDefault();
     
@@ -335,22 +302,18 @@ const TopView = () => {
       y: (pointer.y - position.y) / oldScale,
     };
     
-    // Zoom in or out
     const newScale = e.evt.deltaY < 0 ? oldScale * 1.1 : oldScale / 1.1;
     
-    // Limit zoom
     const limitedScale = Math.max(0.1, Math.min(5, newScale));
     
     setScale(limitedScale);
     
-    // Adjust position to zoom to mouse pointer
     setPosition({
       x: pointer.x - mousePointTo.x * limitedScale,
       y: pointer.y - mousePointTo.y * limitedScale,
     });
   };
   
-  // Render walls
   const renderWalls = () => {
     return walls.map(wall => (
       <Group key={wall.id}>
@@ -379,7 +342,6 @@ const TopView = () => {
     ));
   };
   
-  // Render doors
   const renderDoors = () => {
     return doors.map(door => {
       const wall = walls.find(w => w.id === door.wallId);
@@ -395,7 +357,6 @@ const TopView = () => {
         y: wall.start.y + door.position * wallVector.y
       };
       
-      // Calculate door angle (perpendicular to wall)
       const wallAngle = Math.atan2(wallVector.y, wallVector.x);
       const doorAngle = wallAngle + Math.PI / 2;
       
@@ -443,7 +404,6 @@ const TopView = () => {
     });
   };
   
-  // Render windows
   const renderWindows = () => {
     return windows.map(window => {
       const wall = walls.find(w => w.id === window.wallId);
@@ -495,7 +455,6 @@ const TopView = () => {
     });
   };
   
-  // Render cabinets
   const renderCabinets = () => {
     return cabinets.map(cabinet => (
       <Group
@@ -523,7 +482,6 @@ const TopView = () => {
           offsetY={cabinet.depth / 2}
         />
         
-        {/* Cabinet type indicator */}
         {cabinet.type === 'base' && (
           <Rect
             width={cabinet.width - 10}
@@ -578,16 +536,14 @@ const TopView = () => {
     ));
   };
   
-  // Get cabinet color based on its properties
   const getCabinetColor = (cabinet: Cabinet) => {
     if (cabinet.color === 'white') return "#f9fafb";
     if (cabinet.color === 'brown') return "#92400e";
     if (cabinet.color === 'black') return "#1f2937";
     if (cabinet.color === 'grey') return "#9ca3af";
-    return "#f9fafb"; // Default white
+    return "#f9fafb";
   };
   
-  // Render appliances
   const renderAppliances = () => {
     return appliances.map(appliance => (
       <Group
@@ -615,7 +571,6 @@ const TopView = () => {
           offsetY={appliance.depth / 2}
         />
         
-        {/* Appliance type indicator */}
         {appliance.type === 'sink' && (
           <Circle
             radius={appliance.width / 4}
@@ -690,7 +645,6 @@ const TopView = () => {
     ));
   };
   
-  // Get appliance color based on its type
   const getApplianceColor = (appliance: Appliance) => {
     if (appliance.type === 'sink') return "#e5e7eb";
     if (appliance.type === 'stove') return "#d1d5db";
@@ -698,10 +652,9 @@ const TopView = () => {
     if (appliance.type === 'dishwasher') return "#e5e7eb";
     if (appliance.type === 'oven') return "#d1d5db";
     if (appliance.type === 'microwave') return "#e5e7eb";
-    return "#f3f4f6"; // Default light gray
+    return "#f3f4f6";
   };
   
-  // Render room outline
   const renderRoom = () => {
     if (!room.width || !room.height) return null;
     
@@ -719,15 +672,13 @@ const TopView = () => {
     );
   };
   
-  // Render grid
   const renderGrid = () => {
-    const gridSize = 50; // 50cm grid
+    const gridSize = 50;
     const gridWidth = room.width > 0 ? room.width * 2 : 2000;
     const gridHeight = room.height > 0 ? room.height * 2 : 2000;
     
     const lines = [];
     
-    // Vertical lines
     for (let x = -gridWidth / 2; x <= gridWidth / 2; x += gridSize) {
       lines.push(
         <Line
@@ -739,7 +690,6 @@ const TopView = () => {
       );
     }
     
-    // Horizontal lines
     for (let y = -gridHeight / 2; y <= gridHeight / 2; y += gridSize) {
       lines.push(
         <Line
@@ -751,7 +701,6 @@ const TopView = () => {
       );
     }
     
-    // Center lines
     lines.push(
       <Line
         key="center-h"
@@ -795,8 +744,7 @@ const TopView = () => {
         {renderCabinets()}
         {renderAppliances()}
         
-        {/* Draw line when creating a wall */}
-        {currentToolMode === 'wall' && startPoint && (
+        {currentToolMode === ('wall' as ToolMode) && startPoint && (
           <Line
             points={[
               startPoint.x,

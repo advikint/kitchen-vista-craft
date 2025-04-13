@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { SidebarProvider, Sidebar, SidebarContent, SidebarGroup, SidebarGroupLabel, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarTrigger, SidebarHeader } from "@/components/ui/sidebar";
-import { useKitchenStore } from "@/store/kitchenStore";
+import { useKitchenStore, ToolMode } from "@/store/kitchenStore";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
@@ -80,7 +80,7 @@ const windows = [
 ];
 
 const ModernSidebarContent = () => {
-  const { currentToolMode, setSelectedItemId, setCurrentToolMode: setToolMode } = useKitchenStore();
+  const { currentToolMode, setSelectedItemId, setToolMode } = useKitchenStore();
   const [activeTab, setActiveTab] = useState("cabinets");
   const [searchTerm, setSearchTerm] = useState("");
 
