@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch"; 
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { 
   Save, Home, Undo, Redo, Grid3X3, Ruler, Download, 
   PanelLeft, List, LayoutGrid, Box, Layers, 
@@ -224,8 +225,10 @@ const Editor = () => {
                   Layers
                 </TabsTrigger>
               </TabsList>
-              <div className="flex-1 overflow-hidden">
-                <ObjectPanel />
+              <div className="flex-1 overflow-auto">
+                <ScrollArea className="h-full">
+                  <ObjectPanel />
+                </ScrollArea>
               </div>
             </Tabs>
           </div>
@@ -259,7 +262,9 @@ const Editor = () => {
         {/* Right panel */}
         <div className={`relative ${rightPanelOpen ? 'w-64' : 'w-0'} transition-all duration-300 border-l bg-white shadow-sm z-10`}>
           <div className={`h-full flex flex-col ${!rightPanelOpen && 'invisible'}`}>
-            <PropertiesPanel />
+            <ScrollArea className="h-full">
+              <PropertiesPanel />
+            </ScrollArea>
           </div>
           
           <Button 

@@ -1,5 +1,5 @@
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useKitchenStore, Wall, Cabinet, Appliance, Door, Window } from "@/store/kitchenStore";
 import { useThree } from "@react-three/fiber";
 import * as THREE from "three";
@@ -9,7 +9,8 @@ const ThreeDView = () => {
     room, walls, doors, windows, cabinets, appliances 
   } = useKitchenStore();
   
-  const { scene } = useThree();
+  const { scene, camera } = useThree();
+  const controlsRef = useRef<any>(null);
   
   useEffect(() => {
     // Clear any existing objects
@@ -38,13 +39,20 @@ const ThreeDView = () => {
     // Add lighting
     addLighting();
     
+    // Set camera position based on room size
+    const maxDimension = Math.max(room.width || 300, room.height || 400);
+    if (camera && camera.position) {
+      camera.position.set(maxDimension, maxDimension, maxDimension);
+      camera.lookAt(0, 0, 0);
+    }
+    
     return () => {
       // Clean up when component unmounts
       while(scene.children.length > 0) { 
         scene.remove(scene.children[0]);
       }
     };
-  }, [room, walls, doors, windows, cabinets, appliances, scene]);
+  }, [room, walls, doors, windows, cabinets, appliances, scene, camera]);
   
   const addLighting = () => {
     // Add ambient light

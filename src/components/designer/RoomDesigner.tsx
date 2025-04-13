@@ -11,6 +11,7 @@ import ElevationView from "./ElevationView";
 const RoomDesigner = () => {
   const { viewMode, room, walls, setSelectedItemId } = useKitchenStore();
   const containerRef = useRef<HTMLDivElement>(null);
+  const controlsRef = useRef<any>(null);
   const [isInitialized, setIsInitialized] = useState(false);
   
   useEffect(() => {
@@ -29,6 +30,10 @@ const RoomDesigner = () => {
       setSelectedItemId(null);
     }
   };
+  
+  // Calculate max room dimension for camera positioning
+  const maxRoomDimension = Math.max(room.width || 300, room.height || 400);
+  const cameraDistance = maxRoomDimension * 1.5;
   
   return (
     <div 
@@ -49,7 +54,7 @@ const RoomDesigner = () => {
           shadows 
           gl={{ antialias: true, alpha: false }}
           dpr={[1, 2]} // Improve quality on high-DPI displays
-          camera={{ position: [150, 150, 150], fov: 50 }}
+          camera={{ position: [cameraDistance, cameraDistance, cameraDistance], fov: 50 }}
           style={{ background: '#f8fafc' }}
         >
           <color attach="background" args={['#f8fafc']} />
@@ -81,14 +86,17 @@ const RoomDesigner = () => {
             color="#000000"
           />
           
-          <PerspectiveCamera makeDefault position={[150, 150, 150]} fov={45} />
+          <PerspectiveCamera makeDefault position={[cameraDistance, cameraDistance, cameraDistance]} fov={45} />
           <OrbitControls 
+            ref={controlsRef}
             enablePan={true}
             enableZoom={true}
             enableRotate={true}
             minPolarAngle={0}
             maxPolarAngle={Math.PI / 2}
             target={[0, 0, 0]}
+            maxDistance={cameraDistance * 2}
+            minDistance={20}
           />
           
           <ThreeDView />

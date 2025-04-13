@@ -120,15 +120,15 @@ const TopView = () => {
     if (!templateData) return;
     
     const newCabinet: Cabinet = {
-      type: templateData.type as CabinetType,
-      category: templateData.category as CabinetCategory,
-      frontType: templateData.frontType as CabinetFrontType,
-      finish: templateData.finish as CabinetFinish,
-      width: templateData.width,
-      height: templateData.height,
-      depth: templateData.depth,
-      material: templateData.material,
-      color: templateData.color,
+      type: templateData.type as CabinetType || 'base',
+      category: templateData.category as CabinetCategory || 'standard-base',
+      frontType: templateData.frontType as CabinetFrontType || 'shutter',
+      finish: templateData.finish as CabinetFinish || 'laminate',
+      width: templateData.width || 60,
+      height: templateData.height || 85,
+      depth: templateData.depth || 60,
+      material: templateData.material || 'wood',
+      color: templateData.color || 'white',
       id: uuidv4(),
       position,
       rotation: 0
@@ -141,10 +141,10 @@ const TopView = () => {
     if (!templateData) return;
     
     const newAppliance: Appliance = {
-      type: templateData.type as ApplianceType,
-      width: templateData.width,
-      height: templateData.height,
-      depth: templateData.depth,
+      type: templateData.type as ApplianceType || 'stove',
+      width: templateData.width || 60,
+      height: templateData.height || 85,
+      depth: templateData.depth || 60,
       model: templateData.model || 'standard',
       id: uuidv4(),
       position,
@@ -339,15 +339,15 @@ const TopView = () => {
         y: wall.start.y + door.position * wallVector.y
       };
       
-      const wallAngle = Math.atan2(wallVector.y, wallVector.x);
-      const doorAngle = wallAngle + Math.PI / 2;
+      // Calculate wall angle for proper door orientation
+      const wallAngle = Math.atan2(wallVector.y, wallVector.x) * 180 / Math.PI;
       
       return (
         <Group 
           key={door.id}
           x={doorPosition.x}
           y={doorPosition.y}
-          rotation={doorAngle * 180 / Math.PI}
+          rotation={wallAngle}
           draggable
           onDragMove={(e) => {
             handleItemDrag(door.id, 'door', {
@@ -401,11 +401,15 @@ const TopView = () => {
         y: wall.start.y + window.position * wallVector.y
       };
       
+      // Calculate wall angle for proper window orientation
+      const wallAngle = Math.atan2(wallVector.y, wallVector.x) * 180 / Math.PI;
+      
       return (
         <Group 
           key={window.id}
           x={windowPosition.x}
           y={windowPosition.y}
+          rotation={wallAngle}
           draggable
           onDragMove={(e) => {
             handleItemDrag(window.id, 'window', {
