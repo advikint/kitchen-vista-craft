@@ -47,7 +47,7 @@ const RoomDesigner = () => {
       {viewMode === '3d' && (
         <Canvas 
           shadows 
-          gl={{ antialias: true, alpha: false, physicallyCorrectLights: true }} 
+          gl={{ antialias: true, alpha: false }} // Removed physicallyCorrectLights
           dpr={[1, 2]} // Improve quality on high-DPI displays
           camera={{ position: [150, 150, 150], fov: 50 }}
           style={{ background: '#f8fafc' }}

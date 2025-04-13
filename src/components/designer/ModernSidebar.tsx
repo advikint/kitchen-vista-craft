@@ -9,12 +9,12 @@ import { Button } from "@/components/ui/button";
 import { 
   DoorOpen, 
   Blinds, 
-  Chair, 
+  Car, // Replaced Chair with Car (available in lucide-react)
   Grid3X3, 
   Sofa, 
   Bed, 
   Bath, 
-  Kitchen, 
+  Utensils, // Replaced Kitchen with Utensils (available in lucide-react)
   Refrigerator, 
   Armchair, 
   ChevronRight, 

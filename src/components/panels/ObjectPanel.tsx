@@ -1,8 +1,7 @@
-
 import { useKitchenStore } from "@/store/kitchenStore";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import CabinetCatalog from "./CabinetCatalog";
-import { DoorOpen, Blinds, PackageOpen, Box, Search, Filter, ArrowDownUp, ChevronDown, Cabinet as CabinetIcon } from "lucide-react";
+import { DoorOpen, Blinds, PackageOpen, Box, Search, Filter, ArrowDownUp, ChevronDown } from "lucide-react";
 import { useState } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
@@ -35,7 +34,6 @@ const ObjectPanel = () => {
                 className="h-8"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                prefix={<Search className="h-3.5 w-3.5 text-gray-500" />}
               />
               <Button variant="outline" size="sm" className="h-8 w-8 p-0">
                 <Filter className="h-3.5 w-3.5" />
@@ -159,7 +157,6 @@ const ObjectPanel = () => {
                 className="h-8"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                prefix={<Search className="h-3.5 w-3.5 text-gray-500" />}
               />
               <Button variant="outline" size="sm" className="h-8 w-8 p-0">
                 <Filter className="h-3.5 w-3.5" />
@@ -283,7 +280,6 @@ const ObjectPanel = () => {
                 className="h-8"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                prefix={<Search className="h-3.5 w-3.5 text-gray-500" />}
               />
               <Button variant="outline" size="sm" className="h-8 w-8 p-0">
                 <Filter className="h-3.5 w-3.5" />

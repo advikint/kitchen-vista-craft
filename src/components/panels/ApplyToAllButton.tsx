@@ -52,7 +52,7 @@ const ApplyToAllButton = ({ cabinet, property, value }: ApplyToAllButtonProps) =
       <AlertDialogTrigger asChild>
         <Button
           variant="outline"
-          size="xs"
+          size="sm" // Changed from 'xs' to 'sm'
           className="h-7 px-2 text-xs"
         >
           Apply to all {cabinet.type}

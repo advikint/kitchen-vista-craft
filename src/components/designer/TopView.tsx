@@ -1,5 +1,5 @@
 import { useRef, useEffect, useState } from "react";
-import { useKitchenStore, Cabinet, Appliance, Wall, Door, Window } from "@/store/kitchenStore";
+import { useKitchenStore, Cabinet, Appliance, Wall, Door, Window, CabinetType, ApplianceType } from "@/store/kitchenStore";
 import { toast } from "sonner";
 
 const TopView = () => {
@@ -578,6 +578,24 @@ const TopView = () => {
     return null;
   };
   
+  const findNearestCabinet = (worldPoint: { x: number, y: number }) => {
+    let nearestCabinet = null;
+    let minDistance = Number.MAX_VALUE;
+    
+    cabinets.forEach(cabinet => {
+      const dx = worldPoint.x - cabinet.position.x;
+      const dy = worldPoint.y - cabinet.position.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      
+      if (distance < minDistance) {
+        minDistance = distance;
+        nearestCabinet = cabinet;
+      }
+    });
+    
+    return { cabinet: nearestCabinet, distance: minDistance };
+  };
+  
   const handleMouseDown = (e: React.MouseEvent) => {
     if (!canvasRef.current) return;
     
@@ -672,7 +690,17 @@ const TopView = () => {
         }
       }
       
-      let templateData = {
+      let templateData: {
+        type: CabinetType;
+        category: string;
+        frontType: string;
+        finish: string;
+        width: number;
+        height: number;
+        depth: number;
+        material: string;
+        color: string;
+      } = {
         type: 'base',
         category: 'shutter',
         frontType: 'shutter',
@@ -731,7 +759,13 @@ const TopView = () => {
         rotation = (wallAngle * 180 / Math.PI + 90) % 360;
       }
       
-      let templateData = {
+      let templateData: {
+        type: ApplianceType;
+        width: number;
+        height: number;
+        depth: number;
+        model: string;
+      } = {
         type: 'sink',
         width: 80,
         height: 40,
