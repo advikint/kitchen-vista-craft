@@ -1,3 +1,4 @@
+
 import { useRef, useEffect, useState } from "react";
 import { useKitchenStore, Cabinet, Appliance, Wall, Door, Window } from "@/store/kitchenStore";
 import { toast } from "sonner";
@@ -7,7 +8,7 @@ const TopView = () => {
     room, walls, doors, windows, cabinets, appliances,
     currentToolMode, selectedItemId, setSelectedItemId,
     addWall, addDoor, addWindow, addCabinet, addAppliance,
-    showDimensions
+    showDimensions, updateCabinet, updateAppliance
   } = useKitchenStore();
   
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -58,13 +59,12 @@ const TopView = () => {
     
     walls.forEach(wall => drawWall(ctx, wall));
     
-    doors.forEach(door => drawDoor(ctx, door));
-    
-    windows.forEach(window => drawWindow(ctx, window));
-    
+    // Draw cabinets and appliances before doors/windows so they appear behind
     cabinets.forEach(cabinet => drawCabinet(ctx, cabinet));
-    
     appliances.forEach(appliance => drawAppliance(ctx, appliance));
+    
+    doors.forEach(door => drawDoor(ctx, door));
+    windows.forEach(window => drawWindow(ctx, window));
     
     if (showDimensions) {
       drawDimensions(ctx);
@@ -335,6 +335,8 @@ const TopView = () => {
     ctx.fillText(`${height} cm`, 0, 0);
     ctx.restore();
     
+    ctx.fillText(`${width} cm`, 0, -height / 2 - margin - 10);
+    
     ctx.setLineDash([]);
     
     ctx.restore();
@@ -436,6 +438,47 @@ const TopView = () => {
     );
   };
   
+  const areCabinetsOverlapping = (cabinet1: Cabinet, cabinet2: Cabinet) => {
+    // Quick boundary check using positions and max dimensions
+    const xDist = Math.abs(cabinet1.position.x - cabinet2.position.x);
+    const yDist = Math.abs(cabinet1.position.y - cabinet2.position.y);
+    
+    const maxWidth = Math.max(cabinet1.width, cabinet2.width);
+    const maxDepth = Math.max(cabinet1.depth, cabinet2.depth);
+    
+    // If they are too far apart, they can't be overlapping
+    if (xDist > maxWidth || yDist > maxDepth) {
+      return false;
+    }
+    
+    // For simplicity, we'll assume cabinets are aligned (same rotation)
+    // A more complete solution would transform all points based on rotation
+    if (Math.abs(cabinet1.rotation - cabinet2.rotation) % 180 === 0) {
+      // Same orientation, do a simple AABB check
+      const cab1Left = cabinet1.position.x - cabinet1.width / 2;
+      const cab1Right = cabinet1.position.x + cabinet1.width / 2;
+      const cab1Top = cabinet1.position.y - cabinet1.depth / 2;
+      const cab1Bottom = cabinet1.position.y + cabinet1.depth / 2;
+      
+      const cab2Left = cabinet2.position.x - cabinet2.width / 2;
+      const cab2Right = cabinet2.position.x + cabinet2.width / 2;
+      const cab2Top = cabinet2.position.y - cabinet2.depth / 2;
+      const cab2Bottom = cabinet2.position.y + cabinet2.depth / 2;
+      
+      return !(
+        cab1Right < cab2Left || 
+        cab1Left > cab2Right || 
+        cab1Bottom < cab2Top || 
+        cab1Top > cab2Bottom
+      );
+    }
+    
+    // If rotations are different, we'd need more complex collision detection
+    // For this example, we'll use a simple approximation
+    return (xDist < (cabinet1.width + cabinet2.width) / 3) && 
+           (yDist < (cabinet1.depth + cabinet2.depth) / 3);
+  };
+  
   const findNearestCabinet = (point: { x: number, y: number }, excludeId?: string) => {
     let nearestCabinet = null;
     let minDistance = 50;
@@ -454,6 +497,39 @@ const TopView = () => {
     }
     
     return { cabinet: nearestCabinet, distance: minDistance };
+  };
+  
+  const adjustCabinetPosition = (newCabinet: Cabinet) => {
+    // Check for overlaps with other cabinets of the same type
+    let adjustedCabinet = {...newCabinet};
+    let overlapping = false;
+    
+    for (const existingCabinet of cabinets) {
+      if (existingCabinet.id === newCabinet.id || existingCabinet.type !== newCabinet.type) {
+        continue; // Skip same cabinet or different types
+      }
+      
+      if (areCabinetsOverlapping(adjustedCabinet, existingCabinet)) {
+        overlapping = true;
+        
+        // Determine the direction to move based on cabinet orientation
+        const isHorizontalAlignment = Math.abs(adjustedCabinet.rotation) % 180 === 90;
+        
+        if (isHorizontalAlignment) {
+          // For horizontal cabinets, move vertically (along the y-axis)
+          const moveDirection = adjustedCabinet.position.y > existingCabinet.position.y ? 1 : -1;
+          adjustedCabinet.position.y = existingCabinet.position.y + 
+            moveDirection * (existingCabinet.depth/2 + adjustedCabinet.depth/2);
+        } else {
+          // For vertical cabinets, move horizontally (along the x-axis)
+          const moveDirection = adjustedCabinet.position.x > existingCabinet.position.x ? 1 : -1;
+          adjustedCabinet.position.x = existingCabinet.position.x + 
+            moveDirection * (existingCabinet.width/2 + adjustedCabinet.width/2);
+        }
+      }
+    }
+    
+    return adjustedCabinet;
   };
   
   const findItemAtPosition = (worldPoint: { x: number, y: number }) => {
@@ -606,16 +682,23 @@ const TopView = () => {
           y: wall.start.y + dy * position
         };
         
+        // Calculate perpendicular distance (outward from the wall, not inside it)
         const perpAngle = wallAngle + Math.PI / 2;
+        const placementDistance = 35; // Place cabinet 35 units away from wall
+        
         cabinetPosition = {
-          x: cabinetPos.x + Math.cos(perpAngle) * 30,
-          y: cabinetPos.y + Math.sin(perpAngle) * 30
+          x: cabinetPos.x + Math.cos(perpAngle) * placementDistance,
+          y: cabinetPos.y + Math.sin(perpAngle) * placementDistance
         };
         
+        // Orient cabinet parallel to the wall
+        // 0 degrees means cabinet is aligned with world's X axis
+        // So we need to add 90 degrees to make it parallel to the wall
         rotation = (wallAngle * 180 / Math.PI + 90) % 360;
       } else {
         const { cabinet: nearestCabinet } = findNearestCabinet(worldPoint);
         if (snapEnabled && nearestCabinet) {
+          // Place new cabinet next to existing one
           cabinetPosition = {
             x: nearestCabinet.position.x + 60,
             y: nearestCabinet.position.y
@@ -624,7 +707,9 @@ const TopView = () => {
         }
       }
       
-      addCabinet({
+      // Create the new cabinet
+      const newCabinet: Cabinet = {
+        id: `cabinet-${Date.now()}`,
         type: 'base',
         category: 'shutter',
         frontType: 'shutter',
@@ -636,7 +721,13 @@ const TopView = () => {
         rotation: rotation,
         material: 'laminate',
         color: 'white'
-      });
+      };
+      
+      // Adjust the cabinet position to avoid overlaps
+      const adjustedCabinet = adjustCabinetPosition(newCabinet);
+      
+      // Add the cabinet to the store
+      addCabinet(adjustedCabinet);
       toast.success("Cabinet added");
     } else if (currentToolMode === 'appliance') {
       const { wall, distance, position } = findNearestWall(worldPoint);
@@ -654,16 +745,21 @@ const TopView = () => {
           y: wall.start.y + dy * position
         };
         
+        // Place appliance in front of the wall, not inside it
         const perpAngle = wallAngle + Math.PI / 2;
+        const placementDistance = 35; // Place appliance 35 units away from wall
+        
         appliancePosition = {
-          x: appliancePos.x + Math.cos(perpAngle) * 30,
-          y: appliancePos.y + Math.sin(perpAngle) * 30
+          x: appliancePos.x + Math.cos(perpAngle) * placementDistance,
+          y: appliancePos.y + Math.sin(perpAngle) * placementDistance
         };
         
+        // Orient appliance parallel to the wall
         rotation = (wallAngle * 180 / Math.PI + 90) % 360;
       }
       
-      addAppliance({
+      const newAppliance: Appliance = {
+        id: `appliance-${Date.now()}`,
         type: 'sink',
         position: appliancePosition,
         width: 80,
@@ -671,7 +767,9 @@ const TopView = () => {
         depth: 60,
         rotation: rotation,
         model: 'Standard Sink'
-      });
+      };
+      
+      addAppliance(newAppliance);
       toast.success("Sink added");
     }
   };

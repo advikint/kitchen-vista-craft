@@ -1,7 +1,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Canvas } from "@react-three/fiber";
-import { OrbitControls, PerspectiveCamera } from "@react-three/drei";
+import { OrbitControls, PerspectiveCamera, Environment, SoftShadows, ContactShadows } from "@react-three/drei";
 import { useKitchenStore } from "@/store/kitchenStore";
 import { toast } from "sonner";
 import TopView from "./TopView";
@@ -45,16 +45,31 @@ const RoomDesigner = () => {
       )}
       
       {viewMode === '3d' && (
-        <Canvas shadows>
+        <Canvas 
+          shadows 
+          gl={{ antialias: true }} 
+          dpr={[1, 2]} // Improve quality on high-DPI displays
+          camera={{ position: [150, 150, 150], fov: 50 }}
+        >
           <color attach="background" args={['#f8fafc']} />
-          <ambientLight intensity={0.6} />
+          <fog attach="fog" args={['#f8fafc', 100, 500]} />
+          
+          <ambientLight intensity={0.8} />
           <directionalLight 
             position={[10, 10, 10]} 
-            intensity={0.8} 
+            intensity={1.0} 
             castShadow 
             shadow-mapSize-width={2048} 
             shadow-mapSize-height={2048}
           />
+          <directionalLight 
+            position={[-10, 10, -10]} 
+            intensity={0.5} 
+          />
+          
+          <SoftShadows size={10} samples={16} focus={0.5} />
+          <ContactShadows position={[0, -0.1, 0]} opacity={0.4} scale={10} blur={2} far={4} />
+          
           <PerspectiveCamera makeDefault position={[150, 150, 150]} fov={50} />
           <OrbitControls 
             enablePan={true}
@@ -64,7 +79,10 @@ const RoomDesigner = () => {
             maxPolarAngle={Math.PI / 2}
             target={[0, 0, 0]}
           />
+          
           <ThreeDView />
+          
+          <Environment preset="sunset" />
         </Canvas>
       )}
     </div>

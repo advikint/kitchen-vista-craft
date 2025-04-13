@@ -17,6 +17,7 @@ import RoomDesigner from "@/components/designer/RoomDesigner";
 import ObjectPanel from "@/components/panels/ObjectPanel";
 import PropertiesPanel from "@/components/panels/PropertiesPanel";
 import CreateRoomDialog from "@/components/dialogs/CreateRoomDialog";
+import { Label } from "@/components/ui/label";
 
 const Editor = () => {
   const { 
@@ -108,11 +109,11 @@ const Editor = () => {
           
           <div className="flex items-center space-x-2">
             <div className="flex items-center space-x-1 mr-2">
-              <span className="text-xs text-gray-500">Snap</span>
+              <Label htmlFor="snap-toggle" className="text-xs text-gray-500">Snap</Label>
               <Switch 
+                id="snap-toggle"
                 checked={snapToGrid} 
                 onCheckedChange={setSnapToGrid} 
-                size="sm"
               />
             </div>
             
