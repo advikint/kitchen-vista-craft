@@ -9,12 +9,12 @@ import { Button } from "@/components/ui/button";
 import { 
   DoorOpen, 
   Blinds, 
-  Car, // Replaced Chair with Car (available in lucide-react)
+  Car, 
   Grid3X3, 
   Sofa, 
   Bed, 
   Bath, 
-  Utensils, // Replaced Kitchen with Utensils (available in lucide-react)
+  Utensils, 
   Refrigerator, 
   Armchair, 
   ChevronRight, 
@@ -80,20 +80,20 @@ const windows = [
 ];
 
 const ModernSidebarContent = () => {
-  const { currentToolMode, setSelectedItemId, setCurrentToolMode } = useKitchenStore();
+  const { currentToolMode, setSelectedItemId, setCurrentToolMode: setToolMode } = useKitchenStore();
   const [activeTab, setActiveTab] = useState("cabinets");
   const [searchTerm, setSearchTerm] = useState("");
 
   const handleItemSelect = (itemType: string, templateData: any) => {
     // Change to the appropriate tool mode
     if (itemType === 'cabinet') {
-      setCurrentToolMode('cabinet');
+      setToolMode('cabinet');
     } else if (itemType === 'appliance') {
-      setCurrentToolMode('appliance');
+      setToolMode('appliance');
     } else if (itemType === 'door') {
-      setCurrentToolMode('door');
+      setToolMode('door');
     } else if (itemType === 'window') {
-      setCurrentToolMode('window');
+      setToolMode('window');
     }
     
     // Set the selected item template data for the properties panel to use
@@ -130,14 +130,14 @@ const ModernSidebarContent = () => {
   };
 
   const renderApplianceItem = (item: any) => {
-    let icon = <Kitchen className="w-8 h-8 text-gray-600" />;
+    let icon = <Utensils className="w-8 h-8 text-gray-600" />;
     
     if (item.type === 'sink') {
       icon = <CupSoda className="w-8 h-8 text-gray-600" />;
     } else if (item.type === 'fridge') {
       icon = <Refrigerator className="w-8 h-8 text-gray-600" />;
     } else if (item.type === 'stove') {
-      icon = <Kitchen className="w-8 h-8 text-gray-600" />;
+      icon = <Utensils className="w-8 h-8 text-gray-600" />;
     }
     
     return (
@@ -232,7 +232,7 @@ const ModernSidebarContent = () => {
           <TabsTrigger value="windows">Windows</TabsTrigger>
         </TabsList>
         
-        <ScrollArea className="h-[calc(100vh-240px)] pr-3">
+        <ScrollArea className="h-[calc(100vh-240px)]">
           <TabsContent value="cabinets" className="mt-2">
             <div className="mb-3">
               <h3 className="text-md font-medium mb-2">Base Cabinets</h3>

@@ -1,6 +1,6 @@
 
 import { useEffect } from "react";
-import { useKitchenStore, Wall, Cabinet, Appliance } from "@/store/kitchenStore";
+import { useKitchenStore, Wall, Cabinet, Appliance, Door, Window } from "@/store/kitchenStore";
 import { useThree } from "@react-three/fiber";
 import * as THREE from "three";
 
@@ -127,7 +127,7 @@ const ThreeDView = () => {
     scene.add(wallMesh);
   };
   
-  const createDoor = (door: any) => {
+  const createDoor = (door: Door) => {
     // Find the wall this door belongs to
     const wall = walls.find(w => w.id === door.wallId);
     if (!wall) return;
@@ -153,24 +153,34 @@ const ThreeDView = () => {
     });
     
     const doorMesh = new THREE.Mesh(doorGeometry, doorMaterial);
-    doorMesh.position.set(doorPos.x, door.height / 2, doorPos.z);
     
     // Calculate the angle perpendicular to the wall
     const angle = Math.atan2(direction.z, direction.x);
-    doorMesh.rotation.y = angle;
     
+    // Position the door correctly - the door should be at the wall position,
+    // not inside the wall. We'll offset it by the wall thickness.
+    const wallThickness = 15; // Same as in createWall
+    const perpDirection = new THREE.Vector3(-direction.z, 0, direction.x);
+    
+    doorMesh.position.set(
+      doorPos.x + perpDirection.x * (wallThickness / 2 + 1), 
+      door.height / 2, 
+      doorPos.z + perpDirection.z * (wallThickness / 2 + 1)
+    );
+    
+    doorMesh.rotation.y = angle;
     scene.add(doorMesh);
     
     // Door frame
     const frameGeometry = new THREE.BoxGeometry(door.width + 10, door.height + 5, 5);
     const frameMaterial = new THREE.MeshStandardMaterial({ color: 0x4b5563 });
     const frameMesh = new THREE.Mesh(frameGeometry, frameMaterial);
-    frameMesh.position.set(doorPos.x, door.height / 2, doorPos.z);
+    frameMesh.position.copy(doorMesh.position);
     frameMesh.rotation.y = angle;
     scene.add(frameMesh);
   };
   
-  const createWindow = (window: any) => {
+  const createWindow = (window: Window) => {
     // Find the wall this window belongs to
     const wall = walls.find(w => w.id === window.wallId);
     if (!wall) return;
@@ -198,27 +208,27 @@ const ThreeDView = () => {
     });
     
     const windowMesh = new THREE.Mesh(windowGeometry, windowMaterial);
+    
+    // Calculate the angle perpendicular to the wall
+    const angle = Math.atan2(direction.z, direction.x);
+    
+    // Position the window correctly - should be aligned with the wall, not inside it
+    const wallThickness = 15; // Same as in createWall
+    
     windowMesh.position.set(
       windowPos.x, 
       window.sillHeight + window.height / 2, 
       windowPos.z
     );
     
-    // Calculate the angle perpendicular to the wall
-    const angle = Math.atan2(direction.z, direction.x);
     windowMesh.rotation.y = angle;
-    
     scene.add(windowMesh);
     
     // Window frame
     const frameGeometry = new THREE.BoxGeometry(window.width + 10, window.height + 10, 5);
     const frameMaterial = new THREE.MeshStandardMaterial({ color: 0x4b5563 });
     const frameMesh = new THREE.Mesh(frameGeometry, frameMaterial);
-    frameMesh.position.set(
-      windowPos.x, 
-      window.sillHeight + window.height / 2, 
-      windowPos.z
-    );
+    frameMesh.position.copy(windowMesh.position);
     frameMesh.rotation.y = angle;
     scene.add(frameMesh);
   };

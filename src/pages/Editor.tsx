@@ -17,6 +17,7 @@ import RoomDesigner from "@/components/designer/RoomDesigner";
 import ObjectPanel from "@/components/panels/ObjectPanel";
 import PropertiesPanel from "@/components/panels/PropertiesPanel";
 import CreateRoomDialog from "@/components/dialogs/CreateRoomDialog";
+import BOQEditorDialog from "@/components/dialogs/BOQEditorDialog";
 import { Label } from "@/components/ui/label";
 
 const Editor = () => {
@@ -31,6 +32,7 @@ const Editor = () => {
   const [leftPanelOpen, setLeftPanelOpen] = useState(true);
   const [rightPanelOpen, setRightPanelOpen] = useState(true);
   const [createRoomDialogOpen, setCreateRoomDialogOpen] = useState(false);
+  const [boqEditorOpen, setBoqEditorOpen] = useState(false);
   const [snapToGrid, setSnapToGrid] = useState(true);
   
   const handleViewModeChange = (value: string) => {
@@ -45,9 +47,12 @@ const Editor = () => {
     }
   };
   
-  const handleExportBOQ = () => {
-    const boq = generateBOQ();
-    console.log("Generated BOQ:", boq);
+  const handleOpenBOQEditor = () => {
+    setBoqEditorOpen(true);
+  };
+  
+  const handleExportBOQ = (boq: any) => {
+    console.log("Exporting edited BOQ:", boq);
     
     // In a real app, we'd create a proper export functionality
     const boqString = JSON.stringify(boq, null, 2);
@@ -133,7 +138,7 @@ const Editor = () => {
             <Button 
               variant="outline" 
               size="sm" 
-              onClick={handleExportBOQ}
+              onClick={handleOpenBOQEditor}
               className="rounded-full hover:bg-gray-50 border-gray-200 text-gray-700"
             >
               <Download className="h-4 w-4 mr-2 text-gray-600" />
@@ -272,6 +277,13 @@ const Editor = () => {
       <CreateRoomDialog
         open={createRoomDialogOpen}
         onOpenChange={setCreateRoomDialogOpen}
+      />
+      
+      {/* BOQ Editor Dialog */}
+      <BOQEditorDialog
+        open={boqEditorOpen}
+        onOpenChange={setBoqEditorOpen}
+        onExport={handleExportBOQ}
       />
     </div>
   );

@@ -41,7 +41,9 @@ const ApplyToAllButton = ({ cabinet, property, value }: ApplyToAllButtonProps) =
     setOpen(false);
     
     if (count > 0) {
-      toast.success(`Applied ${property} to ${count} ${cabinet.type} cabinets`);
+      toast.success(`Applied ${property} to ${count} ${cabinet.type} cabinets`, {
+        description: `Updated ${count} cabinets of type ${cabinet.type}`
+      });
     } else {
       toast.info(`No other ${cabinet.type} cabinets to update`);
     }
@@ -52,7 +54,7 @@ const ApplyToAllButton = ({ cabinet, property, value }: ApplyToAllButtonProps) =
       <AlertDialogTrigger asChild>
         <Button
           variant="outline"
-          size="sm" // Changed from 'xs' to 'sm'
+          size="sm"
           className="h-7 px-2 text-xs"
         >
           Apply to all {cabinet.type}
