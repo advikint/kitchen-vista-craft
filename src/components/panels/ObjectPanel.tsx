@@ -2,7 +2,7 @@
 import { useKitchenStore } from "@/store/kitchenStore";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import CabinetCatalog from "./CabinetCatalog";
-import { DoorOpen, Blinds, PackageOpen, Box, Search, Filter, ArrowDownUp, ChevronDown } from "lucide-react";
+import { DoorOpen, Blinds, PackageOpen, Box, Search, Filter, ArrowDownUp, ChevronDown, Cabinet as CabinetIcon } from "lucide-react";
 import { useState } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 const ObjectPanel = () => {
-  const { currentToolMode, setSelectedItemId, setSelectedTemplate } = useKitchenStore();
+  const { currentToolMode, setSelectedItemId } = useKitchenStore();
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [activeSection, setActiveSection] = useState<string | null>(null);
@@ -18,7 +18,8 @@ const ObjectPanel = () => {
   const handleItemSelect = (itemType: string, templateData: any) => {
     // Set the selected item data for the properties panel to use as template
     setSelectedItemId(`template_${itemType}`);
-    setSelectedTemplate(itemType, templateData);
+    // Store the template data in localStorage instead of using setSelectedTemplate
+    localStorage.setItem(`template_${itemType}`, JSON.stringify(templateData));
   };
   
   const renderToolContent = () => {

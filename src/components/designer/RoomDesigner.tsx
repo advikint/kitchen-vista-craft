@@ -47,9 +47,10 @@ const RoomDesigner = () => {
       {viewMode === '3d' && (
         <Canvas 
           shadows 
-          gl={{ antialias: true }} 
+          gl={{ antialias: true, alpha: false, physicallyCorrectLights: true }} 
           dpr={[1, 2]} // Improve quality on high-DPI displays
           camera={{ position: [150, 150, 150], fov: 50 }}
+          style={{ background: '#f8fafc' }}
         >
           <color attach="background" args={['#f8fafc']} />
           <fog attach="fog" args={['#f8fafc', 100, 500]} />
@@ -61,16 +62,26 @@ const RoomDesigner = () => {
             castShadow 
             shadow-mapSize-width={2048} 
             shadow-mapSize-height={2048}
+            shadow-camera-far={500}
+            shadow-camera-near={0.5}
           />
           <directionalLight 
             position={[-10, 10, -10]} 
             intensity={0.5} 
           />
           
-          <SoftShadows size={10} samples={16} focus={0.5} />
-          <ContactShadows position={[0, -0.1, 0]} opacity={0.4} scale={10} blur={2} far={4} />
+          <SoftShadows size={25} samples={25} focus={0.5} />
+          <ContactShadows 
+            position={[0, -0.1, 0]} 
+            opacity={0.4} 
+            scale={20} 
+            blur={2} 
+            far={4} 
+            resolution={1024}
+            color="#000000"
+          />
           
-          <PerspectiveCamera makeDefault position={[150, 150, 150]} fov={50} />
+          <PerspectiveCamera makeDefault position={[150, 150, 150]} fov={45} />
           <OrbitControls 
             enablePan={true}
             enableZoom={true}

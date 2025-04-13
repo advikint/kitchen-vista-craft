@@ -23,17 +23,17 @@ const ThreeDView = () => {
     // Create the walls
     walls.forEach(createWall);
     
-    // Create doors
-    doors.forEach(createDoor);
-    
-    // Create windows
-    windows.forEach(createWindow);
-    
     // Create cabinets
     cabinets.forEach(createCabinet);
     
     // Create appliances
     appliances.forEach(createAppliance);
+    
+    // Create doors
+    doors.forEach(createDoor);
+    
+    // Create windows
+    windows.forEach(createWindow);
     
     // Add lighting
     addLighting();
@@ -48,14 +48,22 @@ const ThreeDView = () => {
   
   const addLighting = () => {
     // Add ambient light
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
     scene.add(ambientLight);
     
     // Add directional light
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0);
     directionalLight.position.set(10, 20, 15);
     directionalLight.castShadow = true;
+    directionalLight.shadow.mapSize.width = 4096;
+    directionalLight.shadow.mapSize.height = 4096;
+    directionalLight.shadow.camera.near = 0.5;
+    directionalLight.shadow.camera.far = 500;
     scene.add(directionalLight);
+    
+    // Add hemisphere light for better ambient illumination
+    const hemisphereLight = new THREE.HemisphereLight(0xddeeff, 0x0f0e0d, 0.5);
+    scene.add(hemisphereLight);
   };
   
   const createRoom = () => {
@@ -148,7 +156,7 @@ const ThreeDView = () => {
     doorMesh.position.set(doorPos.x, door.height / 2, doorPos.z);
     
     // Calculate the angle perpendicular to the wall
-    const angle = Math.atan2(direction.z, direction.x) + Math.PI / 2;
+    const angle = Math.atan2(direction.z, direction.x);
     doorMesh.rotation.y = angle;
     
     scene.add(doorMesh);
@@ -197,7 +205,7 @@ const ThreeDView = () => {
     );
     
     // Calculate the angle perpendicular to the wall
-    const angle = Math.atan2(direction.z, direction.x) + Math.PI / 2;
+    const angle = Math.atan2(direction.z, direction.x);
     windowMesh.rotation.y = angle;
     
     scene.add(windowMesh);
@@ -241,7 +249,10 @@ const ThreeDView = () => {
       cabinet.height / 2, 
       cabinet.position.y
     );
+    
+    // Fix cabinet orientation - place parallel to walls, not perpendicular
     cabinetMesh.rotation.y = cabinet.rotation * Math.PI / 180;
+    
     cabinetMesh.castShadow = true;
     cabinetMesh.receiveShadow = true;
     scene.add(cabinetMesh);
@@ -335,7 +346,10 @@ const ThreeDView = () => {
       appliance.height / 2, 
       appliance.position.y
     );
+    
+    // Fix appliance orientation - place parallel to walls, not perpendicular  
     applianceMesh.rotation.y = appliance.rotation * Math.PI / 180;
+    
     applianceMesh.castShadow = true;
     applianceMesh.receiveShadow = true;
     scene.add(applianceMesh);
