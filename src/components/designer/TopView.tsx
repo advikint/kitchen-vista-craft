@@ -1,4 +1,3 @@
-
 import { useRef, useEffect, useState } from "react";
 import { useKitchenStore, Cabinet, CabinetType, CabinetCategory, CabinetFrontType, CabinetFinish, Appliance, ApplianceType, ToolMode } from "@/store/kitchenStore";
 import { Stage, Layer, Rect, Line, Circle, Group, Text } from "react-konva";
@@ -134,6 +133,7 @@ const TopView = () => {
       rotation: 0
     };
     
+    // Call addCabinet with the cabinet object
     addCabinet(newCabinet);
   };
   
@@ -151,6 +151,7 @@ const TopView = () => {
       rotation: 0
     };
     
+    // Call addAppliance with the appliance object
     addAppliance(newAppliance);
   };
   
