@@ -1,5 +1,6 @@
+
 import { useRef, useEffect, useState } from "react";
-import { useKitchenStore, Cabinet, CabinetType, CabinetCategory, CabinetFrontType, CabinetFinish, CabinetMaterial, CabinetColor, Appliance, ApplianceType } from "@/store/kitchenStore";
+import { useKitchenStore, Cabinet, CabinetType, CabinetCategory, CabinetFrontType, CabinetFinish, Appliance, ApplianceType } from "@/store/kitchenStore";
 import { Stage, Layer, Rect, Line, Circle, Group, Text } from "react-konva";
 import { v4 as uuidv4 } from "uuid";
 import { KonvaEventObject } from "konva/lib/Node";
@@ -20,8 +21,8 @@ const TopView = () => {
     addWall,
     addDoor,
     addWindow,
-    addNewCabinet,
-    addNewAppliance,
+    addCabinet,
+    addAppliance,
     updateCabinet,
     updateAppliance,
     updateDoor,
@@ -64,7 +65,6 @@ const TopView = () => {
         } else {
           // Add wall
           addWall({
-            id: uuidv4(),
             start: startPoint,
             end: worldPos,
             height: 240
@@ -79,7 +79,6 @@ const TopView = () => {
         if (nearestWall) {
           const doorTemplateData = getTemplateData('door');
           addDoor({
-            id: uuidv4(),
             wallId: nearestWall.id,
             position: calculatePositionOnWall(worldPos, nearestWall),
             width: doorTemplateData?.width || 80,
@@ -97,7 +96,6 @@ const TopView = () => {
         if (nearestWallForWindow) {
           const windowTemplateData = getTemplateData('window');
           addWindow({
-            id: uuidv4(),
             wallId: nearestWallForWindow.id,
             position: calculatePositionOnWall(worldPos, nearestWallForWindow),
             width: windowTemplateData?.width || 100,
@@ -112,12 +110,12 @@ const TopView = () => {
         
       case 'cabinet':
         const cabinetTemplateData = getTemplateData('cabinet');
-        addCabinet(worldPos, cabinetTemplateData);
+        addCabinetAtPosition(worldPos, cabinetTemplateData);
         break;
         
       case 'appliance':
         const applianceTemplateData = getTemplateData('appliance');
-        addAppliance(worldPos, applianceTemplateData);
+        addApplianceAtPosition(worldPos, applianceTemplateData);
         break;
         
       default:
@@ -127,7 +125,7 @@ const TopView = () => {
   };
   
   // Add a cabinet at the specified position
-  const addCabinet = (position: { x: number; y: number }, templateData: any) => {
+  const addCabinetAtPosition = (position: { x: number; y: number }, templateData: any) => {
     if (!templateData) return;
     
     // Create a new cabinet with the correct types
@@ -139,18 +137,18 @@ const TopView = () => {
       width: templateData.width,
       height: templateData.height,
       depth: templateData.depth,
-      material: templateData.material as CabinetMaterial,
-      color: templateData.color as CabinetColor,
+      material: templateData.material,
+      color: templateData.color,
       id: uuidv4(),
       position,
       rotation: 0
     };
     
-    addNewCabinet(newCabinet);
+    addCabinet(newCabinet);
   };
   
   // Add an appliance at the specified position
-  const addAppliance = (position: { x: number; y: number }, templateData: any) => {
+  const addApplianceAtPosition = (position: { x: number; y: number }, templateData: any) => {
     if (!templateData) return;
     
     // Create a new appliance with the correct types
@@ -165,7 +163,7 @@ const TopView = () => {
       rotation: 0
     };
     
-    addNewAppliance(newAppliance);
+    addAppliance(newAppliance);
   };
   
   // Find the nearest wall to a point
