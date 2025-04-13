@@ -1,3 +1,4 @@
+
 import { useRef, useEffect, useState } from "react";
 import { useKitchenStore, Cabinet, CabinetType, CabinetCategory, CabinetFrontType, CabinetFinish, Appliance, ApplianceType, ToolMode } from "@/store/kitchenStore";
 import { Stage, Layer, Rect, Line, Circle, Group, Text } from "react-konva";
@@ -265,25 +266,6 @@ const TopView = () => {
         });
       }
     }
-  };
-  
-  const nearestCabinet = (position: { x: number; y: number }, cabinets: Cabinet[]) => {
-    let nearest = null;
-    let minDistance = Infinity;
-    
-    cabinets.forEach(cabinet => {
-      const distance = Math.sqrt(
-        Math.pow(position.x - cabinet.position.x, 2) + 
-        Math.pow(position.y - cabinet.position.y, 2)
-      );
-      
-      if (distance < minDistance) {
-        minDistance = distance;
-        nearest = cabinet;
-      }
-    });
-    
-    return minDistance < 100 ? nearest : null;
   };
   
   const handleWheel = (e: KonvaEventObject<WheelEvent>) => {
