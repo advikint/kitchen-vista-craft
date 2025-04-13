@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -151,8 +150,8 @@ export interface KitchenStore {
   updateWindow: (id: string, updates: Partial<Window>) => void;
   removeWindow: (id: string) => void;
   
-  addCabinet: (cabinet: Omit<Cabinet, 'id'>) => void;
-  updateCabinet: (id: string, updates: Partial<Cabinet>) => void;
+  addCabinet: (cabinetOrId: Omit<Cabinet, 'id'> | string, updates?: Partial<Cabinet>) => void;
+  updateCabinet: (cabinetOrId: Cabinet | string, updates?: Partial<Cabinet>) => void;
   removeCabinet: (id: string) => void;
   
   // Cabinet global settings
@@ -160,8 +159,8 @@ export interface KitchenStore {
   updateWallCabinetDimensions: (height: number, depth: number) => void;
   updateTallCabinetDimensions: (height: number, depth: number) => void;
   
-  addAppliance: (appliance: Omit<Appliance, 'id'>) => void;
-  updateAppliance: (id: string, updates: Partial<Appliance>) => void;
+  addAppliance: (applianceOrId: Omit<Appliance, 'id'> | string, updates?: Partial<Appliance>) => void;
+  updateAppliance: (applianceOrId: Appliance | string, updates?: Partial<Appliance>) => void;
   removeAppliance: (id: string) => void;
   
   resetProject: () => void;
@@ -342,69 +341,89 @@ export const useKitchenStore = create<KitchenStore>((set, get) => ({
     return point.x >= left && point.x <= right && point.y >= top && point.y <= bottom;
   },
   
-  addCabinet: (cabinet) => set((state) => {
-    // Apply global size settings based on cabinet type
-    let updatedCabinet = { ...cabinet };
-    
-    if (cabinet.type === 'base') {
-      if (!cabinet.height) updatedCabinet.height = state.baseCabinetHeight;
-      if (!cabinet.depth) updatedCabinet.depth = state.baseCabinetDepth;
-      if (!cabinet.floorHeight) updatedCabinet.floorHeight = 0; // Base cabinets start at floor
-    } 
-    else if (cabinet.type === 'wall') {
-      if (!cabinet.height) updatedCabinet.height = state.wallCabinetHeight;
-      if (!cabinet.depth) updatedCabinet.depth = state.wallCabinetDepth;
-      if (!cabinet.floorHeight) updatedCabinet.floorHeight = 145; // 145cm from floor is standard
+  addCabinet: (cabinetOrId, updates) => {
+    // If only one parameter is passed and it's an object, treat it as the cabinet
+    if (typeof cabinetOrId === 'object') {
+      const cabinet = cabinetOrId;
+      set((state) => {
+        // Apply global size settings based on cabinet type
+        let updatedCabinet = { ...cabinet };
+        
+        if (cabinet.type === 'base') {
+          if (!cabinet.height) updatedCabinet.height = state.baseCabinetHeight;
+          if (!cabinet.depth) updatedCabinet.depth = state.baseCabinetDepth;
+          if (!cabinet.floorHeight) updatedCabinet.floorHeight = 0; // Base cabinets start at floor
+        } 
+        else if (cabinet.type === 'wall') {
+          if (!cabinet.height) updatedCabinet.height = state.wallCabinetHeight;
+          if (!cabinet.depth) updatedCabinet.depth = state.wallCabinetDepth;
+          if (!cabinet.floorHeight) updatedCabinet.floorHeight = 145; // 145cm from floor is standard
+        }
+        else if (cabinet.type === 'tall') {
+          if (!cabinet.height) updatedCabinet.height = state.tallCabinetHeight;
+          if (!cabinet.depth) updatedCabinet.depth = state.tallCabinetDepth;
+          if (!cabinet.floorHeight) updatedCabinet.floorHeight = 0; // Tall cabinets start at floor
+        }
+        
+        // Ensure frontType is always set
+        if (!updatedCabinet.frontType) {
+          updatedCabinet.frontType = 'shutter';
+        }
+        
+        // Ensure finish is always set
+        if (!updatedCabinet.finish) {
+          updatedCabinet.finish = 'laminate';
+        }
+        
+        const newCabinet = { ...updatedCabinet, id: uuidv4() };
+        
+        // Check for overlaps with existing cabinets before adding
+        const { checkCabinetOverlap } = get();
+        newCabinet.position = checkCabinetOverlap(newCabinet);
+        
+        return { 
+          cabinets: [...state.cabinets, newCabinet] 
+        };
+      });
     }
-    else if (cabinet.type === 'tall') {
-      if (!cabinet.height) updatedCabinet.height = state.tallCabinetHeight;
-      if (!cabinet.depth) updatedCabinet.depth = state.tallCabinetDepth;
-      if (!cabinet.floorHeight) updatedCabinet.floorHeight = 0; // Tall cabinets start at floor
-    }
-    
-    // Ensure frontType is always set
-    if (!updatedCabinet.frontType) {
-      updatedCabinet.frontType = 'shutter';
-    }
-    
-    // Ensure finish is always set
-    if (!updatedCabinet.finish) {
-      updatedCabinet.finish = 'laminate';
-    }
-    
-    const newCabinet = { ...updatedCabinet, id: uuidv4() };
-    
-    // Check for overlaps with existing cabinets before adding
-    const { checkCabinetOverlap } = get();
-    newCabinet.position = checkCabinetOverlap(newCabinet);
-    
-    return { 
-      cabinets: [...state.cabinets, newCabinet] 
-    };
-  }),
+  },
   
-  updateCabinet: (id, updates) => set((state) => {
-    const { cabinets, checkCabinetOverlap } = get();
-    
-    // Find the cabinet that's being updated
-    const cabinetIndex = cabinets.findIndex(cabinet => cabinet.id === id);
-    if (cabinetIndex === -1) return { cabinets };
-    
-    // Create the updated cabinet
-    const oldCabinet = cabinets[cabinetIndex];
-    const updatedCabinet = { ...oldCabinet, ...updates };
-    
-    // Check if position update causes overlap and adjust if needed
-    if (updates.position) {
-      updatedCabinet.position = checkCabinetOverlap(updatedCabinet);
+  updateCabinet: (cabinetOrId, updates) => {
+    if (typeof cabinetOrId === 'string' && updates) {
+      // Two parameter version: updateCabinet(id, updates)
+      const id = cabinetOrId;
+      set((state) => ({
+        cabinets: state.cabinets.map(cabinet => 
+          cabinet.id === id ? { ...cabinet, ...updates } : cabinet
+        )
+      }));
+    } else if (typeof cabinetOrId === 'object') {
+      // One parameter version: updateCabinet(cabinet)
+      const cabinet = cabinetOrId as Cabinet;
+      set((state) => {
+        const { cabinets, checkCabinetOverlap } = get();
+        
+        // Find the cabinet that's being updated
+        const cabinetIndex = cabinets.findIndex(c => c.id === cabinet.id);
+        if (cabinetIndex === -1) return { cabinets };
+        
+        // Create the updated cabinet
+        const oldCabinet = cabinets[cabinetIndex];
+        const updatedCabinet = { ...oldCabinet, ...cabinet };
+        
+        // Check if position update causes overlap and adjust if needed
+        if (cabinet.position) {
+          updatedCabinet.position = checkCabinetOverlap(updatedCabinet);
+        }
+        
+        // Create new cabinet array with the updated cabinet
+        const newCabinets = [...cabinets];
+        newCabinets[cabinetIndex] = updatedCabinet;
+        
+        return { cabinets: newCabinets };
+      });
     }
-    
-    // Create new cabinet array with the updated cabinet
-    const newCabinets = [...cabinets];
-    newCabinets[cabinetIndex] = updatedCabinet;
-    
-    return { cabinets: newCabinets };
-  }),
+  },
   
   removeCabinet: (id) => set((state) => ({
     cabinets: state.cabinets.filter(cabinet => cabinet.id !== id)
@@ -459,15 +478,35 @@ export const useKitchenStore = create<KitchenStore>((set, get) => ({
     };
   }),
   
-  addAppliance: (appliance) => set((state) => ({ 
-    appliances: [...state.appliances, { ...appliance, id: uuidv4() }] 
-  })),
+  addAppliance: (applianceOrId, updates) => {
+    // If only one parameter is passed and it's an object, treat it as the appliance
+    if (typeof applianceOrId === 'object') {
+      const appliance = applianceOrId;
+      set((state) => ({ 
+        appliances: [...state.appliances, { ...appliance, id: uuidv4() }] 
+      }));
+    }
+  },
   
-  updateAppliance: (id, updates) => set((state) => ({
-    appliances: state.appliances.map(appliance => 
-      appliance.id === id ? { ...appliance, ...updates } : appliance
-    )
-  })),
+  updateAppliance: (applianceOrId, updates) => {
+    if (typeof applianceOrId === 'string' && updates) {
+      // Two parameter version: updateAppliance(id, updates)
+      const id = applianceOrId;
+      set((state) => ({
+        appliances: state.appliances.map(appliance => 
+          appliance.id === id ? { ...appliance, ...updates } : appliance
+        )
+      }));
+    } else if (typeof applianceOrId === 'object') {
+      // One parameter version: updateAppliance(appliance)
+      const appliance = applianceOrId as Appliance;
+      set((state) => ({
+        appliances: state.appliances.map(a => 
+          a.id === appliance.id ? { ...a, ...appliance } : a
+        )
+      }));
+    }
+  },
   
   removeAppliance: (id) => set((state) => ({
     appliances: state.appliances.filter(appliance => appliance.id !== id)

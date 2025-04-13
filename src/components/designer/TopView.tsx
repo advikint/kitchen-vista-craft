@@ -1,3 +1,4 @@
+
 import { useRef, useEffect, useState } from "react";
 import { useKitchenStore, Cabinet, CabinetType, CabinetCategory, CabinetFrontType, CabinetFinish, Appliance, ApplianceType, ToolMode } from "@/store/kitchenStore";
 import { Stage, Layer, Rect, Line, Circle, Group, Text } from "react-konva";
@@ -54,7 +55,7 @@ const TopView = () => {
     };
     
     switch (currentToolMode) {
-      case 'wall':
+      case 'wall' as ToolMode:
         if (!startPoint) {
           setStartPoint(worldPos);
         } else {
@@ -67,7 +68,7 @@ const TopView = () => {
         }
         break;
         
-      case 'door':
+      case 'door' as ToolMode:
         const nearestWall = findNearestWall(worldPos);
         if (nearestWall) {
           const doorTemplateData = getTemplateData('door');
@@ -83,7 +84,7 @@ const TopView = () => {
         }
         break;
         
-      case 'window':
+      case 'window' as ToolMode:
         const nearestWallForWindow = findNearestWall(worldPos);
         if (nearestWallForWindow) {
           const windowTemplateData = getTemplateData('window');
@@ -100,12 +101,12 @@ const TopView = () => {
         }
         break;
         
-      case 'cabinet':
+      case 'cabinet' as ToolMode:
         const cabinetTemplateData = getTemplateData('cabinet');
         addCabinetAtPosition(worldPos, cabinetTemplateData);
         break;
         
-      case 'appliance':
+      case 'appliance' as ToolMode:
         const applianceTemplateData = getTemplateData('appliance');
         addApplianceAtPosition(worldPos, applianceTemplateData);
         break;
@@ -727,7 +728,7 @@ const TopView = () => {
       ref={stageRef}
       width={window.innerWidth}
       height={window.innerHeight}
-      draggable={currentToolMode === 'select'}
+      draggable={currentToolMode === 'select' as ToolMode}
       onWheel={handleWheel}
       onClick={handleStageClick}
       onDragStart={() => setIsDragging(true)}
@@ -744,7 +745,7 @@ const TopView = () => {
         {renderCabinets()}
         {renderAppliances()}
         
-        {currentToolMode === 'wall' && startPoint && (
+        {currentToolMode === ('wall' as ToolMode) && startPoint && (
           <Line
             points={[
               startPoint.x,
