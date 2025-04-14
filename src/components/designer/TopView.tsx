@@ -1,4 +1,3 @@
-
 import { useRef, useEffect, useState } from "react";
 import { useKitchenStore, Cabinet, CabinetType, CabinetCategory, CabinetFrontType, CabinetFinish, Appliance, ApplianceType, ToolMode } from "@/store/kitchenStore";
 import { Stage, Layer, Rect, Line, Circle, Group, Text } from "react-konva";
@@ -339,7 +338,6 @@ const TopView = () => {
         y: wall.start.y + door.position * wallVector.y
       };
       
-      // Calculate wall angle for proper door orientation
       const wallAngle = Math.atan2(wallVector.y, wallVector.x) * 180 / Math.PI;
       
       return (
@@ -401,7 +399,6 @@ const TopView = () => {
         y: wall.start.y + window.position * wallVector.y
       };
       
-      // Calculate wall angle for proper window orientation
       const wallAngle = Math.atan2(wallVector.y, wallVector.x) * 180 / Math.PI;
       
       return (
