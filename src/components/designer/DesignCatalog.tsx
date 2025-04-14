@@ -13,7 +13,7 @@ import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from "@/components/ui/";
+} from "@/components/ui/index";
 import { 
   Search, 
   Filter, 

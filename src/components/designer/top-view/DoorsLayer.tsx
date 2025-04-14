@@ -37,7 +37,7 @@ const DoorsLayer = ({ showDimensions }: DoorsLayerProps) => {
             rotation={wallAngle}
             draggable
             onDragMove={(e) => {
-              handleItemDrag(door.id, 'door', {
+              handleItemDrag(door.id, {
                 x: e.target.x(),
                 y: e.target.y()
               });

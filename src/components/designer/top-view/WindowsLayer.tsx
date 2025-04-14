@@ -37,7 +37,7 @@ const WindowsLayer = ({ showDimensions }: WindowsLayerProps) => {
             rotation={wallAngle}
             draggable
             onDragMove={(e) => {
-              handleItemDrag(window.id, 'window', {
+              handleItemDrag(window.id, {
                 x: e.target.x(),
                 y: e.target.y()
               });

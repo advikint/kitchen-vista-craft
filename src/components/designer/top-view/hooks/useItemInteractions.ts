@@ -9,10 +9,10 @@ const useItemInteractions = () => {
   const { 
     selectedItemId, 
     setSelectedItemId,
-    updateCabinetPosition,
-    updateAppliancePosition,
-    cloneCabinet,
-    cloneAppliance
+    updateCabinet,
+    updateAppliance,
+    addCabinet,
+    addAppliance
   } = useKitchenStore();
   
   const isDragging = useRef(false);
@@ -24,7 +24,7 @@ const useItemInteractions = () => {
     setSelectedItemId(id);
   };
 
-  // Handle dragging an item - NEW FUNCTION
+  // Handle dragging an item
   const handleItemDrag = (id: string, newPosition: { x: number, y: number }) => {
     setDraggedItemPosition(newPosition);
     isDragging.current = true;
@@ -40,6 +40,56 @@ const useItemInteractions = () => {
       }
       isDragging.current = false;
     }
+  };
+
+  // Update cabinet position - function that was missing
+  const updateCabinetPosition = (id: string, position: { x: number, y: number }) => {
+    updateCabinet(id, { position });
+  };
+
+  // Update appliance position - function that was missing
+  const updateAppliancePosition = (id: string, position: { x: number, y: number }) => {
+    updateAppliance(id, { position });
+  };
+
+  // Clone a cabinet - function that was missing
+  const cloneCabinet = (id: string, newId: string, offset: { x: number, y: number }) => {
+    const cabinets = useKitchenStore.getState().cabinets;
+    const original = cabinets.find(c => c.id === id);
+    
+    if (original) {
+      const clone = { 
+        ...original, 
+        id: newId,
+        position: { 
+          x: original.position.x + offset.x, 
+          y: original.position.y + offset.y 
+        } 
+      };
+      addCabinet(clone);
+    }
+    
+    return newId;
+  };
+
+  // Clone an appliance - function that was missing
+  const cloneAppliance = (id: string, newId: string, offset: { x: number, y: number }) => {
+    const appliances = useKitchenStore.getState().appliances;
+    const original = appliances.find(a => a.id === id);
+    
+    if (original) {
+      const clone = { 
+        ...original, 
+        id: newId,
+        position: { 
+          x: original.position.x + offset.x, 
+          y: original.position.y + offset.y 
+        } 
+      };
+      addAppliance(clone);
+    }
+    
+    return newId;
   };
 
   // Clone an item
@@ -58,6 +108,10 @@ const useItemInteractions = () => {
     handleItemDrag,
     handleItemDragEnd,
     handleCloneItem,
+    updateCabinetPosition,
+    updateAppliancePosition,
+    cloneCabinet,
+    cloneAppliance,
     selectedItemId
   };
 };

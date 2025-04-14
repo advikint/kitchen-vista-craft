@@ -1,4 +1,3 @@
-
 import { useKitchenStore, Cabinet } from "@/store/kitchenStore";
 import { Group, Rect, Line, Circle, Text } from "react-konva";
 import useItemInteractions from "./hooks/useItemInteractions";
@@ -29,7 +28,7 @@ const CabinetsLayer = ({ showDimensions }: CabinetsLayerProps) => {
           rotation={cabinet.rotation}
           draggable
           onDragMove={(e) => {
-            handleItemDrag(cabinet.id, 'cabinet', {
+            handleItemDrag(cabinet.id, {
               x: e.target.x(),
               y: e.target.y()
             });
