@@ -88,8 +88,8 @@ const useTopViewHandlers = (
 
     // Handle different tool modes
     switch (currentToolMode) {
-      case 'wall':
-        handleWallClick(pos);
+      case 'room':
+        // Handle room tool logic
         break;
       case 'door':
         handleDoorClick(pos);
@@ -105,23 +105,6 @@ const useTopViewHandlers = (
         break;
     }
   }, [currentToolMode, isDragging, scale, position, startPoint]);
-
-  const handleWallClick = (pos: Point) => {
-    if (!startPoint) {
-      // First click - set start point
-      setStartPoint(pos);
-      isDrawingWall.current = true;
-    } else {
-      // Second click - create wall
-      addWall({
-        start: startPoint,
-        end: pos,
-        height: 240 // Default wall height
-      });
-      setStartPoint(null);
-      isDrawingWall.current = false;
-    }
-  };
 
   const handleDoorClick = (pos: Point) => {
     // Find the closest wall to place door on

@@ -1,13 +1,12 @@
-
 import { useState } from "react";
-import { useKitchenStore, ToolMode } from "@/store/kitchenStore";
+import { useKitchenStore } from "@/store/kitchenStore";
 import {
   ScrollArea,
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/components/ui/index";
+} from "@/components/ui";
 import { cn } from "@/lib/utils";
 import { 
   Pointer, 
