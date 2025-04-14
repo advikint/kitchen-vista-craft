@@ -1,81 +1,61 @@
 
+import { useRef, useState } from "react";
 import { KonvaEventObject } from "konva/lib/Node";
+import { Node, NodeConfig } from "konva/lib/Node";
 import { useKitchenStore } from "@/store/kitchenStore";
-import { toast } from "sonner";
+import { v4 as uuidv4 } from 'uuid';
 
 const useItemInteractions = () => {
   const { 
     selectedItemId, 
-    setSelectedItemId, 
-    currentToolMode,
-    walls,
-    updateWall,
-    doors,
-    updateDoor,
-    windows,
-    updateWindow,
-    cabinets,
-    updateCabinet,
-    addCabinet,
-    appliances,
-    updateAppliance,
-    addAppliance,
+    setSelectedItemId,
+    updateCabinetPosition,
+    updateAppliancePosition,
+    cloneCabinet,
+    cloneAppliance
   } = useKitchenStore();
+  
+  const isDragging = useRef(false);
+  const [draggedItemPosition, setDraggedItemPosition] = useState({ x: 0, y: 0 });
 
-  const handleItemSelect = (id: string, e: KonvaEventObject<MouseEvent>) => {
-    e.cancelBubble = true; // Prevent event bubbling
+  // Handle selecting an item
+  const handleItemSelect = (id: string, e: KonvaEventObject<MouseEvent, Node<NodeConfig>>) => {
+    e.cancelBubble = true;
     setSelectedItemId(id);
   };
 
-  const handleItemDragEnd = (id: string, newPosition: { x: number, y: number }, itemType: 'cabinet' | 'appliance') => {
-    if (itemType === 'cabinet') {
-      const cabinet = cabinets.find(c => c.id === id);
-      if (cabinet) {
-        updateCabinet(id, { position: newPosition });
+  // Handle dragging an item - NEW FUNCTION
+  const handleItemDrag = (id: string, newPosition: { x: number, y: number }) => {
+    setDraggedItemPosition(newPosition);
+    isDragging.current = true;
+  };
+
+  // Handle finishing a drag operation
+  const handleItemDragEnd = (id: string, newPosition: { x: number, y: number }, itemType: "cabinet" | "appliance") => {
+    if (isDragging.current) {
+      if (itemType === "cabinet") {
+        updateCabinetPosition(id, newPosition);
+      } else if (itemType === "appliance") {
+        updateAppliancePosition(id, newPosition);
       }
-    } else if (itemType === 'appliance') {
-      const appliance = appliances.find(a => a.id === id);
-      if (appliance) {
-        updateAppliance(id, { position: newPosition });
-      }
+      isDragging.current = false;
     }
   };
 
   // Clone an item
-  const handleCloneItem = (id: string, itemType: 'cabinet' | 'appliance', offset = 10) => {
-    if (itemType === 'cabinet') {
-      const cabinet = cabinets.find(c => c.id === id);
-      if (cabinet) {
-        const newCabinet = { 
-          ...cabinet, 
-          position: { 
-            x: cabinet.position.x + offset, 
-            y: cabinet.position.y + offset 
-          } 
-        };
-        delete (newCabinet as any).id;
-        addCabinet(newCabinet, {});
-        toast.success("Cabinet duplicated");
-      }
-    } else if (itemType === 'appliance') {
-      const appliance = appliances.find(a => a.id === id);
-      if (appliance) {
-        const newAppliance = { 
-          ...appliance, 
-          position: { 
-            x: appliance.position.x + offset, 
-            y: appliance.position.y + offset 
-          } 
-        };
-        delete (newAppliance as any).id;
-        addAppliance(newAppliance, {});
-        toast.success("Appliance duplicated");
-      }
+  const handleCloneItem = (id: string, itemType: "cabinet" | "appliance", offset: number = 20) => {
+    const newId = uuidv4();
+    if (itemType === "cabinet") {
+      cloneCabinet(id, newId, { x: offset, y: offset });
+    } else if (itemType === "appliance") {
+      cloneAppliance(id, newId, { x: offset, y: offset });
     }
+    return newId;
   };
 
   return {
     handleItemSelect,
+    handleItemDrag,
     handleItemDragEnd,
     handleCloneItem,
     selectedItemId

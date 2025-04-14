@@ -5,17 +5,17 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch"; 
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { 
   Save, Home, Undo, Redo, Grid3X3, Ruler, Download, 
-  PanelLeft, List, LayoutGrid, Box, Layers, 
-  Maximize2, Pen, Square, DoorOpen, Blinds, PackageOpen,
-  ChevronsDown, ChevronsUp, ChevronsLeft, ChevronsRight
+  PanelLeft, List, Maximize2
 } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
+
+// Import new components
 import RoomDesigner from "@/components/designer/RoomDesigner";
-import ObjectPanel from "@/components/panels/ObjectPanel";
+import SideToolbar from "@/components/designer/SideToolbar";
+import DesignCatalog from "@/components/designer/DesignCatalog";
 import PropertiesPanel from "@/components/panels/PropertiesPanel";
 import CreateRoomDialog from "@/components/dialogs/CreateRoomDialog";
 import BOQEditorDialog from "@/components/dialogs/BOQEditorDialog";
@@ -151,86 +151,13 @@ const Editor = () => {
       
       {/* Main content area */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Left panel */}
+        {/* Left sidebar with tools */}
+        <SideToolbar />
+        
+        {/* Left panel with catalog */}
         <div className={`relative ${leftPanelOpen ? 'w-64' : 'w-0'} transition-all duration-300 border-r bg-white shadow-sm z-10`}>
           <div className={`h-full flex flex-col ${!leftPanelOpen && 'invisible'}`}>
-            <div className="p-4 border-b">
-              <h3 className="font-medium text-gray-800">Tools</h3>
-            </div>
-            <div className="p-2 grid grid-cols-2 gap-1">
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className={`flex flex-col py-3 h-auto items-center justify-center rounded-md ${currentToolMode === 'select' ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700 hover:bg-gray-50'}`} 
-                onClick={() => handleToolSelect('select')}
-              >
-                <Pen className="h-5 w-5 mb-1" />
-                <span className="text-xs">Select</span>
-              </Button>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className={`flex flex-col py-3 h-auto items-center justify-center rounded-md ${currentToolMode === 'room' ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700 hover:bg-gray-50'}`} 
-                onClick={() => handleToolSelect('room')}
-              >
-                <Square className="h-5 w-5 mb-1" />
-                <span className="text-xs">Room</span>
-              </Button>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className={`flex flex-col py-3 h-auto items-center justify-center rounded-md ${currentToolMode === 'door' ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700 hover:bg-gray-50'}`} 
-                onClick={() => handleToolSelect('door')}
-              >
-                <DoorOpen className="h-5 w-5 mb-1" />
-                <span className="text-xs">Door</span>
-              </Button>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className={`flex flex-col py-3 h-auto items-center justify-center rounded-md ${currentToolMode === 'window' ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700 hover:bg-gray-50'}`} 
-                onClick={() => handleToolSelect('window')}
-              >
-                <Blinds className="h-5 w-5 mb-1" />
-                <span className="text-xs">Window</span>
-              </Button>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className={`flex flex-col py-3 h-auto items-center justify-center rounded-md ${currentToolMode === 'cabinet' ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700 hover:bg-gray-50'}`} 
-                onClick={() => handleToolSelect('cabinet')}
-              >
-                <PackageOpen className="h-5 w-5 mb-1" />
-                <span className="text-xs">Cabinet</span>
-              </Button>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className={`flex flex-col py-3 h-auto items-center justify-center rounded-md ${currentToolMode === 'appliance' ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700 hover:bg-gray-50'}`} 
-                onClick={() => handleToolSelect('appliance')}
-              >
-                <Box className="h-5 w-5 mb-1" />
-                <span className="text-xs">Appliance</span>
-              </Button>
-            </div>
-            
-            <Tabs defaultValue="objects" className="flex-1 flex flex-col mt-4">
-              <TabsList className="mx-4 mb-2 bg-gray-100 p-0.5">
-                <TabsTrigger value="objects" className="flex-1 rounded-sm data-[state=active]:bg-white data-[state=active]:shadow-sm">
-                  <LayoutGrid className="h-4 w-4 mr-2" />
-                  Objects
-                </TabsTrigger>
-                <TabsTrigger value="layers" className="flex-1 rounded-sm data-[state=active]:bg-white data-[state=active]:shadow-sm">
-                  <Layers className="h-4 w-4 mr-2" />
-                  Layers
-                </TabsTrigger>
-              </TabsList>
-              <div className="flex-1 overflow-auto">
-                <ScrollArea className="h-full">
-                  <ObjectPanel />
-                </ScrollArea>
-              </div>
-            </Tabs>
+            <DesignCatalog />
           </div>
           
           <Button 
@@ -239,7 +166,7 @@ const Editor = () => {
             className="absolute top-1/2 -right-3 transform -translate-y-1/2 h-6 w-6 rounded-full bg-white border shadow-sm z-10 p-0"
             onClick={() => setLeftPanelOpen(!leftPanelOpen)}
           >
-            {leftPanelOpen ? <ChevronsLeft className="h-3 w-3" /> : <ChevronsRight className="h-3 w-3" />}
+            <PanelLeft className="h-3 w-3" />
           </Button>
         </div>
         
@@ -259,12 +186,10 @@ const Editor = () => {
           )}
         </div>
         
-        {/* Right panel */}
+        {/* Right panel for properties */}
         <div className={`relative ${rightPanelOpen ? 'w-64' : 'w-0'} transition-all duration-300 border-l bg-white shadow-sm z-10`}>
           <div className={`h-full flex flex-col ${!rightPanelOpen && 'invisible'}`}>
-            <ScrollArea className="h-full">
-              <PropertiesPanel />
-            </ScrollArea>
+            <PropertiesPanel />
           </div>
           
           <Button 
@@ -273,7 +198,7 @@ const Editor = () => {
             className="absolute top-1/2 -left-3 transform -translate-y-1/2 h-6 w-6 rounded-full bg-white border shadow-sm z-10 p-0"
             onClick={() => setRightPanelOpen(!rightPanelOpen)}
           >
-            {rightPanelOpen ? <ChevronsRight className="h-3 w-3" /> : <ChevronsLeft className="h-3 w-3" />}
+            <List className="h-3 w-3" />
           </Button>
         </div>
       </div>

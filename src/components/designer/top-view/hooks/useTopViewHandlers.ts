@@ -1,8 +1,7 @@
-
 import { useRef, useState, useCallback } from "react";
 import { KonvaEventObject } from "konva/lib/Node";
 import { toast } from "sonner";
-import { useKitchenStore, Point } from "@/store/kitchenStore";
+import { useKitchenStore, Point, ToolMode } from "@/store/kitchenStore";
 import { v4 as uuidv4 } from 'uuid';
 
 const useTopViewHandlers = (

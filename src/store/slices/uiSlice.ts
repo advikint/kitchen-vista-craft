@@ -9,12 +9,14 @@ export interface UISlice {
   selectedItemId: string | null;
   gridSize: number;
   showDimensions: boolean;
+  sidebarCollapsed: boolean;
   projectName: string;
   setViewMode: (mode: ViewMode) => void;
   setToolMode: (mode: ToolMode) => void;
   setSelectedItemId: (id: string | null) => void;
   setGridSize: (size: number) => void;
   toggleDimensions: () => void;
+  toggleSidebar: () => void;
   setProjectName: (name: string) => void;
 }
 
@@ -24,6 +26,7 @@ export const createUISlice: StateCreator<KitchenStore, [], [], UISlice> = (set) 
   selectedItemId: null,
   gridSize: 10,
   showDimensions: true,
+  sidebarCollapsed: false,
   projectName: 'New Kitchen Design',
   
   setViewMode: (mode) => set({ viewMode: mode }),
@@ -31,5 +34,6 @@ export const createUISlice: StateCreator<KitchenStore, [], [], UISlice> = (set) 
   setSelectedItemId: (id) => set({ selectedItemId: id }),
   setGridSize: (size) => set({ gridSize: size }),
   toggleDimensions: () => set((state) => ({ showDimensions: !state.showDimensions })),
+  toggleSidebar: () => set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed })),
   setProjectName: (name) => set({ projectName: name }),
 });
