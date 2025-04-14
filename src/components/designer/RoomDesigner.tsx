@@ -4,7 +4,7 @@ import { Canvas } from "@react-three/fiber";
 import { OrbitControls, PerspectiveCamera, Environment, SoftShadows, ContactShadows } from "@react-three/drei";
 import { useKitchenStore } from "@/store/kitchenStore";
 import { toast } from "sonner";
-import TopView from "./TopView";
+import TopView from "./top-view";
 import ThreeDView from "./ThreeDView";
 import ElevationView from "./ElevationView";
 
