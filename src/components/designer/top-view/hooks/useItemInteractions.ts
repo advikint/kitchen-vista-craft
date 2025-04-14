@@ -1,92 +1,84 @@
 
-import { useKitchenStore } from "@/store/kitchenStore";
 import { KonvaEventObject } from "konva/lib/Node";
+import { useKitchenStore } from "@/store/kitchenStore";
+import { toast } from "sonner";
 
 const useItemInteractions = () => {
-  const {
+  const { 
+    selectedItemId, 
+    setSelectedItemId, 
+    currentToolMode,
     walls,
-    updateCabinet,
-    updateAppliance,
+    updateWall,
+    doors,
     updateDoor,
+    windows,
     updateWindow,
-    setSelectedItemId
+    cabinets,
+    updateCabinet,
+    addCabinet,
+    appliances,
+    updateAppliance,
+    addAppliance,
   } = useKitchenStore();
-  
+
   const handleItemSelect = (id: string, e: KonvaEventObject<MouseEvent>) => {
-    e.cancelBubble = true;
+    e.cancelBubble = true; // Prevent event bubbling
     setSelectedItemId(id);
   };
-  
-  const handleItemDrag = (id: string, type: 'cabinet' | 'appliance' | 'door' | 'window', newPosition: { x: number; y: number }) => {
-    const {
-      cabinets,
-      appliances,
-      doors,
-      windows
-    } = useKitchenStore.getState();
-    
-    if (type === 'cabinet') {
+
+  const handleItemDragEnd = (id: string, newPosition: { x: number, y: number }, itemType: 'cabinet' | 'appliance') => {
+    if (itemType === 'cabinet') {
       const cabinet = cabinets.find(c => c.id === id);
       if (cabinet) {
-        updateCabinet({
-          ...cabinet,
-          position: newPosition
-        });
+        updateCabinet(id, { position: newPosition });
       }
-    } else if (type === 'appliance') {
+    } else if (itemType === 'appliance') {
       const appliance = appliances.find(a => a.id === id);
       if (appliance) {
-        updateAppliance({
-          ...appliance,
-          position: newPosition
-        });
-      }
-    } else if (type === 'door') {
-      const door = doors.find(d => d.id === id);
-      const wall = door ? walls.find(w => w.id === door.wallId) : null;
-      
-      if (door && wall) {
-        updateDoor({
-          ...door,
-          position: calculatePositionOnWall(newPosition, wall)
-        });
-      }
-    } else if (type === 'window') {
-      const window = windows.find(w => w.id === id);
-      const wall = window ? walls.find(w => w.id === window.wallId) : null;
-      
-      if (window && wall) {
-        updateWindow({
-          ...window,
-          position: calculatePositionOnWall(newPosition, wall)
-        });
+        updateAppliance(id, { position: newPosition });
       }
     }
   };
-  
-  const calculatePositionOnWall = (point: { x: number; y: number }, wall: any) => {
-    const { start, end } = wall;
-    
-    const wallVector = {
-      x: end.x - start.x,
-      y: end.y - start.y
-    };
-    
-    const pointVector = {
-      x: point.x - start.x,
-      y: point.y - start.y
-    };
-    
-    const wallLengthSq = wallVector.x * wallVector.x + wallVector.y * wallVector.y;
-    
-    const t = (pointVector.x * wallVector.x + pointVector.y * wallVector.y) / wallLengthSq;
-    
-    return Math.max(0, Math.min(1, t));
+
+  // Clone an item
+  const handleCloneItem = (id: string, itemType: 'cabinet' | 'appliance', offset = 10) => {
+    if (itemType === 'cabinet') {
+      const cabinet = cabinets.find(c => c.id === id);
+      if (cabinet) {
+        const newCabinet = { 
+          ...cabinet, 
+          position: { 
+            x: cabinet.position.x + offset, 
+            y: cabinet.position.y + offset 
+          } 
+        };
+        delete (newCabinet as any).id;
+        addCabinet(newCabinet, {});
+        toast.success("Cabinet duplicated");
+      }
+    } else if (itemType === 'appliance') {
+      const appliance = appliances.find(a => a.id === id);
+      if (appliance) {
+        const newAppliance = { 
+          ...appliance, 
+          position: { 
+            x: appliance.position.x + offset, 
+            y: appliance.position.y + offset 
+          } 
+        };
+        delete (newAppliance as any).id;
+        addAppliance(newAppliance, {});
+        toast.success("Appliance duplicated");
+      }
+    }
   };
-  
+
   return {
     handleItemSelect,
-    handleItemDrag
+    handleItemDragEnd,
+    handleCloneItem,
+    selectedItemId
   };
 };
 

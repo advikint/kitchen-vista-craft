@@ -2,8 +2,6 @@
 import { useRef, useState } from "react";
 import { useKitchenStore, ToolMode } from "@/store/kitchenStore";
 import { Stage, Layer, Line } from "react-konva";
-import { KonvaEventObject } from "konva/lib/Node";
-import { toast } from "sonner";
 import RoomGrid from "./RoomGrid";
 import RoomOutline from "./RoomOutline";
 import WallsLayer from "./WallsLayer";
