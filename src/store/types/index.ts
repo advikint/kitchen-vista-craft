@@ -1,7 +1,7 @@
 
 // Basic types
 export type ViewMode = '2d-top' | '2d-elevation' | '3d';
-export type ToolMode = 'select' | 'room' | 'door' | 'window' | 'cabinet' | 'appliance';
+export type ToolMode = 'select' | 'room' | 'wall' | 'door' | 'window' | 'cabinet' | 'appliance';
 
 export interface Point {
   x: number;

@@ -8,6 +8,8 @@ interface InitialState {
   currentWallIndex: number;
   gridSize: number;
   showDimensions: boolean;
+  sidebarCollapsed: boolean;
+  isWallDialogOpen: boolean;
   
   projectName: string;
   room: Room;
@@ -32,6 +34,8 @@ export const createInitialState = (): InitialState => ({
   currentWallIndex: 0,
   gridSize: 10,
   showDimensions: true,
+  sidebarCollapsed: false,
+  isWallDialogOpen: false,
   
   projectName: 'New Kitchen Design',
   room: { width: 300, height: 400 },

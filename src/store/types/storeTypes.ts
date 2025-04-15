@@ -12,6 +12,8 @@ export interface KitchenStore {
   currentWallIndex: number;
   gridSize: number;
   showDimensions: boolean;
+  sidebarCollapsed: boolean;
+  isWallDialogOpen: boolean;
   
   // Kitchen data
   projectName: string;
@@ -37,6 +39,7 @@ export interface KitchenStore {
   setCurrentWallIndex: (index: number) => void;
   setGridSize: (size: number) => void;
   toggleDimensions: () => void;
+  toggleSidebar: () => void;
   
   setProjectName: (name: string) => void;
   setRoom: (room: Room) => void;
@@ -72,4 +75,7 @@ export interface KitchenStore {
   // Helper functions
   checkCabinetOverlap: (cabinet: Cabinet) => Point;
   isPointInsideCabinet: (point: Point, cabinet: Cabinet) => boolean;
+  
+  // Wall dialog
+  setWallDialogOpen: (open: boolean) => void;
 }
