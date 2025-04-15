@@ -1,5 +1,5 @@
 
-import { ScrollArea } from "@/components/ui/index";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { DoorOpen } from "lucide-react";
 import { CatalogItem } from "./CatalogItem";
 

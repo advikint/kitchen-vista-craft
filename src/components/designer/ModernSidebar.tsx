@@ -1,6 +1,5 @@
-
 import { useState } from "react";
-import { SidebarProvider, Sidebar, SidebarContent, SidebarGroup, SidebarGroupLabel, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarTrigger, SidebarHeader } from "@/components/ui/sidebar";
+import { SidebarProvider, Sidebar, SidebarContent, SidebarHeader } from "@/components/ui/sidebar";
 import { useKitchenStore, ToolMode } from "@/store/kitchenStore";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -9,26 +8,12 @@ import { Button } from "@/components/ui/button";
 import { 
   DoorOpen, 
   Blinds, 
-  Car, 
-  Grid3X3, 
-  Sofa, 
-  Bed, 
-  Bath, 
-  Utensils, 
-  Refrigerator, 
-  Armchair, 
-  ChevronRight, 
-  Search, 
-  LayoutDashboard, 
   Filter,
-  Settings,
-  Home,
+  Refrigerator, 
   CupSoda,
-  SofaIcon,
-  BookOpen
+  Utensils,
 } from "lucide-react";
 
-// Define cabinet presets
 const baseCabinets = [
   { name: "Base Cabinet 60cm", width: 60, height: 85, depth: 60 },
   { name: "Base Cabinet 90cm", width: 90, height: 85, depth: 60 },
@@ -85,18 +70,16 @@ const ModernSidebarContent = () => {
   const [searchTerm, setSearchTerm] = useState("");
 
   const handleItemSelect = (itemType: string, templateData: any) => {
-    // Change to the appropriate tool mode
     if (itemType === 'cabinet') {
-      setToolMode('cabinet');
+      setToolMode('cabinet' as ToolMode);
     } else if (itemType === 'appliance') {
-      setToolMode('appliance');
+      setToolMode('appliance' as ToolMode);
     } else if (itemType === 'door') {
-      setToolMode('door');
+      setToolMode('door' as ToolMode);
     } else if (itemType === 'window') {
-      setToolMode('window');
+      setToolMode('window' as ToolMode);
     }
     
-    // Set the selected item template data for the properties panel to use
     setSelectedItemId(`template_${itemType}`);
     localStorage.setItem(`template_${itemType}`, JSON.stringify(templateData));
   };
@@ -205,7 +188,7 @@ const ModernSidebarContent = () => {
   };
 
   return (
-    <div className="h-full w-full p-3">
+    <div className="h-full w-full p-3 flex flex-col overflow-hidden">
       <SidebarHeader>
         <div className="flex items-center justify-between mb-2">
           <h2 className="text-lg font-semibold">Design Objects</h2>
@@ -224,7 +207,7 @@ const ModernSidebarContent = () => {
         </div>
       </SidebarHeader>
       
-      <Tabs defaultValue="cabinets" value={activeTab} onValueChange={setActiveTab} className="w-full">
+      <Tabs defaultValue="cabinets" value={activeTab} onValueChange={setActiveTab} className="w-full flex-1 flex flex-col">
         <TabsList className="grid w-full grid-cols-4 mb-4">
           <TabsTrigger value="cabinets">Cabinets</TabsTrigger>
           <TabsTrigger value="appliances">Appliances</TabsTrigger>
@@ -232,48 +215,50 @@ const ModernSidebarContent = () => {
           <TabsTrigger value="windows">Windows</TabsTrigger>
         </TabsList>
         
-        <ScrollArea className="h-[calc(100vh-240px)]">
-          <TabsContent value="cabinets" className="mt-2">
-            <div className="mb-3">
-              <h3 className="text-md font-medium mb-2">Base Cabinets</h3>
-              {filterItems(baseCabinets, searchTerm).map(cabinet => 
-                renderCabinetItem(cabinet, 'base')
-              )}
-            </div>
+        <div className="flex-1 overflow-hidden">
+          <ScrollArea className="h-[calc(100vh-240px)] w-full">
+            <TabsContent value="cabinets" className="mt-2">
+              <div className="mb-3">
+                <h3 className="text-md font-medium mb-2">Base Cabinets</h3>
+                {filterItems(baseCabinets, searchTerm).map(cabinet => 
+                  renderCabinetItem(cabinet, 'base')
+                )}
+              </div>
+              
+              <div className="mb-3">
+                <h3 className="text-md font-medium mb-2">Wall Cabinets</h3>
+                {filterItems(wallCabinets, searchTerm).map(cabinet => 
+                  renderCabinetItem(cabinet, 'wall')
+                )}
+              </div>
+              
+              <div className="mb-3">
+                <h3 className="text-md font-medium mb-2">Tall Cabinets</h3>
+                {filterItems(tallCabinets, searchTerm).map(cabinet => 
+                  renderCabinetItem(cabinet, 'tall')
+                )}
+              </div>
+            </TabsContent>
             
-            <div className="mb-3">
-              <h3 className="text-md font-medium mb-2">Wall Cabinets</h3>
-              {filterItems(wallCabinets, searchTerm).map(cabinet => 
-                renderCabinetItem(cabinet, 'wall')
+            <TabsContent value="appliances" className="mt-2">
+              {filterItems(appliances, searchTerm).map(appliance => 
+                renderApplianceItem(appliance)
               )}
-            </div>
+            </TabsContent>
             
-            <div className="mb-3">
-              <h3 className="text-md font-medium mb-2">Tall Cabinets</h3>
-              {filterItems(tallCabinets, searchTerm).map(cabinet => 
-                renderCabinetItem(cabinet, 'tall')
+            <TabsContent value="doors" className="mt-2">
+              {filterItems(doors, searchTerm).map(door => 
+                renderDoorItem(door)
               )}
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="appliances" className="mt-2">
-            {filterItems(appliances, searchTerm).map(appliance => 
-              renderApplianceItem(appliance)
-            )}
-          </TabsContent>
-          
-          <TabsContent value="doors" className="mt-2">
-            {filterItems(doors, searchTerm).map(door => 
-              renderDoorItem(door)
-            )}
-          </TabsContent>
-          
-          <TabsContent value="windows" className="mt-2">
-            {filterItems(windows, searchTerm).map(window => 
-              renderWindowItem(window)
-            )}
-          </TabsContent>
-        </ScrollArea>
+            </TabsContent>
+            
+            <TabsContent value="windows" className="mt-2">
+              {filterItems(windows, searchTerm).map(window => 
+                renderWindowItem(window)
+              )}
+            </TabsContent>
+          </ScrollArea>
+        </div>
       </Tabs>
     </div>
   );
@@ -282,7 +267,7 @@ const ModernSidebarContent = () => {
 const ModernSidebar = () => {
   return (
     <SidebarProvider defaultOpen={true}>
-      <Sidebar variant="floating" className="pt-3">
+      <Sidebar variant="floating" className="pt-3 overflow-hidden">
         <ModernSidebarContent />
       </Sidebar>
     </SidebarProvider>

@@ -1,6 +1,6 @@
 
 import { toast } from "sonner";
-import { useKitchenStore, Point } from "@/store/kitchenStore";
+import { useKitchenStore, Point, Wall } from "@/store/kitchenStore";
 
 /**
  * Custom hook for placing doors and windows on walls
@@ -28,6 +28,9 @@ export const useOpeningPlacement = (loadTemplate: (type: string) => any) => {
 
     // Calculate position along the wall (0-1)
     const position = calculatePositionAlongWall(closestWall, pos);
+
+    // Calculate wall angle for correct orientation
+    const wallAngle = calculateWallAngle(closestWall);
 
     addDoor({
       wallId: closestWall.id,
@@ -71,6 +74,15 @@ export const useOpeningPlacement = (loadTemplate: (type: string) => any) => {
     });
 
     toast.success("Window added");
+  };
+
+  /**
+   * Calculate wall angle in degrees
+   */
+  const calculateWallAngle = (wall: Wall) => {
+    const dx = wall.end.x - wall.start.x;
+    const dy = wall.end.y - wall.start.y;
+    return Math.atan2(dy, dx) * 180 / Math.PI;
   };
 
   /**
@@ -145,6 +157,7 @@ export const useOpeningPlacement = (loadTemplate: (type: string) => any) => {
     handleDoorClick,
     handleWindowClick,
     findClosestWallToPoint,
-    calculatePositionAlongWall
+    calculatePositionAlongWall,
+    calculateWallAngle
   };
 };

@@ -34,6 +34,6 @@ export const createUISlice: StateCreator<KitchenStore, [], [], UISlice> = (set) 
   setSelectedItemId: (id) => set({ selectedItemId: id }),
   setGridSize: (size) => set({ gridSize: size }),
   toggleDimensions: () => set((state) => ({ showDimensions: !state.showDimensions })),
-  toggleSidebar: () => set((state: any) => ({ sidebarCollapsed: !state.sidebarCollapsed })),
+  toggleSidebar: () => set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed })),
   setProjectName: (name) => set({ projectName: name }),
 });

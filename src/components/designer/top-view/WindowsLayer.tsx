@@ -1,6 +1,6 @@
 
 import { useKitchenStore } from "@/store/kitchenStore";
-import { Group, Rect, Text } from "react-konva";
+import { Group, Rect, Line, Text } from "react-konva";
 import useItemInteractions from "./hooks/useItemInteractions";
 
 interface WindowsLayerProps {
@@ -50,6 +50,27 @@ const WindowsLayer = ({ showDimensions }: WindowsLayerProps) => {
               fill={selectedItemId === window.id ? "#3b82f6" : "#bfdbfe"}
               offsetX={window.width / 2}
               offsetY={7.5}
+              stroke="#000"
+              strokeWidth={1}
+            />
+            
+            {/* Window panes */}
+            <Line
+              points={[
+                -window.width / 2 + window.width * 0.33, -7.5,
+                -window.width / 2 + window.width * 0.33, 7.5
+              ]}
+              stroke="#fff"
+              strokeWidth={1}
+            />
+            
+            <Line
+              points={[
+                -window.width / 2 + window.width * 0.66, -7.5,
+                -window.width / 2 + window.width * 0.66, 7.5
+              ]}
+              stroke="#fff"
+              strokeWidth={1}
             />
             
             {showDimensions && (

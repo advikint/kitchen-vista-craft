@@ -1,14 +1,8 @@
-
 import { useState } from "react";
 import { useKitchenStore } from "@/store/kitchenStore";
 import { ToolMode } from "@/store/types";
-import {
-  ScrollArea,
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/index";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { 
   Pointer, 
@@ -53,7 +47,7 @@ const ToolButton = ({ icon, label, active, onClick }: ToolButtonProps) => (
 );
 
 const SideToolbar = () => {
-  const { currentToolMode, setToolMode, sidebarCollapsed, toggleSidebar } = useKitchenStore();
+  const { currentToolMode, setToolMode } = useKitchenStore();
   const [collapsed, setCollapsed] = useState(false);
 
   const tools = [
@@ -78,7 +72,7 @@ const SideToolbar = () => {
   return (
     <div 
       className={cn(
-        "h-full bg-card shadow-md border-r flex flex-col transition-all duration-300",
+        "h-full bg-card shadow-md border-r flex flex-col transition-all duration-300 overflow-hidden",
         collapsed ? "w-16" : "w-20"
       )}
     >

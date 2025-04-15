@@ -52,11 +52,21 @@ const DoorsLayer = ({ showDimensions }: DoorsLayerProps) => {
               offsetY={7.5}
             />
             <Line
-              points={[0, 0, door.width * 0.8, door.width * 0.8]}
+              points={[
+                -door.width / 2, 0,
+                door.width / 2, 0
+              ]}
               stroke={selectedItemId === door.id ? "#3b82f6" : "#a1a1aa"}
               strokeWidth={2}
-              offsetX={door.width / 2}
-              offsetY={7.5}
+              dash={[5, 2]}
+            />
+            <Line
+              points={[
+                0, 0,
+                0, door.width * 0.8
+              ]}
+              stroke={selectedItemId === door.id ? "#3b82f6" : "#a1a1aa"}
+              strokeWidth={2}
             />
             
             {showDimensions && (

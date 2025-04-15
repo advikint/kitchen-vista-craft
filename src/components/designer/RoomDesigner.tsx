@@ -95,8 +95,9 @@ const RoomDesigner = () => {
             minPolarAngle={0}
             maxPolarAngle={Math.PI / 2}
             target={[0, 0, 0]}
-            maxDistance={cameraDistance * 2}
+            maxDistance={cameraDistance * 3}
             minDistance={20}
+            zoomSpeed={1.5}
           />
           
           <ThreeDView />
