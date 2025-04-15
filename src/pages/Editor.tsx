@@ -27,12 +27,13 @@ const Editor = () => {
     currentToolMode, setToolMode,
     projectName,
     toggleDimensions, showDimensions,
-    generateBOQ
+    generateBOQ,
+    isWallDialogOpen,
+    setWallDialogOpen
   } = useKitchenStore();
   
   const [leftPanelOpen, setLeftPanelOpen] = useState(true);
   const [rightPanelOpen, setRightPanelOpen] = useState(true);
-  const [createRoomDialogOpen, setCreateRoomDialogOpen] = useState(false);
   const [boqEditorOpen, setBoqEditorOpen] = useState(false);
   const [snapToGrid, setSnapToGrid] = useState(true);
   
@@ -42,7 +43,7 @@ const Editor = () => {
   
   const handleToolSelect = (tool: ToolMode) => {
     if (tool === 'room') {
-      setCreateRoomDialogOpen(true);
+      setWallDialogOpen(true);
     } else {
       setToolMode(tool);
     }
@@ -205,8 +206,8 @@ const Editor = () => {
       
       {/* Room Creation Dialog */}
       <CreateRoomDialog
-        open={createRoomDialogOpen}
-        onOpenChange={setCreateRoomDialogOpen}
+        open={isWallDialogOpen}
+        onOpenChange={setWallDialogOpen}
       />
       
       {/* BOQ Editor Dialog */}

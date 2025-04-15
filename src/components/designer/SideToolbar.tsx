@@ -11,9 +11,10 @@ import {
   DoorOpen, 
   Blinds, 
   PackageOpen, 
-  Refrigerator, 
+  Refrigerator,
   ChevronsLeft,
-  ChevronsRight 
+  ChevronsRight,
+  Wall
 } from "lucide-react";
 
 interface ToolButtonProps {
@@ -54,6 +55,7 @@ const SideToolbar = () => {
   const tools = [
     { id: 'select' as ToolMode, icon: <Pointer size={22} />, label: 'Select' },
     { id: 'room' as ToolMode, icon: <Square size={22} />, label: 'Room' },
+    { id: 'wall' as ToolMode, icon: <Wall size={22} />, label: 'Wall' },
     { id: 'door' as ToolMode, icon: <DoorOpen size={22} />, label: 'Door' },
     { id: 'window' as ToolMode, icon: <Blinds size={22} />, label: 'Window' },
     { id: 'cabinet' as ToolMode, icon: <PackageOpen size={22} />, label: 'Cabinet' },
@@ -62,8 +64,7 @@ const SideToolbar = () => {
 
   const handleToolSelect = (toolId: ToolMode) => {
     if (toolId === 'room') {
-      // Show room creation dialog
-      // We'll dispatch this in the Editor component
+      // Show room creation dialog directly
       setToolMode(toolId);
     } else {
       setToolMode(toolId);
