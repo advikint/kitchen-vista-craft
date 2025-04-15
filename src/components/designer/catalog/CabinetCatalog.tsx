@@ -1,10 +1,9 @@
-
 import { 
   Tabs, 
   TabsContent, 
   TabsList, 
   TabsTrigger,
-} from "@/components/ui/index";
+} from "@/components/ui/tabs";
 import { PackageOpen } from "lucide-react";
 import { CatalogItem } from "./CatalogItem";
 
@@ -16,21 +15,38 @@ interface CabinetCatalogProps {
 export const CabinetCatalog = ({ searchTerm, onItemSelect }: CabinetCatalogProps) => {
   const baseCabinets = [
     { name: "Standard Base 60cm", type: "base", width: 60, height: 85, depth: 60, category: "standard-base" },
+    { name: "Standard Base 45cm", type: "base", width: 45, height: 85, depth: 60, category: "standard-base" },
+    { name: "Standard Base 30cm", type: "base", width: 30, height: 85, depth: 60, category: "standard-base" },
     { name: "Sink Base 90cm", type: "base", width: 90, height: 85, depth: 60, category: "sink-base" },
+    { name: "Sink Base 60cm", type: "base", width: 60, height: 85, depth: 60, category: "sink-base" },
     { name: "Corner Base 90cm", type: "base", width: 90, height: 85, depth: 90, category: "corner-base" },
+    { name: "Corner Base L-Shape", type: "base", width: 105, height: 85, depth: 105, category: "corner-base" },
+    { name: "Drawer Unit 60cm", type: "base", width: 60, height: 85, depth: 60, category: "drawer-base" },
+    { name: "Drawer Unit 45cm", type: "base", width: 45, height: 85, depth: 60, category: "drawer-base" },
+    { name: "Drawer Unit 30cm", type: "base", width: 30, height: 85, depth: 60, category: "drawer-base" },
   ];
   
   const wallCabinets = [
     { name: "Standard Wall 60cm", type: "wall", width: 60, height: 70, depth: 35, category: "standard-wall" },
+    { name: "Standard Wall 45cm", type: "wall", width: 45, height: 70, depth: 35, category: "standard-wall" },
+    { name: "Standard Wall 30cm", type: "wall", width: 30, height: 70, depth: 35, category: "standard-wall" },
     { name: "Corner Wall 60cm", type: "wall", width: 60, height: 70, depth: 60, category: "corner-wall" },
+    { name: "Open Shelf 60cm", type: "wall", width: 60, height: 70, depth: 35, category: "open-shelf" },
+    { name: "Open Shelf 45cm", type: "wall", width: 45, height: 70, depth: 35, category: "open-shelf" },
+    { name: "Glass Door 60cm", type: "wall", width: 60, height: 70, depth: 35, category: "glass-wall" },
+    { name: "Glass Door 45cm", type: "wall", width: 45, height: 70, depth: 35, category: "glass-wall" },
+    { name: "Microwave Unit 60cm", type: "wall", width: 60, height: 40, depth: 35, category: "microwave-wall" },
   ];
   
   const tallCabinets = [
-    { name: "Pantry Cabinet", type: "tall", width: 60, height: 210, depth: 60, category: "pantry-tall" },
-    { name: "Broom Cabinet", type: "tall", width: 45, height: 210, depth: 60, category: "broom-tall" },
+    { name: "Pantry Unit 60cm", type: "tall", width: 60, height: 210, depth: 60, category: "pantry-tall" },
+    { name: "Pantry Unit 45cm", type: "tall", width: 45, height: 210, depth: 60, category: "pantry-tall" },
+    { name: "Oven Housing 60cm", type: "tall", width: 60, height: 210, depth: 60, category: "oven-tall" },
+    { name: "Fridge Housing 60cm", type: "tall", width: 60, height: 210, depth: 60, category: "fridge-tall" },
+    { name: "Broom Cabinet 45cm", type: "tall", width: 45, height: 210, depth: 60, category: "broom-tall" },
+    { name: "Pull-out Pantry 30cm", type: "tall", width: 30, height: 210, depth: 60, category: "pullout-tall" },
   ];
-
-  // Filter items based on search query
+  
   const filterItems = (items: any[]) => {
     if (!searchTerm) return items;
     return items.filter(item => 
@@ -66,7 +82,7 @@ export const CabinetCatalog = ({ searchTerm, onItemSelect }: CabinetCatalogProps
             ))}
           </div>
         </TabsContent>
-        
+
         <TabsContent value="wall" className="pt-3">
           <div className="space-y-2">
             {filterItems(wallCabinets).map(cabinet => (
@@ -85,7 +101,7 @@ export const CabinetCatalog = ({ searchTerm, onItemSelect }: CabinetCatalogProps
             ))}
           </div>
         </TabsContent>
-        
+
         <TabsContent value="tall" className="pt-3">
           <div className="space-y-2">
             {filterItems(tallCabinets).map(cabinet => (

@@ -11,6 +11,7 @@ export interface UISlice {
   showDimensions: boolean;
   sidebarCollapsed: boolean;
   projectName: string;
+  isWallDialogOpen: boolean;
   setViewMode: (mode: ViewMode) => void;
   setToolMode: (mode: ToolMode) => void;
   setSelectedItemId: (id: string | null) => void;
@@ -18,6 +19,7 @@ export interface UISlice {
   toggleDimensions: () => void;
   toggleSidebar: () => void;
   setProjectName: (name: string) => void;
+  setWallDialogOpen: (open: boolean) => void;
 }
 
 export const createUISlice: StateCreator<KitchenStore, [], [], UISlice> = (set) => ({
@@ -28,12 +30,14 @@ export const createUISlice: StateCreator<KitchenStore, [], [], UISlice> = (set) 
   showDimensions: true,
   sidebarCollapsed: false,
   projectName: 'New Kitchen Design',
+  isWallDialogOpen: false,
   
   setViewMode: (mode) => set({ viewMode: mode }),
   setToolMode: (mode) => set({ currentToolMode: mode }),
   setSelectedItemId: (id) => set({ selectedItemId: id }),
   setGridSize: (size) => set({ gridSize: size }),
   toggleDimensions: () => set((state) => ({ showDimensions: !state.showDimensions })),
-  toggleSidebar: () => set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed } as Partial<KitchenStore>)),
+  toggleSidebar: () => set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed })),
   setProjectName: (name) => set({ projectName: name }),
+  setWallDialogOpen: (open) => set({ isWallDialogOpen: open })
 });
