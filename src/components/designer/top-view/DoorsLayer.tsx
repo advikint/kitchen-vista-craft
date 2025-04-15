@@ -44,29 +44,37 @@ const DoorsLayer = ({ showDimensions }: DoorsLayerProps) => {
             }}
             onClick={(e) => handleItemSelect(door.id, e)}
           >
+            {/* Door frame */}
             <Rect
               width={door.width}
               height={15}
               fill={selectedItemId === door.id ? "#3b82f6" : "#a1a1aa"}
               offsetX={door.width / 2}
-              offsetY={7.5}
+              offsetY={0}
+              stroke="#000"
+              strokeWidth={1}
             />
+            
+            {/* Door opening arc - shows which way door opens */}
             <Line
               points={[
-                -door.width / 2, 0,
-                door.width / 2, 0
+                0, 0,
+                50, 50
               ]}
               stroke={selectedItemId === door.id ? "#3b82f6" : "#a1a1aa"}
               strokeWidth={2}
               dash={[5, 2]}
             />
-            <Line
-              points={[
-                0, 0,
-                0, door.width * 0.8
-              ]}
-              stroke={selectedItemId === door.id ? "#3b82f6" : "#a1a1aa"}
-              strokeWidth={2}
+            
+            {/* Door panel */}
+            <Rect
+              width={door.width - 4}
+              height={6}
+              fill="#fff"
+              offsetX={(door.width - 4) / 2}
+              offsetY={-3}
+              stroke="#000"
+              strokeWidth={0.5}
             />
             
             {showDimensions && (
@@ -74,8 +82,8 @@ const DoorsLayer = ({ showDimensions }: DoorsLayerProps) => {
                 text={`${door.width} cm`}
                 fontSize={14}
                 fill="#000"
-                offsetX={-20}
-                offsetY={-10}
+                offsetX={0}
+                offsetY={-25}
               />
             )}
           </Group>

@@ -44,12 +44,13 @@ const WindowsLayer = ({ showDimensions }: WindowsLayerProps) => {
             }}
             onClick={(e) => handleItemSelect(window.id, e)}
           >
+            {/* Window frame */}
             <Rect
               width={window.width}
               height={15}
               fill={selectedItemId === window.id ? "#3b82f6" : "#bfdbfe"}
               offsetX={window.width / 2}
-              offsetY={7.5}
+              offsetY={0}
               stroke="#000"
               strokeWidth={1}
             />
@@ -78,8 +79,8 @@ const WindowsLayer = ({ showDimensions }: WindowsLayerProps) => {
                 text={`${window.width} cm`}
                 fontSize={14}
                 fill="#000"
-                offsetX={-20}
-                offsetY={-10}
+                offsetX={0}
+                offsetY={-25}
               />
             )}
           </Group>

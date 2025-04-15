@@ -1,5 +1,9 @@
 import { useState } from "react";
-import { SidebarProvider, Sidebar, SidebarContent, SidebarHeader } from "@/components/ui/sidebar";
+import { 
+  Sidebar,
+  SidebarContent,
+  SidebarHeader
+} from "@/components/ui/sidebar";
 import { useKitchenStore, ToolMode } from "@/store/kitchenStore";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -12,6 +16,8 @@ import {
   Refrigerator, 
   CupSoda,
   Utensils,
+  ChevronsLeft,
+  ChevronsRight
 } from "lucide-react";
 
 const baseCabinets = [
@@ -192,7 +198,13 @@ const ModernSidebarContent = () => {
       <SidebarHeader>
         <div className="flex items-center justify-between mb-2">
           <h2 className="text-lg font-semibold">Design Objects</h2>
-          <SidebarTrigger className="h-8 w-8" />
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+          >
+            {activeTab === "cabinets" ? <ChevronsLeft size={16} /> : <ChevronsRight size={16} />}
+          </Button>
         </div>
         <div className="flex items-center mb-2 gap-2">
           <Input
@@ -266,11 +278,9 @@ const ModernSidebarContent = () => {
 
 const ModernSidebar = () => {
   return (
-    <SidebarProvider defaultOpen={true}>
-      <Sidebar variant="floating" className="pt-3 overflow-hidden">
-        <ModernSidebarContent />
-      </Sidebar>
-    </SidebarProvider>
+    <Sidebar variant="floating" className="pt-3 overflow-hidden">
+      <ModernSidebarContent />
+    </Sidebar>
   );
 };
 

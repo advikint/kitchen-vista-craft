@@ -31,13 +31,14 @@ const WallsLayer = ({ showDimensions }: WallsLayerProps) => {
           <Group key={wall.id}>
             <Line
               points={[wall.start.x, wall.start.y, wall.end.x, wall.end.y]}
-              stroke={selectedItemId === wall.id ? "#3b82f6" : "#424242"}
+              stroke={selectedItemId === wall.id ? "#3b82f6" : "#686868"}
               strokeWidth={15}
               onClick={(e) => handleItemSelect(wall.id, e)}
               lineCap="round"
-              shadowColor="rgba(0,0,0,0.2)"
-              shadowBlur={5}
+              shadowColor="rgba(0,0,0,0.3)"
+              shadowBlur={8}
               shadowOffset={{ x: 2, y: 2 }}
+              shadowOpacity={0.5}
             />
             
             {/* Wall end caps - rounded corners */}
@@ -46,8 +47,11 @@ const WallsLayer = ({ showDimensions }: WallsLayerProps) => {
               y={wall.start.y - 7.5}
               width={15}
               height={15}
-              fill={selectedItemId === wall.id ? "#3b82f6" : "#424242"}
+              fill={selectedItemId === wall.id ? "#3b82f6" : "#686868"}
               cornerRadius={7.5}
+              shadowColor="rgba(0,0,0,0.2)"
+              shadowBlur={3}
+              shadowOffset={{ x: 1, y: 1 }}
             />
             
             <Rect
@@ -55,8 +59,11 @@ const WallsLayer = ({ showDimensions }: WallsLayerProps) => {
               y={wall.end.y - 7.5}
               width={15}
               height={15}
-              fill={selectedItemId === wall.id ? "#3b82f6" : "#424242"}
+              fill={selectedItemId === wall.id ? "#3b82f6" : "#686868"}
               cornerRadius={7.5}
+              shadowColor="rgba(0,0,0,0.2)"
+              shadowBlur={3}
+              shadowOffset={{ x: 1, y: 1 }}
             />
             
             {showDimensions && (

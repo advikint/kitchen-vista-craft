@@ -28,7 +28,7 @@ export const useOpeningPlacement = (loadTemplate: (type: string) => any) => {
 
     // Calculate position along the wall (0-1)
     const position = calculatePositionAlongWall(closestWall, pos);
-
+    
     // Calculate wall angle for correct orientation
     const wallAngle = calculateWallAngle(closestWall);
 

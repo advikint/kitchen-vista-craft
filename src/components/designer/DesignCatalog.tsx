@@ -9,7 +9,7 @@ import {
   Button,
   Input,
   ScrollArea,
-} from "@/components/ui/index";
+} from "@/components/ui";
 import { Search } from "lucide-react";
 import { CabinetCatalog } from "./catalog/CabinetCatalog";
 import { DoorCatalog } from "./catalog/DoorCatalog";

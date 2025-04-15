@@ -1,3 +1,4 @@
+
 import { useRef, useState, useCallback } from "react";
 import { KonvaEventObject } from "konva/lib/Node";
 import { toast } from "sonner";
@@ -36,9 +37,7 @@ const useTopViewHandlers = (
   // Door and window placement handlers
   const { 
     handleDoorClick, 
-    handleWindowClick,
-    findClosestWallToPoint,
-    calculatePositionAlongWall
+    handleWindowClick
   } = useOpeningPlacement(loadTemplate);
   
   // Cabinet and appliance placement handlers
@@ -101,8 +100,8 @@ const useTopViewHandlers = (
 
     // Handle different tool modes
     switch (currentToolMode) {
-      case 'room':
-        // Handle room tool logic
+      case 'wall':
+        handleWallClick(pos);
         break;
       case 'door':
         handleDoorClick(pos);

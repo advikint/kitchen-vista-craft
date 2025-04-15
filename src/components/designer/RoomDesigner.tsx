@@ -65,8 +65,7 @@ const RoomDesigner = () => {
             position={[10, 10, 10]} 
             intensity={1.0} 
             castShadow 
-            shadow-mapSize-width={2048} 
-            shadow-mapSize-height={2048}
+            shadow-mapSize={[2048, 2048]}
             shadow-camera-far={500}
             shadow-camera-near={0.5}
           />
