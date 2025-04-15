@@ -1,12 +1,14 @@
+
 import { useState } from "react";
 import { useKitchenStore } from "@/store/kitchenStore";
+import { ToolMode } from "@/store/types";
 import {
   ScrollArea,
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/components/ui";
+} from "@/components/ui/index";
 import { cn } from "@/lib/utils";
 import { 
   Pointer, 
@@ -51,7 +53,7 @@ const ToolButton = ({ icon, label, active, onClick }: ToolButtonProps) => (
 );
 
 const SideToolbar = () => {
-  const { currentToolMode, setToolMode } = useKitchenStore();
+  const { currentToolMode, setToolMode, sidebarCollapsed, toggleSidebar } = useKitchenStore();
   const [collapsed, setCollapsed] = useState(false);
 
   const tools = [
