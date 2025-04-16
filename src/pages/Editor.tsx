@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { useKitchenStore } from "@/store/kitchenStore";
-import { ToolMode } from "@/store/types";
+import { ToolMode, ViewMode } from "@/store/types";
 import { EditorHeader } from "@/components/editor/EditorHeader";
 import { EditorContent } from "@/components/editor/EditorContent";
 import SideToolbar from "@/components/designer/SideToolbar";
