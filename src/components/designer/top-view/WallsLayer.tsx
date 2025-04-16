@@ -2,6 +2,7 @@
 import { useKitchenStore } from "@/store/kitchenStore";
 import { Group, Line, Text, Rect } from "react-konva";
 import useItemInteractions from "./hooks/useItemInteractions";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface WallsLayerProps {
   showDimensions: boolean;
@@ -10,6 +11,7 @@ interface WallsLayerProps {
 const WallsLayer = ({ showDimensions }: WallsLayerProps) => {
   const { walls, selectedItemId } = useKitchenStore();
   const { handleItemSelect } = useItemInteractions();
+  const isMobile = useIsMobile();
   
   return (
     <>
@@ -27,13 +29,20 @@ const WallsLayer = ({ showDimensions }: WallsLayerProps) => {
         const offsetX = Math.sin(angle) * 25;
         const offsetY = -Math.cos(angle) * 25;
         
+        // Adjust thickness for mobile
+        const wallThickness = isMobile ? 12 : 15;
+        const endCapSize = isMobile ? 6 : 7.5;
+        const fontSize = isMobile ? 14 : 16;
+        const labelFontSize = isMobile ? 12 : 14;
+        
         return (
           <Group key={wall.id}>
             <Line
               points={[wall.start.x, wall.start.y, wall.end.x, wall.end.y]}
               stroke={selectedItemId === wall.id ? "#3b82f6" : "#686868"}
-              strokeWidth={15}
+              strokeWidth={wallThickness}
               onClick={(e) => handleItemSelect(wall.id, e)}
+              onTap={(e) => handleItemSelect(wall.id, e)}
               lineCap="round"
               shadowColor="rgba(0,0,0,0.3)"
               shadowBlur={8}
@@ -43,24 +52,24 @@ const WallsLayer = ({ showDimensions }: WallsLayerProps) => {
             
             {/* Wall end caps - rounded corners */}
             <Rect
-              x={wall.start.x - 7.5}
-              y={wall.start.y - 7.5}
-              width={15}
-              height={15}
+              x={wall.start.x - endCapSize}
+              y={wall.start.y - endCapSize}
+              width={endCapSize * 2}
+              height={endCapSize * 2}
               fill={selectedItemId === wall.id ? "#3b82f6" : "#686868"}
-              cornerRadius={7.5}
+              cornerRadius={endCapSize}
               shadowColor="rgba(0,0,0,0.2)"
               shadowBlur={3}
               shadowOffset={{ x: 1, y: 1 }}
             />
             
             <Rect
-              x={wall.end.x - 7.5}
-              y={wall.end.y - 7.5}
-              width={15}
-              height={15}
+              x={wall.end.x - endCapSize}
+              y={wall.end.y - endCapSize}
+              width={endCapSize * 2}
+              height={endCapSize * 2}
               fill={selectedItemId === wall.id ? "#3b82f6" : "#686868"}
-              cornerRadius={7.5}
+              cornerRadius={endCapSize}
               shadowColor="rgba(0,0,0,0.2)"
               shadowBlur={3}
               shadowOffset={{ x: 1, y: 1 }}
@@ -72,7 +81,7 @@ const WallsLayer = ({ showDimensions }: WallsLayerProps) => {
                   x={midX + offsetX}
                   y={midY + offsetY}
                   text={`${Math.round(wallLength)} cm`}
-                  fontSize={16}
+                  fontSize={fontSize}
                   fill="#000"
                   padding={4}
                   background="#f8fafc"
@@ -84,7 +93,7 @@ const WallsLayer = ({ showDimensions }: WallsLayerProps) => {
                     x={midX}
                     y={midY}
                     text={wall.label}
-                    fontSize={14}
+                    fontSize={labelFontSize}
                     fill="#000"
                     padding={4}
                     background="#f8fafc"

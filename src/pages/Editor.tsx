@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useKitchenStore } from "@/store/kitchenStore";
 import { ToolMode, ViewMode } from "@/store/types";
 import { EditorHeader } from "@/components/editor/EditorHeader";
@@ -8,6 +8,7 @@ import SideToolbar from "@/components/designer/SideToolbar";
 import CreateRoomDialog from "@/components/dialogs/CreateRoomDialog";
 import BOQEditorDialog from "@/components/dialogs/BOQEditorDialog";
 import { toast } from "sonner";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const Editor = () => {
   const { 
@@ -20,10 +21,19 @@ const Editor = () => {
     setWallDialogOpen
   } = useKitchenStore();
   
-  const [leftPanelOpen, setLeftPanelOpen] = useState(true);
-  const [rightPanelOpen, setRightPanelOpen] = useState(true);
+  const isMobile = useIsMobile();
+  const [leftPanelOpen, setLeftPanelOpen] = useState(!isMobile);
+  const [rightPanelOpen, setRightPanelOpen] = useState(!isMobile);
   const [boqEditorOpen, setBoqEditorOpen] = useState(false);
   const [snapToGrid, setSnapToGrid] = useState(true);
+  
+  // Close panels when switching to mobile view
+  useEffect(() => {
+    if (isMobile) {
+      setLeftPanelOpen(false);
+      setRightPanelOpen(false);
+    }
+  }, [isMobile]);
   
   const handleViewModeChange = (value: string) => {
     setViewMode(value as ViewMode);
@@ -66,7 +76,7 @@ const Editor = () => {
   };
   
   return (
-    <div className="h-screen flex flex-col bg-gray-50">
+    <div className="h-screen flex flex-col bg-gray-50 overflow-hidden">
       <EditorHeader 
         projectName={projectName}
         viewMode={viewMode}
@@ -78,8 +88,8 @@ const Editor = () => {
         onOpenBOQEditor={handleOpenBOQEditor}
       />
       
-      <div className="flex-1 flex">
-        <SideToolbar />
+      <div className="flex-1 flex overflow-hidden">
+        {!isMobile && <SideToolbar />}
         <EditorContent 
           viewMode={viewMode}
           leftPanelOpen={leftPanelOpen}
@@ -87,6 +97,7 @@ const Editor = () => {
           setLeftPanelOpen={setLeftPanelOpen}
           setRightPanelOpen={setRightPanelOpen}
         />
+        {isMobile && <SideToolbar />}
       </div>
       
       {/* Dialogs */}

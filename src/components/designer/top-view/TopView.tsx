@@ -1,5 +1,5 @@
 
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { useKitchenStore, ToolMode } from "@/store/kitchenStore";
 import { Stage, Layer, Line } from "react-konva";
 import RoomGrid from "./RoomGrid";
@@ -10,9 +10,11 @@ import WindowsLayer from "./WindowsLayer";
 import CabinetsLayer from "./CabinetsLayer";
 import AppliancesLayer from "./AppliancesLayer";
 import useTopViewHandlers from "./hooks/useTopViewHandlers";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const TopView = () => {
   const stageRef = useRef<any>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const {
     currentToolMode,
     setSelectedItemId,
@@ -22,50 +24,84 @@ const TopView = () => {
   const [scale, setScale] = useState(1);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
+  const [stageSize, setStageSize] = useState({ width: window.innerWidth, height: window.innerHeight });
+  const isMobile = useIsMobile();
   
   const {
     startPoint,
     handleStageClick,
-    handleWheel
+    handleWheel,
+    handleTouchStart,
+    handleTouchMove,
+    handleTouchEnd
   } = useTopViewHandlers(stageRef, scale, position, setScale, setPosition, isDragging);
-  
+
+  // Update stage size when window resizes
+  useEffect(() => {
+    const updateDimensions = () => {
+      if (containerRef.current) {
+        setStageSize({
+          width: containerRef.current.offsetWidth,
+          height: containerRef.current.offsetHeight
+        });
+      }
+    };
+    
+    updateDimensions();
+    window.addEventListener('resize', updateDimensions);
+    return () => window.removeEventListener('resize', updateDimensions);
+  }, []);
+
   return (
-    <Stage
-      ref={stageRef}
-      width={window.innerWidth}
-      height={window.innerHeight}
-      draggable={currentToolMode === 'select' as ToolMode}
-      onWheel={handleWheel}
-      onClick={handleStageClick}
-      onDragStart={() => setIsDragging(true)}
-      onDragEnd={() => setIsDragging(false)}
-      scale={{ x: scale, y: scale }}
-      position={position}
-    >
-      <Layer>
-        <RoomGrid />
-        <RoomOutline />
-        <WallsLayer showDimensions={showDimensions} />
-        <DoorsLayer showDimensions={showDimensions} />
-        <WindowsLayer showDimensions={showDimensions} />
-        <CabinetsLayer showDimensions={showDimensions} />
-        <AppliancesLayer showDimensions={showDimensions} />
-        
-        {currentToolMode === ('wall' as ToolMode) && startPoint && (
-          <Line
-            points={[
-              startPoint.x,
-              startPoint.y,
-              stageRef.current?.getPointerPosition().x / scale - position.x / scale,
-              stageRef.current?.getPointerPosition().y / scale - position.y / scale
-            ]}
-            stroke="#3b82f6"
-            strokeWidth={3}
-            dash={[10, 5]}
-          />
-        )}
-      </Layer>
-    </Stage>
+    <div ref={containerRef} className="w-full h-full">
+      <Stage
+        ref={stageRef}
+        width={stageSize.width}
+        height={stageSize.height}
+        draggable={currentToolMode === 'select' as ToolMode}
+        onWheel={handleWheel}
+        onClick={handleStageClick}
+        onTap={handleStageClick}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        onDragStart={() => setIsDragging(true)}
+        onDragEnd={() => setIsDragging(false)}
+        scale={{ x: scale, y: scale }}
+        position={position}
+      >
+        <Layer>
+          <RoomGrid />
+          <RoomOutline />
+          <WallsLayer showDimensions={showDimensions} />
+          <DoorsLayer showDimensions={showDimensions} />
+          <WindowsLayer showDimensions={showDimensions} />
+          <CabinetsLayer showDimensions={showDimensions} />
+          <AppliancesLayer showDimensions={showDimensions} />
+          
+          {currentToolMode === ('wall' as ToolMode) && startPoint && stageRef.current && (
+            <Line
+              points={[
+                startPoint.x,
+                startPoint.y,
+                stageRef.current.getPointerPosition()?.x / scale - position.x / scale || startPoint.x,
+                stageRef.current.getPointerPosition()?.y / scale - position.y / scale || startPoint.y
+              ]}
+              stroke="#3b82f6"
+              strokeWidth={3}
+              dash={[10, 5]}
+            />
+          )}
+        </Layer>
+      </Stage>
+
+      {/* Mobile help message */}
+      {isMobile && (
+        <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 bg-white px-3 py-1.5 rounded-full text-xs shadow-md opacity-70 pointer-events-none">
+          Pinch to zoom, double-tap to reset
+        </div>
+      )}
+    </div>
   );
 };
 

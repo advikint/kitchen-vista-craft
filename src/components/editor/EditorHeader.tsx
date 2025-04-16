@@ -4,10 +4,13 @@ import { Separator } from "@/components/ui/separator";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Home, Save, Undo, Redo, Grid3X3, Ruler, Download } from "lucide-react";
+import { Home, Save, Undo, Redo, Grid3X3, Ruler, Download, Menu } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
 import { ViewMode } from "@/store/types";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { useState } from "react";
 
 interface EditorHeaderProps {
   projectName: string;
@@ -30,6 +33,96 @@ export const EditorHeader = ({
   toggleDimensions,
   onOpenBOQEditor,
 }: EditorHeaderProps) => {
+  const isMobile = useIsMobile();
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  // Mobile header
+  if (isMobile) {
+    return (
+      <header className="bg-white border-b px-3 py-2 shadow-sm">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center">
+            <Link to="/">
+              <Button variant="ghost" size="icon" className="rounded-full mr-2">
+                <Home className="h-5 w-5 text-gray-600" />
+              </Button>
+            </Link>
+            <h1 className="font-medium text-sm truncate max-w-[150px]">{projectName}</h1>
+          </div>
+          
+          <Tabs value={viewMode} onValueChange={onViewModeChange} className="flex-1 mx-2">
+            <TabsList className="grid grid-cols-3 bg-gray-100 p-0.5 h-8">
+              <TabsTrigger value="2d-top" className="text-xs rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                Top
+              </TabsTrigger>
+              <TabsTrigger value="2d-elevation" className="text-xs rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                Front
+              </TabsTrigger>
+              <TabsTrigger value="3d" className="text-xs rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                3D
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+          
+          <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" className="rounded-full">
+                <Menu className="h-5 w-5 text-gray-600" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="top" className="px-4 py-6">
+              <SheetHeader>
+                <SheetTitle>Options</SheetTitle>
+              </SheetHeader>
+              <div className="grid gap-4 mt-4">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="snap-toggle-mobile" className="text-sm">Snap to Grid</Label>
+                  <Switch 
+                    id="snap-toggle-mobile"
+                    checked={snapToGrid} 
+                    onCheckedChange={onSnapToGridChange} 
+                  />
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="dimension-toggle-mobile" className="text-sm">Show Dimensions</Label>
+                  <Switch 
+                    id="dimension-toggle-mobile"
+                    checked={showDimensions} 
+                    onCheckedChange={toggleDimensions} 
+                  />
+                </div>
+                
+                <div className="flex gap-2 mt-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={onOpenBOQEditor}
+                    className="w-full"
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Export BOQ
+                  </Button>
+                  
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => toast.success("Design saved")}
+                    className="w-full"
+                  >
+                    <Save className="h-4 w-4 mr-2" />
+                    Save
+                  </Button>
+                </div>
+              </div>
+            </SheetContent>
+          </Sheet>
+        </div>
+      </header>
+    );
+  }
+
+  // Desktop header
   return (
     <header className="bg-white border-b px-4 py-3 shadow-sm">
       <div className="flex items-center justify-between">

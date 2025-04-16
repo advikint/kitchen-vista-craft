@@ -1,10 +1,12 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useKitchenStore } from "@/store/kitchenStore";
 import { ToolMode } from "@/store/types";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { 
   Pointer, 
   Square, 
@@ -14,7 +16,8 @@ import {
   Refrigerator,
   ChevronsLeft,
   ChevronsRight,
-  LayoutGrid, // Added this as a replacement for WallBrick
+  LayoutGrid,
+  Menu,
 } from "lucide-react";
 
 interface ToolButtonProps {
@@ -22,23 +25,25 @@ interface ToolButtonProps {
   label: string;
   active: boolean;
   onClick: () => void;
+  showLabel?: boolean;
 }
 
-const ToolButton = ({ icon, label, active, onClick }: ToolButtonProps) => (
+const ToolButton = ({ icon, label, active, onClick, showLabel = true }: ToolButtonProps) => (
   <TooltipProvider delayDuration={300}>
     <Tooltip>
       <TooltipTrigger asChild>
         <button
           onClick={onClick}
           className={cn(
-            "flex flex-col items-center justify-center w-14 h-14 rounded-lg transition-colors",
+            "flex flex-col items-center justify-center rounded-lg transition-colors",
+            showLabel ? "w-14 h-14" : "w-10 h-10",
             active 
               ? "bg-primary text-primary-foreground" 
               : "hover:bg-muted text-muted-foreground hover:text-foreground"
           )}
         >
-          <div className="text-xl mb-1">{icon}</div>
-          <span className="text-xs font-medium">{label}</span>
+          <div className={cn("mb-1", showLabel ? "text-xl" : "text-lg")}>{icon}</div>
+          {showLabel && <span className="text-xs font-medium">{label}</span>}
         </button>
       </TooltipTrigger>
       <TooltipContent side="right">
@@ -51,6 +56,15 @@ const ToolButton = ({ icon, label, active, onClick }: ToolButtonProps) => (
 const SideToolbar = () => {
   const { currentToolMode, setToolMode } = useKitchenStore();
   const [collapsed, setCollapsed] = useState(false);
+  const [mobileExpanded, setMobileExpanded] = useState(false);
+  const isMobile = useIsMobile();
+
+  // Auto-collapse on mobile
+  useEffect(() => {
+    if (isMobile) {
+      setCollapsed(true);
+    }
+  }, [isMobile]);
 
   const tools = [
     { id: 'select' as ToolMode, icon: <Pointer size={22} />, label: 'Select' },
@@ -63,13 +77,44 @@ const SideToolbar = () => {
   ];
 
   const handleToolSelect = (toolId: ToolMode) => {
-    if (toolId === 'room') {
-      setToolMode(toolId);
-    } else {
-      setToolMode(toolId);
+    setToolMode(toolId);
+    if (isMobile) {
+      setMobileExpanded(false);
     }
   };
 
+  // Mobile toolbar rendering
+  if (isMobile) {
+    return (
+      <>
+        <Button
+          variant="outline"
+          size="icon"
+          className="fixed bottom-4 left-4 z-50 bg-white shadow-md rounded-full h-12 w-12"
+          onClick={() => setMobileExpanded(!mobileExpanded)}
+        >
+          <Menu size={24} />
+        </Button>
+        
+        {mobileExpanded && (
+          <div className="fixed bottom-20 left-4 z-50 bg-card shadow-lg rounded-lg p-3 flex flex-col gap-3">
+            {tools.map(tool => (
+              <ToolButton
+                key={tool.id}
+                icon={tool.icon}
+                label={tool.label}
+                active={currentToolMode === tool.id}
+                onClick={() => handleToolSelect(tool.id)}
+                showLabel={false}
+              />
+            ))}
+          </div>
+        )}
+      </>
+    );
+  }
+
+  // Desktop toolbar rendering
   return (
     <div 
       className={cn(

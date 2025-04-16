@@ -36,7 +36,10 @@ export const createRoomSlice: StateCreator<KitchenStore, [], [], RoomSlice> = (s
     // If no label is provided, generate one based on wall count
     if (!newWall.label) {
       const wallCount = state.walls.length;
-      newWall.label = `Wall ${String.fromCharCode(65 + wallCount)}`;
+      // Use letters A-Z for the first 26 walls, then Wall 27, Wall 28, etc.
+      newWall.label = wallCount < 26 
+        ? `Wall ${String.fromCharCode(65 + wallCount)}` 
+        : `Wall ${wallCount + 1}`;
     }
     
     return { 
@@ -49,7 +52,9 @@ export const createRoomSlice: StateCreator<KitchenStore, [], [], RoomSlice> = (s
   })),
   
   removeWall: (id) => set((state) => ({
-    walls: state.walls.filter(wall => wall.id !== id)
+    walls: state.walls.filter(wall => wall.id !== id),
+    // Also ensure selectedItemId is cleared if it was this wall
+    selectedItemId: state.selectedItemId === id ? null : state.selectedItemId
   })),
   
   setCurrentWallIndex: (index) => set({ currentWallIndex: index }),

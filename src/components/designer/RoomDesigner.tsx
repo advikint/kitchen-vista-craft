@@ -7,12 +7,14 @@ import { toast } from "sonner";
 import TopView from "./top-view";
 import ThreeDView from "./ThreeDView";
 import ElevationView from "./ElevationView";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const RoomDesigner = () => {
   const { viewMode, room, walls, setSelectedItemId } = useKitchenStore();
   const containerRef = useRef<HTMLDivElement>(null);
   const controlsRef = useRef<any>(null);
   const [isInitialized, setIsInitialized] = useState(false);
+  const isMobile = useIsMobile();
   
   useEffect(() => {
     if (!isInitialized) {
@@ -33,7 +35,7 @@ const RoomDesigner = () => {
   
   // Calculate max room dimension for camera positioning
   const maxRoomDimension = Math.max(room.width || 300, room.height || 400);
-  const cameraDistance = maxRoomDimension * 1.5;
+  const cameraDistance = maxRoomDimension * (isMobile ? 2 : 1.5);
   
   return (
     <div 
@@ -53,9 +55,16 @@ const RoomDesigner = () => {
         <Canvas 
           shadows 
           gl={{ antialias: true, alpha: false }}
-          dpr={[1, 2]} // Improve quality on high-DPI displays
-          camera={{ position: [cameraDistance, cameraDistance, cameraDistance], fov: 50 }}
+          dpr={[1, isMobile ? 1.5 : 2]} // Adjust DPR based on mobile for performance
+          camera={{ position: [cameraDistance, cameraDistance, cameraDistance], fov: isMobile ? 60 : 50 }}
           style={{ background: '#f8fafc' }}
+          onCreated={({ gl }) => {
+            if (isMobile) {
+              // Optimize for mobile
+              gl.setPixelRatio(window.devicePixelRatio);
+              gl.setClearColor('#f8fafc', 1);
+            }
+          }}
         >
           <color attach="background" args={['#f8fafc']} />
           <fog attach="fog" args={['#f8fafc', 100, 500]} />
@@ -65,7 +74,7 @@ const RoomDesigner = () => {
             position={[10, 10, 10]} 
             intensity={1.0} 
             castShadow 
-            shadow-mapSize={[2048, 2048]}
+            shadow-mapSize={isMobile ? [1024, 1024] : [2048, 2048]}
             shadow-camera-far={500}
             shadow-camera-near={0.5}
           />
@@ -74,18 +83,22 @@ const RoomDesigner = () => {
             intensity={0.5} 
           />
           
-          <SoftShadows size={25} samples={25} focus={0.5} />
+          <SoftShadows size={isMobile ? 15 : 25} samples={isMobile ? 15 : 25} focus={0.5} />
           <ContactShadows 
             position={[0, -0.1, 0]} 
             opacity={0.4} 
             scale={20} 
             blur={2} 
             far={4} 
-            resolution={1024}
+            resolution={isMobile ? 512 : 1024}
             color="#000000"
           />
           
-          <PerspectiveCamera makeDefault position={[cameraDistance, cameraDistance, cameraDistance]} fov={45} />
+          <PerspectiveCamera 
+            makeDefault 
+            position={[cameraDistance, cameraDistance, cameraDistance]} 
+            fov={isMobile ? 60 : 45} 
+          />
           <OrbitControls 
             ref={controlsRef}
             enablePan={true}
@@ -97,6 +110,10 @@ const RoomDesigner = () => {
             maxDistance={cameraDistance * 3}
             minDistance={20}
             zoomSpeed={1.5}
+            touches={{
+              ONE: isMobile ? "ROTATE" : undefined, 
+              TWO: isMobile ? "DOLLY_ROTATE" : undefined
+            }}
           />
           
           <ThreeDView />
