@@ -26,7 +26,7 @@ export const createRoomSlice: StateCreator<KitchenStore, [], [], RoomSlice> = (s
   resetWalls: () => set({ walls: [] }),
   
   addWall: (wall) => set((state) => {
-    // Only assign a label if one is not provided
+    // Create new wall with required properties
     const newWall = {
       ...wall,
       id: uuidv4(),
@@ -36,8 +36,7 @@ export const createRoomSlice: StateCreator<KitchenStore, [], [], RoomSlice> = (s
     // If no label is provided, generate one based on wall count
     if (!newWall.label) {
       const wallCount = state.walls.length;
-      const wallLabels = ['Wall A', 'Wall B', 'Wall C', 'Wall D'];
-      newWall.label = wallCount < 4 ? wallLabels[wallCount] : `Wall ${wallCount + 1}`;
+      newWall.label = `Wall ${String.fromCharCode(65 + wallCount)}`;
     }
     
     return { 

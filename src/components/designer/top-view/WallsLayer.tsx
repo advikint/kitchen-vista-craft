@@ -67,17 +67,34 @@ const WallsLayer = ({ showDimensions }: WallsLayerProps) => {
             />
             
             {showDimensions && (
-              <Text
-                x={midX + offsetX}
-                y={midY + offsetY}
-                text={`${Math.round(wallLength)} cm`}
-                fontSize={16}
-                fill="#000"
-                padding={4}
-                background="#f8fafc"
-                cornerRadius={3}
-                align="center"
-              />
+              <>
+                <Text
+                  x={midX + offsetX}
+                  y={midY + offsetY}
+                  text={`${Math.round(wallLength)} cm`}
+                  fontSize={16}
+                  fill="#000"
+                  padding={4}
+                  background="#f8fafc"
+                  cornerRadius={3}
+                  align="center"
+                />
+                {wall.label && (
+                  <Text
+                    x={midX}
+                    y={midY}
+                    text={wall.label}
+                    fontSize={14}
+                    fill="#000"
+                    padding={4}
+                    background="#f8fafc"
+                    cornerRadius={3}
+                    align="center"
+                    offsetX={0}
+                    offsetY={-45}
+                  />
+                )}
+              </>
             )}
           </Group>
         );
