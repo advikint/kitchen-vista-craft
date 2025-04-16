@@ -23,15 +23,10 @@ export const useWallInteractions = (
       isDrawingWall.current = true;
     } else {
       // Second click - create wall
-      const wallCount = walls.length;
-      const wallLabels = ['Wall A', 'Wall B', 'Wall C', 'Wall D'];
-      const label = wallCount < 4 ? wallLabels[wallCount] : `Wall ${wallCount + 1}`;
-      
       addWall({
         start: startPoint,
         end: pos,
         height: 270, // 2700mm converted to cm (default)
-        label,
         thickness: 10 // 100mm converted to cm (default)
       });
       
@@ -39,7 +34,8 @@ export const useWallInteractions = (
       isDrawingWall.current = false;
       
       // Notify user of successful wall creation
-      toast.success(`${label} created successfully`);
+      const wallCount = walls.length;
+      toast.success(`Wall ${String.fromCharCode(65 + wallCount)} created successfully`);
     }
   };
 
