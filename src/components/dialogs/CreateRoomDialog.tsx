@@ -52,28 +52,36 @@ const CreateRoomDialog = ({ open, onOpenChange }: CreateRoomDialogProps) => {
     addWall({
       start: { x: -halfWidth, y: -halfHeight },
       end: { x: halfWidth, y: -halfHeight },
-      height: heightInCm
+      height: heightInCm,
+      label: "Wall A",
+      thickness: 10 // 100mm converted to cm
     });
 
     // Wall B - Right
     addWall({
       start: { x: halfWidth, y: -halfHeight },
       end: { x: halfWidth, y: halfHeight },
-      height: heightInCm
+      height: heightInCm,
+      label: "Wall B",
+      thickness: 10
     });
 
     // Wall C - Bottom
     addWall({
       start: { x: halfWidth, y: halfHeight },
       end: { x: -halfWidth, y: halfHeight },
-      height: heightInCm
+      height: heightInCm,
+      label: "Wall C",
+      thickness: 10
     });
 
     // Wall D - Left
     addWall({
       start: { x: -halfWidth, y: halfHeight },
       end: { x: -halfWidth, y: -halfHeight },
-      height: heightInCm
+      height: heightInCm,
+      label: "Wall D",
+      thickness: 10
     });
 
     toast.success("Room created successfully");

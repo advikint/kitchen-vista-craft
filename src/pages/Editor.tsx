@@ -38,6 +38,12 @@ const Editor = () => {
   };
   
   const handleOpenBOQEditor = () => {
+    // Generate BOQ data and open editor
+    const boqData = generateBOQ();
+    if (!boqData || (Array.isArray(boqData) && boqData.length === 0)) {
+      toast.warning("No items to generate Bill of Quantities. Please add cabinets and appliances first.");
+      return;
+    }
     setBoqEditorOpen(true);
   };
   

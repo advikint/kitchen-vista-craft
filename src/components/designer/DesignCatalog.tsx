@@ -1,70 +1,80 @@
 
 import { useState } from "react";
-import { useKitchenStore } from "@/store/kitchenStore";
-import { 
-  Tabs, 
-  TabsContent, 
-  TabsList, 
-  TabsTrigger,
-  Button,
-  Input,
-  ScrollArea,
-} from "@/components/ui";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
-import { CabinetCatalog } from "./catalog/CabinetCatalog";
-import { DoorCatalog } from "./catalog/DoorCatalog";
+import CabinetCatalog from "@/components/panels/CabinetCatalog";
 import { WindowCatalog } from "./catalog/WindowCatalog";
+import { DoorCatalog } from "./catalog/DoorCatalog";
 import { ApplianceCatalog } from "./catalog/ApplianceCatalog";
-import { CatalogItem } from "./catalog/CatalogItem";
+import { useKitchenStore, ToolMode } from "@/store/kitchenStore";
 
 const DesignCatalog = () => {
-  const { currentToolMode, setSelectedItemId } = useKitchenStore();
+  const { currentToolMode, setToolMode, setSelectedItemId } = useKitchenStore();
   const [searchTerm, setSearchTerm] = useState("");
-
+  const [activeTab, setActiveTab] = useState("cabinets");
+  
   const handleItemSelect = (itemType: string, templateData: any) => {
-    // Set the selected item template data for the properties panel to use
+    if (itemType === 'cabinet') {
+      setToolMode('cabinet' as ToolMode);
+    } else if (itemType === 'appliance') {
+      setToolMode('appliance' as ToolMode);
+    } else if (itemType === 'door') {
+      setToolMode('door' as ToolMode);
+    } else if (itemType === 'window') {
+      setToolMode('window' as ToolMode);
+    }
+    
     setSelectedItemId(`template_${itemType}`);
     localStorage.setItem(`template_${itemType}`, JSON.stringify(templateData));
   };
 
-  const renderCatalogContent = () => {
-    switch (currentToolMode) {
-      case 'cabinet':
-        return <CabinetCatalog searchTerm={searchTerm} onItemSelect={handleItemSelect} />;
-      case 'door':
-        return <DoorCatalog searchTerm={searchTerm} onItemSelect={handleItemSelect} />;
-      case 'window':
-        return <WindowCatalog searchTerm={searchTerm} onItemSelect={handleItemSelect} />;
-      case 'appliance':
-        return <ApplianceCatalog searchTerm={searchTerm} onItemSelect={handleItemSelect} />;
-      default:
-        return (
-          <div className="flex flex-col items-center justify-center h-full p-6 text-muted-foreground">
-            <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
-              <Search size={24} />
-            </div>
-            <p className="text-center">
-              Select a tool from the sidebar to view available items
-            </p>
-          </div>
-        );
-    }
-  };
-
   return (
-    <div className="h-full bg-card">
-      {currentToolMode !== 'select' && currentToolMode !== 'room' && (
-        <div className="relative p-4">
-          <Search className="absolute left-6 top-7 h-4 w-4 text-muted-foreground" />
+    <div className="h-full w-full flex flex-col overflow-hidden">
+      <div className="p-4 border-b">
+        <h2 className="text-lg font-semibold mb-3">Design Objects</h2>
+        <div className="relative mb-2">
+          <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
           <Input
-            placeholder={`Search ${currentToolMode}s...`}
+            placeholder="Search objects..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-8"
           />
         </div>
-      )}
-      {renderCatalogContent()}
+      </div>
+      
+      <Tabs 
+        defaultValue="cabinets" 
+        value={activeTab} 
+        onValueChange={setActiveTab} 
+        className="flex-1 overflow-hidden"
+      >
+        <TabsList className="grid w-full grid-cols-4 px-4 pt-2">
+          <TabsTrigger value="cabinets">Cabinets</TabsTrigger>
+          <TabsTrigger value="appliances">Appliances</TabsTrigger>
+          <TabsTrigger value="doors">Doors</TabsTrigger>
+          <TabsTrigger value="windows">Windows</TabsTrigger>
+        </TabsList>
+        
+        <div className="flex-1 overflow-hidden">
+          <TabsContent value="cabinets" className="h-full">
+            <CabinetCatalog />
+          </TabsContent>
+          
+          <TabsContent value="appliances" className="h-full">
+            <ApplianceCatalog searchTerm={searchTerm} onItemSelect={handleItemSelect} />
+          </TabsContent>
+          
+          <TabsContent value="doors" className="h-full">
+            <DoorCatalog searchTerm={searchTerm} onItemSelect={handleItemSelect} />
+          </TabsContent>
+          
+          <TabsContent value="windows" className="h-full">
+            <WindowCatalog searchTerm={searchTerm} onItemSelect={handleItemSelect} />
+          </TabsContent>
+        </div>
+      </Tabs>
     </div>
   );
 };
