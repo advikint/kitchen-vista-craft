@@ -1,16 +1,27 @@
+
 import { useKitchenStore, Appliance } from "@/store/kitchenStore";
-import { Group, Rect, Circle, Text } from "react-konva";
+import { Group, Rect, Circle, Text, Line } from "react-konva";
 import useItemInteractions from "./hooks/useItemInteractions";
+import { KonvaEventObject } from "konva/lib/Node";
 
 interface AppliancesLayerProps {
   showDimensions: boolean;
 }
 
 const AppliancesLayer = ({ showDimensions }: AppliancesLayerProps) => {
-  const { appliances, selectedItemId } = useKitchenStore();
-  const { handleItemSelect, handleItemDrag } = useItemInteractions();
+  const { appliances, selectedItemId, walls } = useKitchenStore();
+  const { 
+    handleItemSelect, 
+    handleDragStart, 
+    handleDragMove, 
+    handleDragEnd,
+    isNearWall,
+    nearestWallId
+  } = useItemInteractions();
   
   const getApplianceColor = (appliance: Appliance) => {
+    if (selectedItemId === appliance.id) return "#3b82f6";
+    
     if (appliance.type === 'sink') return "#e5e7eb";
     if (appliance.type === 'stove') return "#d1d5db";
     if (appliance.type === 'fridge') return "#f3f4f6";
@@ -18,6 +29,25 @@ const AppliancesLayer = ({ showDimensions }: AppliancesLayerProps) => {
     if (appliance.type === 'oven') return "#d1d5db";
     if (appliance.type === 'microwave') return "#e5e7eb";
     return "#f3f4f6";
+  };
+  
+  // Render snap guidelines for sink appliances
+  const renderSnapGuides = (appliance: Appliance) => {
+    if (!isNearWall || selectedItemId !== appliance.id || appliance.type !== "sink") return null;
+    
+    const wall = walls.find(w => w.id === nearestWallId);
+    if (!wall) return null;
+    
+    return (
+      <Line
+        points={[wall.start.x, wall.start.y, wall.end.x, wall.end.y]}
+        stroke="#3b82f680"
+        strokeWidth={3}
+        dash={[5, 5]}
+        opacity={0.7}
+        globalCompositeOperation="source-over"
+      />
+    );
   };
   
   return (
@@ -29,18 +59,16 @@ const AppliancesLayer = ({ showDimensions }: AppliancesLayerProps) => {
           y={appliance.position.y}
           rotation={appliance.rotation}
           draggable
-          onDragMove={(e) => {
-            handleItemDrag(appliance.id, {
-              x: e.target.x(),
-              y: e.target.y()
-            });
-          }}
-          onClick={(e) => handleItemSelect(appliance.id, e)}
+          onClick={(e: KonvaEventObject<MouseEvent>) => handleItemSelect(appliance.id, e)}
+          onTap={(e: KonvaEventObject<MouseEvent>) => handleItemSelect(appliance.id, e)}
+          onDragStart={() => handleDragStart()}
+          onDragMove={(e) => handleDragMove(appliance.id, e.target.position(), "appliance")}
+          onDragEnd={(e) => handleDragEnd(appliance.id, e.target.position(), "appliance")}
         >
           <Rect
             width={appliance.width}
             height={appliance.depth}
-            fill={selectedItemId === appliance.id ? "#3b82f6" : getApplianceColor(appliance)}
+            fill={getApplianceColor(appliance)}
             stroke="#000"
             strokeWidth={1}
             cornerRadius={2}
@@ -107,6 +135,8 @@ const AppliancesLayer = ({ showDimensions }: AppliancesLayerProps) => {
                 offsetX={0}
                 offsetY={-appliance.depth / 2 - 10}
                 align="center"
+                background="#ffffff99"
+                padding={2}
               />
               <Text
                 text={appliance.type}
@@ -115,9 +145,14 @@ const AppliancesLayer = ({ showDimensions }: AppliancesLayerProps) => {
                 offsetX={0}
                 offsetY={appliance.depth / 2 + 15}
                 align="center"
+                background="#ffffff99"
+                padding={2}
               />
             </>
           )}
+          
+          {/* Render snap guides for sink appliances */}
+          {renderSnapGuides(appliance)}
         </Group>
       ))}
     </>

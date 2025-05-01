@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { useKitchenStore } from "@/store/kitchenStore";
-import { Group, Rect, Text } from "react-konva";
+import { Group, Rect, Text, Line } from "react-konva";
 import useItemInteractions from "./hooks/useItemInteractions";
 import { KonvaEventObject } from "konva/lib/Node";
 
@@ -10,8 +10,15 @@ interface CabinetsLayerProps {
 }
 
 const CabinetsLayer = ({ showDimensions }: CabinetsLayerProps) => {
-  const { cabinets, selectedItemId } = useKitchenStore();
-  const { handleItemSelect, handleItemDrag, handleItemDragEnd } = useItemInteractions();
+  const { cabinets, selectedItemId, walls } = useKitchenStore();
+  const { 
+    handleItemSelect, 
+    handleDragStart, 
+    handleDragMove, 
+    handleDragEnd, 
+    isNearWall,
+    nearestWallId
+  } = useItemInteractions();
   
   // Determine cabinet fill color based on type and selection state
   const getCabinetFill = (cabinet: any, isSelected: boolean) => {
@@ -34,7 +41,7 @@ const CabinetsLayer = ({ showDimensions }: CabinetsLayerProps) => {
     if (cabinet.frontType !== 'drawer' || !cabinet.drawers) return null;
     
     const drawerLines = [];
-    const drawerHeight = cabinet.height / (cabinet.drawers || 1);
+    const drawerHeight = cabinet.depth / (cabinet.drawers || 1);
     
     for (let i = 1; i < cabinet.drawers; i++) {
       drawerLines.push(
@@ -53,6 +60,24 @@ const CabinetsLayer = ({ showDimensions }: CabinetsLayerProps) => {
     return drawerLines;
   };
 
+  // Render snap guidelines if the cabinet is being dragged near a wall
+  const renderSnapGuides = (cabinet: any) => {
+    if (!isNearWall || selectedItemId !== cabinet.id) return null;
+    
+    const wall = walls.find(w => w.id === nearestWallId);
+    if (!wall) return null;
+    
+    return (
+      <Line
+        points={[wall.start.x, wall.start.y, wall.end.x, wall.end.y]}
+        stroke="#3b82f680"
+        strokeWidth={3}
+        dash={[5, 5]}
+        opacity={0.7}
+      />
+    );
+  };
+
   return (
     <>
       {cabinets.map(cabinet => (
@@ -64,9 +89,9 @@ const CabinetsLayer = ({ showDimensions }: CabinetsLayerProps) => {
           draggable
           onClick={(e: KonvaEventObject<MouseEvent>) => handleItemSelect(cabinet.id, e)}
           onTap={(e: KonvaEventObject<MouseEvent>) => handleItemSelect(cabinet.id, e)}
-          onDragStart={() => {}}
-          onDragMove={(e) => handleItemDrag(cabinet.id, e.target.position())}
-          onDragEnd={(e) => handleItemDragEnd(cabinet.id, e.target.position(), "cabinet")}
+          onDragStart={() => handleDragStart()}
+          onDragMove={(e) => handleDragMove(cabinet.id, e.target.position(), "cabinet")}
+          onDragEnd={(e) => handleDragEnd(cabinet.id, e.target.position(), "cabinet")}
         >
           <Rect
             width={cabinet.width}
@@ -116,6 +141,23 @@ const CabinetsLayer = ({ showDimensions }: CabinetsLayerProps) => {
               />
             </>
           )}
+          
+          {/* Type indicator for selected cabinet */}
+          {selectedItemId === cabinet.id && (
+            <Text
+              text={cabinet.type}
+              fontSize={10}
+              fill="#000"
+              background="#ffffff99"
+              padding={2}
+              x={cabinet.width / 2}
+              y={-15}
+              offsetX={cabinet.type.length * 2}
+            />
+          )}
+          
+          {/* Render snap guides if needed */}
+          {renderSnapGuides(cabinet)}
         </Group>
       ))}
     </>

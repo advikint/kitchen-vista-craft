@@ -31,7 +31,7 @@ export const createRoomSlice: StateCreator<KitchenStore, [], [], RoomSlice> = (s
     const newWall: Wall = { 
       id: uuidv4(), 
       ...wallData,
-      label: wallData.label || '' // Ensure label property is present
+      label: wallData.label || `Wall ${state.walls.length + 1}` // Give walls a default label if none provided
     };
     return { walls: [...state.walls, newWall] };
   }),

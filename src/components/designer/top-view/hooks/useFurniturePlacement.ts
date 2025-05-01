@@ -6,7 +6,72 @@ import { useKitchenStore } from "@/store/kitchenStore";
  * Custom hook for placing cabinets and appliances
  */
 export const useFurniturePlacement = (loadTemplate: (type: string) => any) => {
-  const { addCabinet, addAppliance } = useKitchenStore();
+  const { addCabinet, addAppliance, walls } = useKitchenStore();
+
+  // Helper function to find nearest wall to a position
+  const findNearestWall = (pos: { x: number; y: number }) => {
+    if (!walls.length) return null;
+    
+    const threshold = 40; // Distance threshold for snapping
+    let closestWall = null;
+    let closestDistance = threshold;
+    
+    for (const wall of walls) {
+      // Calculate distances using point-to-line algorithm
+      const A = pos.x - wall.start.x;
+      const B = pos.y - wall.start.y;
+      const C = wall.end.x - wall.start.x;
+      const D = wall.end.y - wall.start.y;
+      
+      const dot = A * C + B * D;
+      const lenSq = C * C + D * D;
+      
+      if (lenSq === 0) continue; // Skip zero-length walls
+      
+      let param = dot / lenSq;
+      param = Math.max(0, Math.min(1, param));
+      
+      const xx = wall.start.x + param * C;
+      const yy = wall.start.y + param * D;
+      
+      const distance = Math.sqrt((pos.x - xx) * (pos.x - xx) + (pos.y - yy) * (pos.y - yy));
+      
+      if (distance < closestDistance) {
+        closestDistance = distance;
+        closestWall = { wall, distance, param, point: { x: xx, y: yy } };
+      }
+    }
+    
+    return closestWall;
+  };
+
+  // Get snapped position for cabinet placement
+  const getSnappedCabinetPosition = (pos: { x: number; y: number }, cabinetType: string) => {
+    const nearWall = findNearestWall(pos);
+    
+    if (!nearWall) return pos;
+    
+    const { wall, point } = nearWall;
+    const angle = Math.atan2(wall.end.y - wall.start.y, wall.end.x - wall.start.x);
+    
+    // Offset from wall based on cabinet type
+    let offset = 0;
+    
+    if (cabinetType === 'base' || cabinetType === 'tall') {
+      offset = 10; // Distance from wall for base and tall cabinets
+    } else if (cabinetType === 'wall') {
+      offset = 5; // Smaller offset for wall cabinets
+    }
+    
+    // Calculate position with offset perpendicular to the wall
+    const snapX = point.x + Math.sin(angle) * offset;
+    const snapY = point.y - Math.cos(angle) * offset;
+    
+    // Adjust rotation based on wall direction
+    const rotation = (angle * 180 / Math.PI + 90) % 360;
+    
+    return { position: { x: snapX, y: snapY }, rotation };
+  };
 
   /**
    * Handle cabinet placement
@@ -19,11 +84,14 @@ export const useFurniturePlacement = (loadTemplate: (type: string) => any) => {
       return;
     }
 
+    // Get snapped position if near a wall
+    const { position, rotation } = getSnappedCabinetPosition(pos, cabinetTemplate.type);
+
     // Create a new cabinet
     addCabinet({
       ...cabinetTemplate,
-      position: pos,
-      rotation: 0
+      position,
+      rotation: rotation || 0
     }, {});
 
     toast.success("Cabinet added");
@@ -40,11 +108,21 @@ export const useFurniturePlacement = (loadTemplate: (type: string) => any) => {
       return;
     }
 
+    // Special handling for sink type appliances
+    let position = pos;
+    let rotation = 0;
+    
+    if (applianceTemplate.type === 'sink') {
+      const snapped = getSnappedCabinetPosition(pos, 'base');
+      position = snapped.position;
+      rotation = snapped.rotation;
+    }
+
     // Create a new appliance
     addAppliance({
       ...applianceTemplate,
-      position: pos,
-      rotation: 0
+      position,
+      rotation
     }, {});
 
     toast.success("Appliance added");
@@ -52,6 +130,7 @@ export const useFurniturePlacement = (loadTemplate: (type: string) => any) => {
 
   return {
     handleCabinetClick,
-    handleApplianceClick
+    handleApplianceClick,
+    findNearestWall
   };
 };

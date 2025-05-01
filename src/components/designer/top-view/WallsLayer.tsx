@@ -97,11 +97,12 @@ const WallsLayer = ({ showDimensions }: WallsLayerProps) => {
                     fontSize={labelFontSize}
                     fill="#000"
                     padding={4}
-                    background="#f8fafc"
+                    background="#f8fafcdd"
                     cornerRadius={3}
                     align="center"
-                    offsetX={0}
-                    offsetY={-45}
+                    offsetX={wall.label.length * 3}
+                    offsetY={-50}
+                    rotation={angle * (180 / Math.PI)}
                   />
                 )}
               </>

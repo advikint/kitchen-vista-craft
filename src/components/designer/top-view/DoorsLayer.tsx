@@ -10,8 +10,33 @@ interface DoorsLayerProps {
 
 const DoorsLayer = ({ showDimensions }: DoorsLayerProps) => {
   const { doors, walls, selectedItemId } = useKitchenStore();
-  const { handleItemSelect } = useItemInteractions();
+  const { 
+    handleItemSelect, 
+    handleDragStart, 
+    handleDragMove, 
+    handleDragEnd,
+    isNearWall,
+    nearestWallId
+  } = useItemInteractions();
   
+  // Render snap guidelines
+  const renderSnapGuides = (doorId: string, wallId: string) => {
+    if (!isNearWall || selectedItemId !== doorId) return null;
+    
+    const wall = walls.find(w => w.id === nearestWallId);
+    if (!wall) return null;
+    
+    return (
+      <Line
+        points={[wall.start.x, wall.start.y, wall.end.x, wall.end.y]}
+        stroke="#3b82f680"
+        strokeWidth={3}
+        dash={[5, 5]}
+        opacity={0.7}
+      />
+    );
+  };
+
   return (
     <>
       {doors.map(door => {
@@ -36,8 +61,12 @@ const DoorsLayer = ({ showDimensions }: DoorsLayerProps) => {
             x={doorPosition.x}
             y={doorPosition.y}
             rotation={wallAngle}
+            draggable
             onClick={(e: KonvaEventObject<MouseEvent>) => handleItemSelect(door.id, e)}
             onTap={(e: KonvaEventObject<MouseEvent>) => handleItemSelect(door.id, e)}
+            onDragStart={() => handleDragStart()}
+            onDragMove={(e) => handleDragMove(door.id, e.target.position(), "door")}
+            onDragEnd={(e) => handleDragEnd(door.id, e.target.position(), "door")}
           >
             {/* Door frame */}
             <Rect
@@ -82,8 +111,25 @@ const DoorsLayer = ({ showDimensions }: DoorsLayerProps) => {
                 fill="#000"
                 offsetX={0}
                 offsetY={-25}
+                background="#ffffff99"
+                padding={2}
               />
             )}
+            
+            {selectedItemId === door.id && (
+              <Text
+                text={door.type}
+                fontSize={10}
+                fill="#000"
+                background="#ffffff99"
+                padding={2}
+                offsetX={0}
+                offsetY={-45}
+              />
+            )}
+            
+            {/* Render snap guides */}
+            {renderSnapGuides(door.id, door.wallId)}
           </Group>
         );
       })}

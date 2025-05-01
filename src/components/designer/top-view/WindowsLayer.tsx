@@ -10,7 +10,32 @@ interface WindowsLayerProps {
 
 const WindowsLayer = ({ showDimensions }: WindowsLayerProps) => {
   const { windows, walls, selectedItemId } = useKitchenStore();
-  const { handleItemSelect } = useItemInteractions();
+  const { 
+    handleItemSelect, 
+    handleDragStart, 
+    handleDragMove, 
+    handleDragEnd,
+    isNearWall,
+    nearestWallId
+  } = useItemInteractions();
+  
+  // Render snap guidelines
+  const renderSnapGuides = (windowId: string, wallId: string) => {
+    if (!isNearWall || selectedItemId !== windowId) return null;
+    
+    const wall = walls.find(w => w.id === nearestWallId);
+    if (!wall) return null;
+    
+    return (
+      <Line
+        points={[wall.start.x, wall.start.y, wall.end.x, wall.end.y]}
+        stroke="#3b82f680"
+        strokeWidth={3}
+        dash={[5, 5]}
+        opacity={0.7}
+      />
+    );
+  };
   
   return (
     <>
@@ -36,8 +61,12 @@ const WindowsLayer = ({ showDimensions }: WindowsLayerProps) => {
             x={windowPosition.x}
             y={windowPosition.y}
             rotation={wallAngle}
+            draggable
             onClick={(e: KonvaEventObject<MouseEvent>) => handleItemSelect(window.id, e)}
             onTap={(e: KonvaEventObject<MouseEvent>) => handleItemSelect(window.id, e)}
+            onDragStart={() => handleDragStart()}
+            onDragMove={(e) => handleDragMove(window.id, e.target.position(), "window")}
+            onDragEnd={(e) => handleDragEnd(window.id, e.target.position(), "window")}
           >
             {/* Window frame */}
             <Rect
@@ -87,8 +116,25 @@ const WindowsLayer = ({ showDimensions }: WindowsLayerProps) => {
                 fill="#000"
                 offsetX={0}
                 offsetY={-25}
+                background="#ffffff99"
+                padding={2}
               />
             )}
+            
+            {selectedItemId === window.id && (
+              <Text
+                text={`${window.type} (${window.sillHeight}cm sill)`}
+                fontSize={10}
+                fill="#000"
+                background="#ffffff99"
+                padding={2}
+                offsetX={0}
+                offsetY={-45}
+              />
+            )}
+            
+            {/* Render snap guides */}
+            {renderSnapGuides(window.id, window.wallId)}
           </Group>
         );
       })}
