@@ -111,8 +111,8 @@ const RoomDesigner = () => {
             minDistance={20}
             zoomSpeed={1.5}
             touches={{
-              ONE: "ROTATE",
-              TWO: "DOLLY_ROTATE" 
+              ONE: 1,
+              TWO: 3
             }}
           />
           

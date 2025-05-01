@@ -11,6 +11,7 @@ export interface UISlice {
   selectedItemId: string | null;
   gridSize: number;
   isWallDialogOpen: boolean;
+  sidebarCollapsed: boolean;
   
   setProjectName: (name: string) => void;
   setViewMode: (mode: ViewMode) => void;
@@ -19,6 +20,7 @@ export interface UISlice {
   setSelectedItemId: (id: string | null) => void;
   setGridSize: (size: number) => void;
   setWallDialogOpen: (isOpen: boolean) => void;
+  toggleSidebar: () => void;
 }
 
 export const createUISlice: StateCreator<KitchenStore, [], [], UISlice> = (set) => ({
@@ -29,6 +31,7 @@ export const createUISlice: StateCreator<KitchenStore, [], [], UISlice> = (set) 
   selectedItemId: null,
   gridSize: 10,
   isWallDialogOpen: false,
+  sidebarCollapsed: false,
   
   setProjectName: (name) => set({ projectName: name }),
   
@@ -54,4 +57,8 @@ export const createUISlice: StateCreator<KitchenStore, [], [], UISlice> = (set) 
   setGridSize: (size) => set({ gridSize: size }),
 
   setWallDialogOpen: (isOpen) => set({ isWallDialogOpen: isOpen }),
+  
+  toggleSidebar: () => set((state) => ({
+    sidebarCollapsed: !state.sidebarCollapsed
+  })),
 });
