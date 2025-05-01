@@ -1,6 +1,7 @@
+
 import { useKitchenStore } from "@/store/kitchenStore";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import CabinetCatalog from "./CabinetCatalog";
+import { CabinetCatalog } from "@/components/designer/catalog/CabinetCatalog";
 import { DoorOpen, Blinds, PackageOpen, Box, Search, Filter, ArrowDownUp, ChevronDown } from "lucide-react";
 import { useState } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -24,7 +25,10 @@ const ObjectPanel = () => {
   const renderToolContent = () => {
     switch (currentToolMode) {
       case 'cabinet':
-        return <CabinetCatalog />;
+        return <CabinetCatalog 
+                  searchTerm={searchTerm}
+                  onItemSelect={handleItemSelect}
+                />;
       case 'door':
         return (
           <div className="p-4">

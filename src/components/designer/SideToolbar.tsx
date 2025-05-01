@@ -41,6 +41,7 @@ const ToolButton = ({ icon, label, active, onClick, showLabel = true }: ToolButt
               ? "bg-primary text-primary-foreground" 
               : "hover:bg-muted text-muted-foreground hover:text-foreground"
           )}
+          data-tool={label.toLowerCase()}
         >
           <div className={cn("mb-1", showLabel ? "text-xl" : "text-lg")}>{icon}</div>
           {showLabel && <span className="text-xs font-medium">{label}</span>}
@@ -54,7 +55,7 @@ const ToolButton = ({ icon, label, active, onClick, showLabel = true }: ToolButt
 );
 
 const SideToolbar = () => {
-  const { currentToolMode, setToolMode } = useKitchenStore();
+  const { currentToolMode, setToolMode, setWallDialogOpen } = useKitchenStore();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileExpanded, setMobileExpanded] = useState(false);
   const isMobile = useIsMobile();
@@ -77,7 +78,13 @@ const SideToolbar = () => {
   ];
 
   const handleToolSelect = (toolId: ToolMode) => {
-    setToolMode(toolId);
+    if (toolId === 'room') {
+      // For room tool, directly open the dialog
+      setWallDialogOpen(true);
+    } else {
+      setToolMode(toolId);
+    }
+    
     if (isMobile) {
       setMobileExpanded(false);
     }

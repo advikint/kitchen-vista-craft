@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useKitchenStore } from "@/store/kitchenStore";
 import { 
   Dialog, 
@@ -19,10 +19,19 @@ interface CreateRoomDialogProps {
 }
 
 const CreateRoomDialog = ({ open, onOpenChange }: CreateRoomDialogProps) => {
-  const { setRoom, resetWalls, addWall } = useKitchenStore();
+  const { setRoom, resetWalls, addWall, setToolMode } = useKitchenStore();
   const [width, setWidth] = useState(3000);
   const [length, setLength] = useState(4000);
   const [height, setHeight] = useState(2700);
+
+  // Reset form values when opened
+  useEffect(() => {
+    if (open) {
+      setWidth(3000);
+      setLength(4000);
+      setHeight(2700);
+    }
+  }, [open]);
 
   const handleCreateRoom = () => {
     if (width <= 0 || length <= 0 || height <= 0) {
@@ -83,6 +92,9 @@ const CreateRoomDialog = ({ open, onOpenChange }: CreateRoomDialogProps) => {
       label: "Wall D",
       thickness: 10
     });
+    
+    // Switch to select tool after creating a room
+    setToolMode('select');
 
     toast.success("Room created successfully");
     onOpenChange(false);
@@ -103,7 +115,7 @@ const CreateRoomDialog = ({ open, onOpenChange }: CreateRoomDialogProps) => {
               id="width"
               type="number"
               value={width}
-              onChange={(e) => setWidth(parseInt(e.target.value))}
+              onChange={(e) => setWidth(parseInt(e.target.value) || 0)}
               className="col-span-2"
             />
           </div>
@@ -115,7 +127,7 @@ const CreateRoomDialog = ({ open, onOpenChange }: CreateRoomDialogProps) => {
               id="length"
               type="number"
               value={length}
-              onChange={(e) => setLength(parseInt(e.target.value))}
+              onChange={(e) => setLength(parseInt(e.target.value) || 0)}
               className="col-span-2"
             />
           </div>
@@ -127,7 +139,7 @@ const CreateRoomDialog = ({ open, onOpenChange }: CreateRoomDialogProps) => {
               id="height"
               type="number"
               value={height}
-              onChange={(e) => setHeight(parseInt(e.target.value))}
+              onChange={(e) => setHeight(parseInt(e.target.value) || 0)}
               className="col-span-2"
             />
           </div>

@@ -3,6 +3,7 @@ import { useKitchenStore } from "@/store/kitchenStore";
 import { Group, Line, Text, Rect } from "react-konva";
 import useItemInteractions from "./hooks/useItemInteractions";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { KonvaEventObject } from "konva/lib/Node";
 
 interface WallsLayerProps {
   showDimensions: boolean;
@@ -41,8 +42,8 @@ const WallsLayer = ({ showDimensions }: WallsLayerProps) => {
               points={[wall.start.x, wall.start.y, wall.end.x, wall.end.y]}
               stroke={selectedItemId === wall.id ? "#3b82f6" : "#686868"}
               strokeWidth={wallThickness}
-              onClick={(e) => handleItemSelect(wall.id, e)}
-              onTap={(e) => handleItemSelect(wall.id, e)}
+              onClick={(e: KonvaEventObject<MouseEvent>) => handleItemSelect(wall.id, e)}
+              onTap={(e: KonvaEventObject<MouseEvent>) => handleItemSelect(wall.id, e)}
               lineCap="round"
               shadowColor="rgba(0,0,0,0.3)"
               shadowBlur={8}
