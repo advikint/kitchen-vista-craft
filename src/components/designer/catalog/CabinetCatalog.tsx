@@ -1,11 +1,15 @@
+
+import { useState } from 'react';
 import { 
   Tabs, 
   TabsContent, 
   TabsList, 
   TabsTrigger,
 } from "@/components/ui/tabs";
-import { PackageOpen } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { PackageOpen, Layers } from "lucide-react";
 import { CatalogItem } from "./CatalogItem";
+import CabinetDrawerTypes from "./CabinetDrawerTypes";
 
 interface CabinetCatalogProps {
   searchTerm: string;
@@ -13,6 +17,8 @@ interface CabinetCatalogProps {
 }
 
 export const CabinetCatalog = ({ searchTerm, onItemSelect }: CabinetCatalogProps) => {
+  const [activeTab, setActiveTab] = useState('base');
+  
   const baseCabinets = [
     { name: "Standard Base 60cm", type: "base", width: 60, height: 85, depth: 60, category: "standard-base" },
     { name: "Standard Base 45cm", type: "base", width: 45, height: 85, depth: 60, category: "standard-base" },
@@ -21,9 +27,6 @@ export const CabinetCatalog = ({ searchTerm, onItemSelect }: CabinetCatalogProps
     { name: "Sink Base 60cm", type: "base", width: 60, height: 85, depth: 60, category: "sink-base" },
     { name: "Corner Base 90cm", type: "base", width: 90, height: 85, depth: 90, category: "corner-base" },
     { name: "Corner Base L-Shape", type: "base", width: 105, height: 85, depth: 105, category: "corner-base" },
-    { name: "Drawer Unit 60cm", type: "base", width: 60, height: 85, depth: 60, category: "drawer-base" },
-    { name: "Drawer Unit 45cm", type: "base", width: 45, height: 85, depth: 60, category: "drawer-base" },
-    { name: "Drawer Unit 30cm", type: "base", width: 30, height: 85, depth: 60, category: "drawer-base" },
   ];
   
   const wallCabinets = [
@@ -57,9 +60,10 @@ export const CabinetCatalog = ({ searchTerm, onItemSelect }: CabinetCatalogProps
 
   return (
     <div className="p-4">
-      <Tabs defaultValue="base">
-        <TabsList className="w-full grid grid-cols-3">
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="w-full grid grid-cols-4">
           <TabsTrigger value="base">Base</TabsTrigger>
+          <TabsTrigger value="drawer">Drawers</TabsTrigger>
           <TabsTrigger value="wall">Wall</TabsTrigger>
           <TabsTrigger value="tall">Tall</TabsTrigger>
         </TabsList>
@@ -81,6 +85,10 @@ export const CabinetCatalog = ({ searchTerm, onItemSelect }: CabinetCatalogProps
               />
             ))}
           </div>
+        </TabsContent>
+
+        <TabsContent value="drawer">
+          <CabinetDrawerTypes searchTerm={searchTerm} onItemSelect={onItemSelect} />
         </TabsContent>
 
         <TabsContent value="wall" className="pt-3">

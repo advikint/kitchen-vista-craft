@@ -79,7 +79,6 @@ const SideToolbar = () => {
 
   const handleToolSelect = (toolId: ToolMode) => {
     if (toolId === 'room') {
-      // For room tool, directly open the dialog
       setWallDialogOpen(true);
     } else {
       setToolMode(toolId);

@@ -21,7 +21,8 @@ const useTopViewHandlers = (
     currentToolMode,
     setSelectedItemId,
     isWallDialogOpen,
-    setWallDialogOpen
+    setWallDialogOpen,
+    gridSize
   } = useKitchenStore();
 
   const [startPoint, setStartPoint] = useState<Point | null>(null);
@@ -29,6 +30,7 @@ const useTopViewHandlers = (
   const lastTapRef = useRef<number>(0);
   const lastTouchDistance = useRef<number | null>(null);
   const isMobile = useIsMobile();
+  const [snapEnabled, setSnapEnabled] = useState(true);
 
   // Load template data using the custom hook
   const { loadTemplate } = useTemplateLoader();
@@ -42,7 +44,84 @@ const useTopViewHandlers = (
   // Cabinet and appliance placement handlers
   const { handleCabinetClick, handleApplianceClick } = useFurniturePlacement(loadTemplate);
 
-  const getPointerPosition = (event?: KonvaEventObject<any>) => {
+  // Helper function to check if a point is near a wall
+  const isNearWall = useCallback((point: Point): boolean => {
+    const { walls } = useKitchenStore.getState();
+    const threshold = 30; // Distance threshold in pixels
+    
+    return walls.some(wall => {
+      // Calculate distances using point-to-line algorithm
+      const A = point.x - wall.start.x;
+      const B = point.y - wall.start.y;
+      const C = wall.end.x - wall.start.x;
+      const D = wall.end.y - wall.start.y;
+      
+      const dot = A * C + B * D;
+      const lenSq = C * C + D * D;
+      
+      // If wall length is zero, use point-to-point distance
+      if (lenSq === 0) return Math.sqrt(A * A + B * B) <= threshold;
+      
+      let param = dot / lenSq;
+      param = Math.max(0, Math.min(1, param));
+      
+      const xx = wall.start.x + param * C;
+      const yy = wall.start.y + param * D;
+      
+      const distance = Math.sqrt((point.x - xx) * (point.x - xx) + (point.y - yy) * (point.y - yy));
+      return distance <= threshold;
+    });
+  }, []);
+
+  // Helper function to snap point to grid
+  const snapToGrid = useCallback((point: Point): Point => {
+    if (!snapEnabled) return point;
+    
+    return {
+      x: Math.round(point.x / gridSize) * gridSize,
+      y: Math.round(point.y / gridSize) * gridSize
+    };
+  }, [gridSize, snapEnabled]);
+
+  // Helper function to snap point to nearest wall
+  const snapToWall = useCallback((point: Point): Point => {
+    if (!snapEnabled) return point;
+    
+    const { walls } = useKitchenStore.getState();
+    const snapThreshold = 30;
+    let closestWallPoint: Point | null = null;
+    let minDistance = snapThreshold;
+    
+    walls.forEach(wall => {
+      // Calculate distances using point-to-line algorithm
+      const A = point.x - wall.start.x;
+      const B = point.y - wall.start.y;
+      const C = wall.end.x - wall.start.x;
+      const D = wall.end.y - wall.start.y;
+      
+      const dot = A * C + B * D;
+      const lenSq = C * C + D * D;
+      
+      if (lenSq === 0) return; // Skip zero-length walls
+      
+      let param = dot / lenSq;
+      param = Math.max(0, Math.min(1, param));
+      
+      const xx = wall.start.x + param * C;
+      const yy = wall.start.y + param * D;
+      
+      const distance = Math.sqrt((point.x - xx) * (point.x - xx) + (point.y - yy) * (point.y - yy));
+      
+      if (distance < minDistance) {
+        minDistance = distance;
+        closestWallPoint = { x: xx, y: yy };
+      }
+    });
+    
+    return closestWallPoint || point;
+  }, [snapEnabled]);
+
+  const getPointerPosition = useCallback((event?: KonvaEventObject<any>) => {
     let pos;
     
     if (event && isMobile) {
@@ -63,132 +142,164 @@ const useTopViewHandlers = (
       x: (pos.x - position.x) / scale,
       y: (pos.y - position.y) / scale
     };
-  };
+  }, [isMobile, position.x, position.y, scale, stageRef]);
 
-  const handleWheel = (e: KonvaEventObject<WheelEvent>) => {
+  const handleWheel = useCallback((e: KonvaEventObject<WheelEvent>) => {
     e.evt.preventDefault();
     
     const scaleBy = 1.1;
     const oldScale = scale;
     
     const pointer = stageRef.current.getPointerPosition();
+    if (!pointer) return;
+    
+    const mousePointTo = {
+      x: (pointer.x - position.x) / oldScale,
+      y: (pointer.y - position.y) / oldScale,
+    };
     
     const newScale = e.evt.deltaY < 0 ? oldScale * scaleBy : oldScale / scaleBy;
     
     const newPos = {
-      x: pointer.x - (pointer.x - position.x) * newScale / oldScale,
-      y: pointer.y - (pointer.y - position.y) * newScale / oldScale
+      x: pointer.x - mousePointTo.x * newScale,
+      y: pointer.y - mousePointTo.y * newScale,
     };
     
-    setPosition(newPos);
     setScale(newScale);
-  };
+    setPosition(newPos);
+  }, [scale, position, setScale, setPosition, stageRef]);
 
-  // Touch event handlers for pinch-to-zoom on mobile
-  const handleTouchStart = (e: KonvaEventObject<TouchEvent>) => {
-    const touches = e.evt.touches;
+  const handleStageClick = useCallback((e: KonvaEventObject<MouseEvent | TouchEvent>) => {
+    if (isDragging) return;
     
-    // Handle double-tap to reset zoom
-    if (touches.length === 1) {
+    // Detect double taps on mobile
+    if (isMobile && e.evt.type === 'touchend') {
       const now = Date.now();
-      const timeDiff = now - lastTapRef.current;
-      if (timeDiff < 300) { // 300ms between taps
-        // Reset zoom and position
+      if (now - lastTapRef.current < 300) {
+        // Double tap detected - reset view
         setScale(1);
         setPosition({ x: 0, y: 0 });
+        lastTapRef.current = 0;
+        return;
       }
       lastTapRef.current = now;
     }
     
-    // Initialize pinch zoom tracking
-    if (touches.length === 2) {
-      const dx = touches[0].clientX - touches[1].clientX;
-      const dy = touches[0].clientY - touches[1].clientY;
-      lastTouchDistance.current = Math.sqrt(dx * dx + dy * dy);
-    }
-  };
-
-  const handleTouchMove = (e: KonvaEventObject<TouchEvent>) => {
-    const touches = e.evt.touches;
+    // Get click position
+    const pointerPos = getPointerPosition(e);
+    if (!pointerPos) return;
     
-    // Handle pinch zoom
-    if (touches.length === 2 && lastTouchDistance.current !== null) {
-      e.evt.preventDefault();
-      
-      const dx = touches[0].clientX - touches[1].clientX;
-      const dy = touches[0].clientY - touches[1].clientY;
-      const touchDistance = Math.sqrt(dx * dx + dy * dy);
-      
-      // Calculate center point between two fingers
-      const centerX = (touches[0].clientX + touches[1].clientX) / 2;
-      const centerY = (touches[0].clientY + touches[1].clientY) / 2;
-      
-      // Calculate new scale
-      const scaleBy = 1.01;
-      const oldScale = scale;
-      let newScale;
-      
-      if (touchDistance > lastTouchDistance.current) {
-        newScale = oldScale * scaleBy;
-      } else {
-        newScale = oldScale / scaleBy;
+    // Check if clicking on stage background (not on an object)
+    if (e.target === e.currentTarget) {
+      // Clear selection when clicking on empty area
+      if (currentToolMode === 'select') {
+        setSelectedItemId(null);
+        return;
       }
       
-      // Limit scale
-      newScale = Math.max(0.5, Math.min(5, newScale));
+      const snappedPos = snapToGrid(pointerPos);
       
-      // Calculate new position
-      const newPos = {
-        x: centerX - (centerX - position.x) * newScale / oldScale,
-        y: centerY - (centerY - position.y) * newScale / oldScale
+      // Handle different tool modes
+      switch (currentToolMode) {
+        case 'wall':
+          handleWallClick(snappedPos);
+          break;
+          
+        case 'door':
+          // For doors, check if near a wall
+          if (isNearWall(pointerPos)) {
+            handleDoorClick(pointerPos);
+          } else {
+            toast.warning("Doors must be placed on a wall");
+          }
+          break;
+          
+        case 'window':
+          // For windows, check if near a wall
+          if (isNearWall(pointerPos)) {
+            handleWindowClick(pointerPos);
+          } else {
+            toast.warning("Windows must be placed on a wall");
+          }
+          break;
+          
+        case 'cabinet':
+          // For cabinets, try to snap to wall if close enough
+          const cabinetPos = isNearWall(pointerPos) ? snapToWall(pointerPos) : snapToGrid(pointerPos);
+          handleCabinetClick(cabinetPos);
+          break;
+          
+        case 'appliance':
+          const appliancePos = snapToGrid(pointerPos);
+          handleApplianceClick(appliancePos);
+          break;
+          
+        case 'room':
+          setWallDialogOpen(true);
+          break;
+          
+        default:
+          break;
+      }
+    }
+  }, [
+    currentToolMode, isDragging, isMobile, handleWallClick, handleDoorClick, handleWindowClick,
+    handleCabinetClick, handleApplianceClick, getPointerPosition, snapToGrid, snapToWall,
+    isNearWall, setSelectedItemId, setWallDialogOpen, setPosition, setScale
+  ]);
+
+  // Handle touch events for mobile pinch-to-zoom
+  const handleTouchStart = useCallback((e: KonvaEventObject<TouchEvent>) => {
+    if (e.evt.touches.length === 2) {
+      const touch1 = e.evt.touches[0];
+      const touch2 = e.evt.touches[1];
+      
+      const dx = touch1.clientX - touch2.clientX;
+      const dy = touch1.clientY - touch2.clientY;
+      
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      lastTouchDistance.current = distance;
+    }
+  }, []);
+
+  const handleTouchMove = useCallback((e: KonvaEventObject<TouchEvent>) => {
+    if (e.evt.touches.length === 2 && lastTouchDistance.current !== null) {
+      const touch1 = e.evt.touches[0];
+      const touch2 = e.evt.touches[1];
+      
+      const dx = touch1.clientX - touch2.clientX;
+      const dy = touch1.clientY - touch2.clientY;
+      
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      
+      const midPoint = {
+        x: (touch1.clientX + touch2.clientX) / 2,
+        y: (touch1.clientY + touch2.clientY) / 2,
       };
       
-      setPosition(newPos);
-      setScale(newScale);
+      const oldScale = scale;
+      const newScale = oldScale * (distance / lastTouchDistance.current!);
       
-      lastTouchDistance.current = touchDistance;
+      const mousePointTo = {
+        x: (midPoint.x - position.x) / oldScale,
+        y: (midPoint.y - position.y) / oldScale,
+      };
+      
+      const newPos = {
+        x: midPoint.x - mousePointTo.x * newScale,
+        y: midPoint.y - mousePointTo.y * newScale,
+      };
+      
+      setScale(newScale);
+      setPosition(newPos);
+      
+      lastTouchDistance.current = distance;
     }
-  };
+  }, [scale, position, setScale, setPosition]);
 
-  const handleTouchEnd = () => {
+  const handleTouchEnd = useCallback(() => {
     lastTouchDistance.current = null;
-  };
-
-  const handleStageClick = useCallback((e: KonvaEventObject<MouseEvent | TouchEvent>) => {
-    // Skip handling during pinch-zoom operations
-    if (lastTouchDistance.current !== null) return;
-    
-    const pos = getPointerPosition(e as any);
-    if (!pos) return;
-
-    const clickedOnEmptySpace = e.target === e.currentTarget;
-    
-    if (clickedOnEmptySpace && currentToolMode === 'select') {
-      setSelectedItemId(null);
-      return;
-    }
-
-    switch (currentToolMode) {
-      case 'room':
-        setWallDialogOpen(true);
-        break;
-      case 'wall':
-        handleWallClick(pos);
-        break;
-      case 'door':
-        handleDoorClick(pos);
-        break;
-      case 'window':
-        handleWindowClick(pos);
-        break;
-      case 'cabinet':
-        handleCabinetClick(pos);
-        break;
-      case 'appliance':
-        handleApplianceClick(pos);
-        break;
-    }
-  }, [currentToolMode, isDragging, scale, position, startPoint]);
+  }, []);
 
   return {
     startPoint,
@@ -197,6 +308,8 @@ const useTopViewHandlers = (
     handleTouchStart,
     handleTouchMove,
     handleTouchEnd,
+    snapEnabled,
+    setSnapEnabled
   };
 };
 

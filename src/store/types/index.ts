@@ -1,6 +1,6 @@
 
-// Basic types
-export type ViewMode = '2d-top' | '2d-elevation' | '3d';
+export type ViewMode = '2d-top' | '3d' | '2d-elevation';
+
 export type ToolMode = 'select' | 'room' | 'wall' | 'door' | 'window' | 'cabinet' | 'appliance';
 
 export interface Point {
@@ -8,10 +8,14 @@ export interface Point {
   y: number;
 }
 
+export interface Size {
+  width: number;
+  height: number;
+}
+
 export interface Room {
   width: number;
   height: number;
-  roomHeight?: number; // Height of the room in cm
 }
 
 export interface Wall {
@@ -19,9 +23,11 @@ export interface Wall {
   start: Point;
   end: Point;
   height: number;
-  label?: string; // Wall label (e.g., "Wall A")
-  thickness?: number; // Wall thickness in cm, default 10cm (100mm)
+  thickness: number;
+  color: string;
 }
+
+export type DoorType = 'standard' | 'sliding' | 'pocket' | 'folding';
 
 export interface Door {
   id: string;
@@ -29,8 +35,11 @@ export interface Door {
   position: number; // Position along the wall (0-1)
   width: number;
   height: number;
-  type?: 'standard' | 'sliding' | 'folding' | 'pocket';
+  type: DoorType;
+  color: string;
 }
+
+export type WindowType = 'standard' | 'sliding' | 'fixed' | 'louvered';
 
 export interface Window {
   id: string;
@@ -39,27 +48,20 @@ export interface Window {
   width: number;
   height: number;
   sillHeight: number;
-  type?: 'standard' | 'sliding' | 'louvered' | 'fixed';
+  type: WindowType;
 }
 
-// Cabinet types
-export type CabinetType = 'base' | 'wall' | 'tall' | 'corner' | 'island' | 'loft' | 'specialty';
+export type CabinetType = 'base' | 'wall' | 'tall' | 'specialty';
 
 export type CabinetCategory = 
-  // Base cabinets
-  'drawer-base' | 'sink-base' | 'corner-base' | 'blind-corner-base' | 'cooktop-base' | 'appliance-base' | 'standard-base' |
-  // Wall cabinets
-  'standard-wall' | 'open-shelf' | 'microwave-wall' | 'corner-wall' | 'blind-corner-wall' | 'glass-wall' | 
-  // Tall cabinets
-  'pantry-tall' | 'oven-tall' | 'fridge-tall' | 'broom-tall' | 'appliance-tall' |
-  // Specialty cabinets
-  'magic-corner' | 'pullout' | 'carousel' | 'open' | 'wine-rack' |
-  // Added these to fix type errors
-  'drawer' | 'shutter';
+  | 'standard-base' | 'sink-base' | 'drawer-base' | 'corner-base' | 'cooktop-base' | 'blind-corner-base' | 'appliance-base'
+  | 'standard-wall' | 'open-shelf' | 'microwave-wall' | 'corner-wall' | 'glass-wall' | 'blind-corner-wall'
+  | 'pantry-tall' | 'oven-tall' | 'fridge-tall' | 'broom-tall' | 'appliance-tall'
+  | 'magic-corner' | 'pullout' | 'carousel' | 'wine-rack';
 
-export type CabinetFrontType = 'shutter' | 'drawer' | 'open' | 'glass' | 'flap-up' | 'bi-fold';
+export type CabinetFrontType = 'shutter' | 'drawer' | 'glass' | 'open';
 
-export type CabinetFinish = 'matte' | 'gloss' | 'textured' | 'woodgrain' | 'membrane' | 'pvc' | 'acrylic' | 'laminate' | 'veneer' | 'solid';
+export type CabinetFinish = 'laminate' | 'veneer' | 'acrylic' | 'matte' | 'gloss';
 
 export interface Cabinet {
   id: string;
@@ -74,13 +76,11 @@ export interface Cabinet {
   rotation: number;
   material: string;
   color: string;
-  wallId?: string; // If attached to a wall
-  floorHeight?: number; // Height from floor in cm (for wall cabinets)
+  drawers?: number;  // Number of drawers (for drawer cabinets)
+  special?: string;  // Special drawer type (mixed, file, deep, etc.)
 }
 
-export type ApplianceType = 
-  'sink' | 'stove' | 'hob' | 'oven' | 'microwave' | 'fridge' | 'dishwasher' | 
-  'hood' | 'chimney' | 'mixer-grinder' | 'water-purifier' | 'washing-machine';
+export type ApplianceType = 'sink' | 'stove' | 'fridge' | 'dishwasher' | 'oven' | 'microwave' | 'hood';
 
 export interface Appliance {
   id: string;
@@ -90,8 +90,25 @@ export interface Appliance {
   height: number;
   depth: number;
   rotation: number;
-  model: string;
   brand?: string;
+  model?: string;
   color?: string;
-  wallId?: string; // If attached to a wall
+}
+
+// Utility types for better type safety in functions
+export interface CabinetDimensions {
+  width?: number;
+  height?: number;
+  depth?: number;
+}
+
+export interface CabinetProperties {
+  type?: CabinetType;
+  category?: CabinetCategory;
+  frontType?: CabinetFrontType;
+  finish?: CabinetFinish;
+  material?: string;
+  color?: string;
+  drawers?: number;
+  special?: string;
 }
