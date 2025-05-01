@@ -2,6 +2,7 @@
 import { useKitchenStore } from "@/store/kitchenStore";
 import { Group, Rect, Line, Text } from "react-konva";
 import useItemInteractions from "./hooks/useItemInteractions";
+import { KonvaEventObject } from "konva/lib/Node";
 
 interface WindowsLayerProps {
   showDimensions: boolean;
@@ -9,7 +10,7 @@ interface WindowsLayerProps {
 
 const WindowsLayer = ({ showDimensions }: WindowsLayerProps) => {
   const { windows, walls, selectedItemId } = useKitchenStore();
-  const { handleItemSelect, handleItemDrag } = useItemInteractions();
+  const { handleItemSelect } = useItemInteractions();
   
   return (
     <>
@@ -35,14 +36,8 @@ const WindowsLayer = ({ showDimensions }: WindowsLayerProps) => {
             x={windowPosition.x}
             y={windowPosition.y}
             rotation={wallAngle}
-            draggable
-            onDragMove={(e) => {
-              handleItemDrag(window.id, {
-                x: e.target.x(),
-                y: e.target.y()
-              });
-            }}
-            onClick={(e) => handleItemSelect(window.id, e)}
+            onClick={(e: KonvaEventObject<MouseEvent>) => handleItemSelect(window.id, e)}
+            onTap={(e: KonvaEventObject<MouseEvent>) => handleItemSelect(window.id, e)}
           >
             {/* Window frame */}
             <Rect
@@ -53,6 +48,17 @@ const WindowsLayer = ({ showDimensions }: WindowsLayerProps) => {
               offsetY={0}
               stroke="#000"
               strokeWidth={1}
+            />
+            
+            {/* Window glass */}
+            <Rect
+              width={window.width - 6}
+              height={9}
+              fill="#e0f2fe"
+              stroke="#fff"
+              strokeWidth={1}
+              offsetX={(window.width - 6) / 2}
+              offsetY={0}
             />
             
             {/* Window panes */}

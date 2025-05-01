@@ -15,7 +15,7 @@ export const useOpeningPlacement = (loadTemplate: (type: string) => any) => {
     // Find the closest wall to place door on
     const closestWall = findClosestWallToPoint(pos);
     if (!closestWall) {
-      toast.error("No wall found to place door on");
+      toast.error("No wall found to place door on. Click closer to a wall.");
       return;
     }
 
@@ -32,6 +32,7 @@ export const useOpeningPlacement = (loadTemplate: (type: string) => any) => {
     // Calculate wall angle for correct orientation
     const wallAngle = calculateWallAngle(closestWall);
 
+    // Add the door
     addDoor({
       wallId: closestWall.id,
       position,
@@ -50,7 +51,7 @@ export const useOpeningPlacement = (loadTemplate: (type: string) => any) => {
     // Find the closest wall to place window on
     const closestWall = findClosestWallToPoint(pos);
     if (!closestWall) {
-      toast.error("No wall found to place window on");
+      toast.error("No wall found to place window on. Click closer to a wall.");
       return;
     }
 
@@ -64,6 +65,7 @@ export const useOpeningPlacement = (loadTemplate: (type: string) => any) => {
     // Calculate position along the wall (0-1)
     const position = calculatePositionAlongWall(closestWall, pos);
 
+    // Add the window
     addWindow({
       wallId: closestWall.id,
       position,
@@ -86,7 +88,7 @@ export const useOpeningPlacement = (loadTemplate: (type: string) => any) => {
   };
 
   /**
-   * Find the closest wall to a point
+   * Find the closest wall to a point - improved to be more sensitive
    */
   const findClosestWallToPoint = (point: Point) => {
     if (walls.length === 0) return null;
@@ -102,8 +104,8 @@ export const useOpeningPlacement = (loadTemplate: (type: string) => any) => {
       }
     });
 
-    // Only return the wall if it's close enough (within 50 units)
-    return minDistance <= 50 ? closestWall : null;
+    // Increased distance threshold to make it easier to place on walls
+    return minDistance <= 80 ? closestWall : null;
   };
 
   /**
@@ -132,7 +134,7 @@ export const useOpeningPlacement = (loadTemplate: (type: string) => any) => {
   /**
    * Calculate position along a wall (0-1)
    */
-  const calculatePositionAlongWall = (wall: any, point: Point) => {
+  const calculatePositionAlongWall = (wall: Wall, point: Point) => {
     const { start, end } = wall;
     
     // Calculate vector from start to end

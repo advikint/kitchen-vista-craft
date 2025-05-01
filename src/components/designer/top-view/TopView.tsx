@@ -79,7 +79,7 @@ const TopView = () => {
           <CabinetsLayer showDimensions={showDimensions} />
           <AppliancesLayer showDimensions={showDimensions} />
           
-          {currentToolMode === ('wall' as ToolMode) && startPoint && stageRef.current && (
+          {currentToolMode === 'wall' && startPoint && stageRef.current && (
             <Line
               points={[
                 startPoint.x,
@@ -95,9 +95,20 @@ const TopView = () => {
         </Layer>
       </Stage>
 
+      {/* Helper messages based on current tool */}
+      <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 bg-white px-3 py-1.5 rounded-full text-xs shadow-md opacity-80 pointer-events-none">
+        {currentToolMode === 'select' && "Click and drag to move objects. Select items to edit properties."}
+        {currentToolMode === 'wall' && "Click to start a wall, click again to end."}
+        {currentToolMode === 'door' && "Click near a wall to place a door."}
+        {currentToolMode === 'window' && "Click near a wall to place a window."}
+        {currentToolMode === 'cabinet' && "Click to place a cabinet."}
+        {currentToolMode === 'appliance' && "Click to place an appliance."}
+        {currentToolMode === 'room' && "Define room dimensions in the dialog."}
+      </div>
+
       {/* Mobile help message */}
       {isMobile && (
-        <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 bg-white px-3 py-1.5 rounded-full text-xs shadow-md opacity-70 pointer-events-none">
+        <div className="absolute bottom-28 left-1/2 transform -translate-x-1/2 bg-white px-3 py-1.5 rounded-full text-xs shadow-md opacity-70 pointer-events-none">
           Pinch to zoom, double-tap to reset
         </div>
       )}

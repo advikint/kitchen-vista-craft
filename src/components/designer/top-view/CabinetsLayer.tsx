@@ -1,3 +1,4 @@
+
 import { useKitchenStore, Cabinet } from "@/store/kitchenStore";
 import { Group, Rect, Line, Circle, Text } from "react-konva";
 import useItemInteractions from "./hooks/useItemInteractions";
@@ -8,7 +9,7 @@ interface CabinetsLayerProps {
 
 const CabinetsLayer = ({ showDimensions }: CabinetsLayerProps) => {
   const { cabinets, selectedItemId } = useKitchenStore();
-  const { handleItemSelect, handleItemDrag } = useItemInteractions();
+  const { handleItemSelect, handleItemDrag, handleItemDragEnd } = useItemInteractions();
   
   const getCabinetColor = (cabinet: Cabinet) => {
     if (cabinet.color === 'white') return "#f9fafb";
@@ -32,6 +33,12 @@ const CabinetsLayer = ({ showDimensions }: CabinetsLayerProps) => {
               x: e.target.x(),
               y: e.target.y()
             });
+          }}
+          onDragEnd={(e) => {
+            handleItemDragEnd(cabinet.id, {
+              x: e.target.x(),
+              y: e.target.y()
+            }, "cabinet");
           }}
           onClick={(e) => handleItemSelect(cabinet.id, e)}
         >

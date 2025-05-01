@@ -30,7 +30,7 @@ const useItemInteractions = () => {
     isDragging.current = true;
   };
 
-  // Handle finishing a drag operation
+  // Handle finishing a drag operation - we're fixing this to maintain position
   const handleItemDragEnd = (id: string, newPosition: { x: number, y: number }, itemType: "cabinet" | "appliance") => {
     if (isDragging.current) {
       if (itemType === "cabinet") {
@@ -42,17 +42,27 @@ const useItemInteractions = () => {
     }
   };
 
-  // Update cabinet position - function that was missing
+  // Update cabinet position - fixing to maintain position after drag
   const updateCabinetPosition = (id: string, position: { x: number, y: number }) => {
     updateCabinet(id, { position });
   };
 
-  // Update appliance position - function that was missing
+  // Update appliance position
   const updateAppliancePosition = (id: string, position: { x: number, y: number }) => {
     updateAppliance(id, { position });
   };
 
-  // Clone a cabinet - function that was missing
+  // Rotate cabinet by 90 degrees
+  const rotateCabinet = (id: string) => {
+    const cabinets = useKitchenStore.getState().cabinets;
+    const cabinet = cabinets.find(c => c.id === id);
+    if (cabinet) {
+      const newRotation = (cabinet.rotation + 90) % 360;
+      updateCabinet(id, { rotation: newRotation });
+    }
+  };
+
+  // Clone a cabinet
   const cloneCabinet = (id: string, newId: string, offset: { x: number, y: number }) => {
     const cabinets = useKitchenStore.getState().cabinets;
     const original = cabinets.find(c => c.id === id);
@@ -72,7 +82,7 @@ const useItemInteractions = () => {
     return newId;
   };
 
-  // Clone an appliance - function that was missing
+  // Clone an appliance
   const cloneAppliance = (id: string, newId: string, offset: { x: number, y: number }) => {
     const appliances = useKitchenStore.getState().appliances;
     const original = appliances.find(a => a.id === id);
@@ -112,6 +122,7 @@ const useItemInteractions = () => {
     updateAppliancePosition,
     cloneCabinet,
     cloneAppliance,
+    rotateCabinet,
     selectedItemId
   };
 };

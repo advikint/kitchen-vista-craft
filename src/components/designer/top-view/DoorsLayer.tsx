@@ -1,7 +1,8 @@
 
 import { useKitchenStore } from "@/store/kitchenStore";
-import { Group, Rect, Line, Text } from "react-konva";
+import { Group, Rect, Line, Text, Arc } from "react-konva";
 import useItemInteractions from "./hooks/useItemInteractions";
+import { KonvaEventObject } from "konva/lib/Node";
 
 interface DoorsLayerProps {
   showDimensions: boolean;
@@ -9,7 +10,7 @@ interface DoorsLayerProps {
 
 const DoorsLayer = ({ showDimensions }: DoorsLayerProps) => {
   const { doors, walls, selectedItemId } = useKitchenStore();
-  const { handleItemSelect, handleItemDrag } = useItemInteractions();
+  const { handleItemSelect } = useItemInteractions();
   
   return (
     <>
@@ -35,14 +36,8 @@ const DoorsLayer = ({ showDimensions }: DoorsLayerProps) => {
             x={doorPosition.x}
             y={doorPosition.y}
             rotation={wallAngle}
-            draggable
-            onDragMove={(e) => {
-              handleItemDrag(door.id, {
-                x: e.target.x(),
-                y: e.target.y()
-              });
-            }}
-            onClick={(e) => handleItemSelect(door.id, e)}
+            onClick={(e: KonvaEventObject<MouseEvent>) => handleItemSelect(door.id, e)}
+            onTap={(e: KonvaEventObject<MouseEvent>) => handleItemSelect(door.id, e)}
           >
             {/* Door frame */}
             <Rect
@@ -55,15 +50,18 @@ const DoorsLayer = ({ showDimensions }: DoorsLayerProps) => {
               strokeWidth={1}
             />
             
-            {/* Door opening arc - shows which way door opens */}
-            <Line
-              points={[
-                0, 0,
-                50, 50
-              ]}
+            {/* Door opening arc - improved to be an actual arc */}
+            <Arc
+              x={0}
+              y={0}
+              innerRadius={0}
+              outerRadius={50}
+              angle={90}
+              fill=""
               stroke={selectedItemId === door.id ? "#3b82f6" : "#a1a1aa"}
               strokeWidth={2}
               dash={[5, 2]}
+              rotation={0}
             />
             
             {/* Door panel */}
