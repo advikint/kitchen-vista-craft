@@ -11,7 +11,7 @@ interface CabinetsLayerProps {
 
 const CabinetsLayer = ({ showDimensions }: CabinetsLayerProps) => {
   const { cabinets, selectedItemId } = useKitchenStore();
-  const { handleItemSelect, handleDragStart, handleDragMove, handleDragEnd } = useItemInteractions();
+  const { handleItemSelect, handleItemDrag, handleItemDragEnd } = useItemInteractions();
   
   // Determine cabinet fill color based on type and selection state
   const getCabinetFill = (cabinet: any, isSelected: boolean) => {
@@ -64,9 +64,9 @@ const CabinetsLayer = ({ showDimensions }: CabinetsLayerProps) => {
           draggable
           onClick={(e: KonvaEventObject<MouseEvent>) => handleItemSelect(cabinet.id, e)}
           onTap={(e: KonvaEventObject<MouseEvent>) => handleItemSelect(cabinet.id, e)}
-          onDragStart={(e) => handleDragStart(cabinet.id, e)}
-          onDragMove={(e) => handleDragMove(cabinet.id, e)}
-          onDragEnd={(e) => handleDragEnd(cabinet.id, e)}
+          onDragStart={() => {}}
+          onDragMove={(e) => handleItemDrag(cabinet.id, e.target.position())}
+          onDragEnd={(e) => handleItemDragEnd(cabinet.id, e.target.position(), "cabinet")}
         >
           <Rect
             width={cabinet.width}

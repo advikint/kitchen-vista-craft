@@ -1,4 +1,3 @@
-
 import { useEffect, useRef } from "react";
 import { useKitchenStore, Wall, Cabinet, Appliance, Door, Window } from "@/store/kitchenStore";
 import { useThree } from "@react-three/fiber";
@@ -300,7 +299,7 @@ const ThreeDView = () => {
     }
     
     // Add handles
-    if (cabinet.category === 'drawer' || cabinet.category === 'shutter') {
+    if (cabinet.frontType === 'drawer' || cabinet.frontType === 'shutter') {
       const handleGeometry = new THREE.BoxGeometry(20, 2, 2);
       const handleMaterial = new THREE.MeshStandardMaterial({ 
         color: 0x6b7280,
@@ -308,7 +307,7 @@ const ThreeDView = () => {
         roughness: 0.2
       });
       
-      if (cabinet.category === 'drawer') {
+      if (cabinet.frontType === 'drawer') {
         // Add handles for each drawer
         const drawers = 3;
         const drawerHeight = cabinet.height / drawers;

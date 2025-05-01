@@ -1,6 +1,9 @@
 
 import { useKitchenStore } from "@/store/kitchenStore";
 import CabinetPropertiesPanel from "./CabinetPropertiesPanel";
+import DoorPropertiesPanel from "./DoorPropertiesPanel";
+import WindowPropertiesPanel from "./WindowPropertiesPanel";
+import AppliancePropertiesPanel from "./AppliancePropertiesPanel";
 
 const PropertiesPanel = () => {
   const { selectedItemId, cabinets, doors, windows, appliances } = useKitchenStore();
@@ -29,38 +32,15 @@ const PropertiesPanel = () => {
   }
   
   if (selectedDoor) {
-    return (
-      <div className="p-4">
-        <h2 className="text-lg font-semibold mb-4">Door Properties</h2>
-        <p>Door Width: {selectedDoor.width}cm</p>
-        <p>Position on Wall: {Math.round(selectedDoor.position * 100)}%</p>
-        <p>Type: {selectedDoor.type || 'Standard'}</p>
-      </div>
-    );
+    return <DoorPropertiesPanel door={selectedDoor} />;
   }
   
   if (selectedWindow) {
-    return (
-      <div className="p-4">
-        <h2 className="text-lg font-semibold mb-4">Window Properties</h2>
-        <p>Window Width: {selectedWindow.width}cm</p>
-        <p>Window Height: {selectedWindow.height}cm</p>
-        <p>Position on Wall: {Math.round(selectedWindow.position * 100)}%</p>
-        <p>Sill Height: {selectedWindow.sillHeight}cm</p>
-      </div>
-    );
+    return <WindowPropertiesPanel window={selectedWindow} />;
   }
   
   if (selectedAppliance) {
-    return (
-      <div className="p-4">
-        <h2 className="text-lg font-semibold mb-4">Appliance Properties</h2>
-        <p>Type: {selectedAppliance.type}</p>
-        <p>Width: {selectedAppliance.width}cm</p>
-        <p>Height: {selectedAppliance.height}cm</p>
-        <p>Depth: {selectedAppliance.depth}cm</p>
-      </div>
-    );
+    return <AppliancePropertiesPanel appliance={selectedAppliance} />;
   }
 
   return (

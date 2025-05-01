@@ -43,5 +43,42 @@ export const useKitchenStore = create<KitchenStore>()((...a) => ({
   generateBOQ: () => {
     const state = useKitchenStore.getState();
     return generateBOQ(state.cabinets, state.appliances);
+  },
+  
+  // Implement missing cabinet methods
+  updateCabinet: (cabinetOrId, updates) => {
+    const state = useKitchenStore.getState();
+    if (typeof cabinetOrId === 'string') {
+      state.updateCabinetProperties(cabinetOrId, updates || {});
+    } else {
+      state.updateCabinetProperties(cabinetOrId.id, updates || {});
+    }
+  },
+  
+  removeCabinet: (id) => {
+    const state = useKitchenStore.getState();
+    state.deleteCabinet(id);
+  },
+  
+  // Cabinet dimension methods
+  updateBaseCabinetDimensions: (height, depth) => {
+    useKitchenStore.setState({
+      baseCabinetHeight: height,
+      baseCabinetDepth: depth
+    });
+  },
+  
+  updateWallCabinetDimensions: (height, depth) => {
+    useKitchenStore.setState({
+      wallCabinetHeight: height,
+      wallCabinetDepth: depth
+    });
+  },
+  
+  updateTallCabinetDimensions: (height, depth) => {
+    useKitchenStore.setState({
+      tallCabinetHeight: height,
+      tallCabinetDepth: depth
+    });
   }
 }));

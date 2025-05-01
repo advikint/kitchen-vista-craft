@@ -1,4 +1,3 @@
-
 export type ViewMode = '2d-top' | '3d' | '2d-elevation';
 
 export type ToolMode = 'select' | 'room' | 'wall' | 'door' | 'window' | 'cabinet' | 'appliance';
@@ -25,6 +24,7 @@ export interface Wall {
   height: number;
   thickness: number;
   color: string;
+  label?: string; // Added label property
 }
 
 export type DoorType = 'standard' | 'sliding' | 'pocket' | 'folding';

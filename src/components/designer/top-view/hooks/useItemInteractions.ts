@@ -30,7 +30,7 @@ const useItemInteractions = () => {
     isDragging.current = true;
   };
 
-  // Handle finishing a drag operation - we're fixing this to maintain position
+  // Handle finishing a drag operation
   const handleItemDragEnd = (id: string, newPosition: { x: number, y: number }, itemType: "cabinet" | "appliance") => {
     if (isDragging.current) {
       if (itemType === "cabinet") {
@@ -42,7 +42,7 @@ const useItemInteractions = () => {
     }
   };
 
-  // Update cabinet position - fixing to maintain position after drag
+  // Update cabinet position
   const updateCabinetPosition = (id: string, position: { x: number, y: number }) => {
     updateCabinet(id, { position });
   };
