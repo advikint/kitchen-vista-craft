@@ -22,15 +22,33 @@ export const useOpeningPlacement = (loadTemplate: (type: string) => any) => {
     // Get the template door data
     const doorTemplate = loadTemplate('door');
     if (!doorTemplate) {
-      toast.error("Door template not found");
+      // Use default values if no template found
+      const defaultDoor = {
+        type: 'standard',
+        width: 80,
+        height: 200,
+        color: '#a1a1aa'
+      };
+
+      // Calculate position along the wall (0-1)
+      const position = calculatePositionAlongWall(closestWall, pos);
+
+      // Add the door with default values
+      addDoor({
+        wallId: closestWall.id,
+        position,
+        width: defaultDoor.width,
+        height: defaultDoor.height,
+        type: defaultDoor.type,
+        color: defaultDoor.color
+      });
+
+      toast.success("Door added");
       return;
     }
 
     // Calculate position along the wall (0-1)
     const position = calculatePositionAlongWall(closestWall, pos);
-    
-    // Calculate wall angle for correct orientation
-    const wallAngle = calculateWallAngle(closestWall);
 
     // Add the door
     addDoor({
@@ -38,7 +56,8 @@ export const useOpeningPlacement = (loadTemplate: (type: string) => any) => {
       position,
       width: doorTemplate.width || 80,
       height: doorTemplate.height || 200,
-      type: doorTemplate.type || 'standard'
+      type: doorTemplate.type || 'standard',
+      color: '#a1a1aa'
     });
 
     toast.success("Door added");
@@ -58,7 +77,28 @@ export const useOpeningPlacement = (loadTemplate: (type: string) => any) => {
     // Get the template window data
     const windowTemplate = loadTemplate('window');
     if (!windowTemplate) {
-      toast.error("Window template not found");
+      // Use default values if no template found
+      const defaultWindow = {
+        type: 'standard',
+        width: 100,
+        height: 120,
+        sillHeight: 90
+      };
+
+      // Calculate position along the wall (0-1)
+      const position = calculatePositionAlongWall(closestWall, pos);
+
+      // Add the window with default values
+      addWindow({
+        wallId: closestWall.id,
+        position,
+        width: defaultWindow.width,
+        height: defaultWindow.height,
+        sillHeight: defaultWindow.sillHeight,
+        type: defaultWindow.type
+      });
+
+      toast.success("Window added");
       return;
     }
 

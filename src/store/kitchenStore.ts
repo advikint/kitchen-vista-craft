@@ -25,6 +25,31 @@ export const useKitchenStore = create<KitchenStore>()((...a) => ({
   // Point inside cabinet checker
   isPointInsideCabinet,
   
+  // Cabinet overlap checker
+  checkCabinetOverlap: (cabinet) => {
+    const state = useKitchenStore.getState();
+    const { cabinets } = state;
+    
+    // Check if this cabinet overlaps with any existing cabinet
+    for (const existingCabinet of cabinets) {
+      if (existingCabinet.id === cabinet.id) continue;
+      
+      // Simple bounding box check
+      const isOverlapping = (
+        cabinet.position.x < existingCabinet.position.x + existingCabinet.width &&
+        cabinet.position.x + cabinet.width > existingCabinet.position.x &&
+        cabinet.position.y < existingCabinet.position.y + existingCabinet.depth &&
+        cabinet.position.y + cabinet.depth > existingCabinet.position.y
+      );
+      
+      if (isOverlapping) {
+        return existingCabinet.position;
+      }
+    }
+    
+    return null;
+  },
+  
   // Reset project function
   resetProject: () => {
     const state = useKitchenStore.getState();

@@ -9,6 +9,8 @@ const useItemInteractions = () => {
   const { 
     selectedItemId, 
     setSelectedItemId,
+    cabinets,
+    appliances,
     updateCabinet,
     updateAppliance,
     addCabinet,
@@ -54,7 +56,6 @@ const useItemInteractions = () => {
 
   // Rotate cabinet by 90 degrees
   const rotateCabinet = (id: string) => {
-    const cabinets = useKitchenStore.getState().cabinets;
     const cabinet = cabinets.find(c => c.id === id);
     if (cabinet) {
       const newRotation = (cabinet.rotation + 90) % 360;
@@ -64,7 +65,6 @@ const useItemInteractions = () => {
 
   // Clone a cabinet
   const cloneCabinet = (id: string, newId: string, offset: { x: number, y: number }) => {
-    const cabinets = useKitchenStore.getState().cabinets;
     const original = cabinets.find(c => c.id === id);
     
     if (original) {
@@ -84,7 +84,6 @@ const useItemInteractions = () => {
 
   // Clone an appliance
   const cloneAppliance = (id: string, newId: string, offset: { x: number, y: number }) => {
-    const appliances = useKitchenStore.getState().appliances;
     const original = appliances.find(a => a.id === id);
     
     if (original) {
