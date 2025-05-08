@@ -33,7 +33,9 @@ const TopView = () => {
     handleWheel,
     handleTouchStart,
     handleTouchMove,
-    handleTouchEnd
+    handleTouchEnd,
+    snapEnabled,
+    setSnapEnabled
   } = useTopViewHandlers(stageRef, scale, position, setScale, setPosition, isDragging);
 
   // Update stage size when window resizes
@@ -112,6 +114,19 @@ const TopView = () => {
           Pinch to zoom, double-tap to reset
         </div>
       )}
+
+      {/* Snap toggle */}
+      <div className="absolute top-4 right-4 bg-white rounded-md shadow-md p-2 opacity-90">
+        <label className="flex items-center text-xs cursor-pointer">
+          <input
+            type="checkbox"
+            checked={snapEnabled}
+            onChange={() => setSnapEnabled(!snapEnabled)}
+            className="mr-2"
+          />
+          Snap to grid/walls
+        </label>
+      </div>
     </div>
   );
 };
