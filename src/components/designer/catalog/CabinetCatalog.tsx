@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { 
   Tabs, 
@@ -6,14 +5,13 @@ import {
   TabsList, 
   TabsTrigger,
 } from "@/components/ui/tabs";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { PackageOpen, Layers } from "lucide-react";
+import { PackageOpen } from "lucide-react";
 import { CatalogItem } from "./CatalogItem";
 import CabinetDrawerTypes from "./CabinetDrawerTypes";
 
-interface CabinetCatalogProps {
+export interface CabinetCatalogProps {
   searchTerm: string;
-  onItemSelect?: (itemType: string, templateData: any) => void;
+  onItemSelect: (itemType: string, templateData: any) => void;
 }
 
 export const CabinetCatalog = ({ searchTerm, onItemSelect }: CabinetCatalogProps) => {
@@ -138,3 +136,6 @@ export const CabinetCatalog = ({ searchTerm, onItemSelect }: CabinetCatalogProps
     </div>
   );
 };
+
+// Add default export for backward compatibility
+export default CabinetCatalog;

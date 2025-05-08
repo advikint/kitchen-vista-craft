@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls, PerspectiveCamera, Environment, SoftShadows, ContactShadows } from "@react-three/drei";
@@ -53,51 +52,30 @@ const RoomDesigner = () => {
       
       {viewMode === '3d' && (
         <Canvas 
-          shadows 
-          gl={{ antialias: true, alpha: false }}
-          dpr={[1, isMobile ? 1.5 : 2]} // Adjust DPR based on mobile for performance
+          shadows={false} // Disable shadows for better performance
+          gl={{ antialias: false, alpha: false, powerPreference: 'low-power' }}
+          dpr={[0.5, isMobile ? 1 : 1.5]} // Reduce DPR for better performance
           camera={{ position: [cameraDistance, cameraDistance, cameraDistance], fov: isMobile ? 60 : 50 }}
           style={{ background: '#f8fafc' }}
           onCreated={({ gl }) => {
-            if (isMobile) {
-              // Optimize for mobile
-              gl.setPixelRatio(window.devicePixelRatio);
-              gl.setClearColor('#f8fafc', 1);
-            }
+            // Optimize WebGL renderer
+            gl.setPixelRatio(Math.min(1.5, window.devicePixelRatio));
+            gl.setClearColor('#f8fafc', 1);
           }}
+          performance={{ min: 0.5 }} // Performance optimization
         >
           <color attach="background" args={['#f8fafc']} />
-          <fog attach="fog" args={['#f8fafc', 100, 500]} />
           
           <ambientLight intensity={0.8} />
           <directionalLight 
             position={[10, 10, 10]} 
             intensity={1.0} 
-            castShadow 
-            shadow-mapSize={isMobile ? [1024, 1024] : [2048, 2048]}
-            shadow-camera-far={500}
-            shadow-camera-near={0.5}
-          />
-          <directionalLight 
-            position={[-10, 10, -10]} 
-            intensity={0.5} 
-          />
-          
-          <SoftShadows size={isMobile ? 15 : 25} samples={isMobile ? 15 : 25} focus={0.5} />
-          <ContactShadows 
-            position={[0, -0.1, 0]} 
-            opacity={0.4} 
-            scale={20} 
-            blur={2} 
-            far={4} 
-            resolution={isMobile ? 512 : 1024}
-            color="#000000"
           />
           
           <PerspectiveCamera 
             makeDefault 
             position={[cameraDistance, cameraDistance, cameraDistance]} 
-            fov={isMobile ? 60 : 45} 
+            fov={isMobile ? 60 : 50} 
           />
           <OrbitControls 
             ref={controlsRef}
@@ -110,15 +88,9 @@ const RoomDesigner = () => {
             maxDistance={cameraDistance * 3}
             minDistance={20}
             zoomSpeed={1.5}
-            touches={{
-              ONE: 1,
-              TWO: 3
-            }}
           />
           
           <ThreeDView />
-          
-          <Environment preset="sunset" />
         </Canvas>
       )}
     </div>

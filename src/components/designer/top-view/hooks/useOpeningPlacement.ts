@@ -22,28 +22,7 @@ export const useOpeningPlacement = (loadTemplate: (type: string) => any) => {
     // Get the template door data
     const doorTemplate = loadTemplate('door');
     if (!doorTemplate) {
-      // Use default values if no template found
-      const defaultDoor = {
-        type: 'standard',
-        width: 80,
-        height: 200,
-        color: '#a1a1aa'
-      };
-
-      // Calculate position along the wall (0-1)
-      const position = calculatePositionAlongWall(closestWall, pos);
-
-      // Add the door with default values
-      addDoor({
-        wallId: closestWall.id,
-        position,
-        width: defaultDoor.width,
-        height: defaultDoor.height,
-        type: defaultDoor.type,
-        color: defaultDoor.color
-      });
-
-      toast.success("Door added");
+      toast.error("Door template not found");
       return;
     }
 
@@ -77,28 +56,7 @@ export const useOpeningPlacement = (loadTemplate: (type: string) => any) => {
     // Get the template window data
     const windowTemplate = loadTemplate('window');
     if (!windowTemplate) {
-      // Use default values if no template found
-      const defaultWindow = {
-        type: 'standard',
-        width: 100,
-        height: 120,
-        sillHeight: 90
-      };
-
-      // Calculate position along the wall (0-1)
-      const position = calculatePositionAlongWall(closestWall, pos);
-
-      // Add the window with default values
-      addWindow({
-        wallId: closestWall.id,
-        position,
-        width: defaultWindow.width,
-        height: defaultWindow.height,
-        sillHeight: defaultWindow.sillHeight,
-        type: defaultWindow.type
-      });
-
-      toast.success("Window added");
+      toast.error("Window template not found");
       return;
     }
 
@@ -119,15 +77,6 @@ export const useOpeningPlacement = (loadTemplate: (type: string) => any) => {
   };
 
   /**
-   * Calculate wall angle in degrees
-   */
-  const calculateWallAngle = (wall: Wall) => {
-    const dx = wall.end.x - wall.start.x;
-    const dy = wall.end.y - wall.start.y;
-    return Math.atan2(dy, dx) * 180 / Math.PI;
-  };
-
-  /**
    * Find the closest wall to a point - improved to be more sensitive
    */
   const findClosestWallToPoint = (point: Point) => {
@@ -145,7 +94,7 @@ export const useOpeningPlacement = (loadTemplate: (type: string) => any) => {
     });
 
     // Increased distance threshold to make it easier to place on walls
-    return minDistance <= 80 ? closestWall : null;
+    return minDistance <= 50 ? closestWall : null;
   };
 
   /**
@@ -199,7 +148,6 @@ export const useOpeningPlacement = (loadTemplate: (type: string) => any) => {
     handleDoorClick,
     handleWindowClick,
     findClosestWallToPoint,
-    calculatePositionAlongWall,
-    calculateWallAngle
+    calculatePositionAlongWall
   };
 };
