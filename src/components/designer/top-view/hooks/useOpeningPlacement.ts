@@ -77,7 +77,7 @@ export const useOpeningPlacement = (loadTemplate: (type: string) => any) => {
   };
 
   /**
-   * Find the closest wall to a point - improved to be more sensitive
+   * Find the closest wall to a point
    */
   const findClosestWallToPoint = (point: Point) => {
     if (walls.length === 0) return null;

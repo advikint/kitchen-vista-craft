@@ -1,68 +1,69 @@
 
-/**
- * Custom hook for loading template data from local storage
- */
-export const useTemplateLoader = () => {
-  /**
-   * Load template data for a specific item type from localStorage or use default
-   */
-  const loadTemplate = (type: string) => {
-    try {
-      const template = localStorage.getItem(`template_${type}`);
-      
-      if (template) {
-        return JSON.parse(template);
-      }
-      
-      // Return defaults if no template found
-      return getDefaultTemplate(type);
-    } catch (error) {
-      console.error(`Error loading template for ${type}:`, error);
-      return getDefaultTemplate(type);
-    }
-  };
+import { useCallback } from "react";
+import { useKitchenStore } from "@/store/kitchenStore";
 
+export const useTemplateLoader = () => {
+  const { currentToolMode } = useKitchenStore();
+  
   /**
-   * Get default template for different item types
+   * Load template data from localStorage based on type
    */
-  const getDefaultTemplate = (type: string) => {
+  const loadTemplate = useCallback((type: string) => {
+    // Check if we have a stored template for this type in localStorage
+    const storedTemplate = localStorage.getItem(`template_${type}`);
+    
+    // If we have a stored template, use it
+    if (storedTemplate) {
+      try {
+        const template = JSON.parse(storedTemplate);
+        return template;
+      } catch (error) {
+        console.error(`Error parsing template for ${type}:`, error);
+      }
+    }
+    
+    // If no stored template, use defaults based on type
     switch (type) {
-      case 'door':
-        return { 
-          type: 'standard', 
-          width: 80, 
-          height: 200 
-        };
-      case 'window':
-        return { 
-          type: 'standard', 
-          width: 100, 
-          height: 120, 
-          sillHeight: 90 
-        };
       case 'cabinet':
-        return { 
-          type: 'base', 
-          width: 60, 
-          height: 85, 
-          depth: 60,
-          category: 'shutter',
+        return {
+          type: 'base',
+          category: 'standard-base',
           frontType: 'shutter',
           finish: 'laminate',
+          width: 60,
+          height: 85,
+          depth: 60,
           material: 'laminate',
           color: 'white'
         };
-      case 'appliance':
-        return { 
-          type: 'sink', 
-          width: 80, 
-          height: 20, 
-          depth: 60 
+        
+      case 'door':
+        return {
+          type: 'standard',
+          width: 80,
+          height: 200
         };
+        
+      case 'window':
+        return {
+          type: 'standard',
+          width: 100,
+          height: 120,
+          sillHeight: 90
+        };
+        
+      case 'appliance':
+        return {
+          type: 'sink',
+          width: 80,
+          height: 20,
+          depth: 60
+        };
+        
       default:
         return null;
     }
-  };
-
+  }, []);
+  
   return { loadTemplate };
 };

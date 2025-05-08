@@ -1,6 +1,7 @@
+
 import { useEffect, useRef, useState } from "react";
 import { Canvas } from "@react-three/fiber";
-import { OrbitControls, PerspectiveCamera, Environment, SoftShadows, ContactShadows } from "@react-three/drei";
+import { OrbitControls, PerspectiveCamera, Environment } from "@react-three/drei";
 import { useKitchenStore } from "@/store/kitchenStore";
 import { toast } from "sonner";
 import TopView from "./top-view";
@@ -9,7 +10,7 @@ import ElevationView from "./ElevationView";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 const RoomDesigner = () => {
-  const { viewMode, room, walls, setSelectedItemId } = useKitchenStore();
+  const { viewMode, room, walls, currentToolMode, setSelectedItemId } = useKitchenStore();
   const containerRef = useRef<HTMLDivElement>(null);
   const controlsRef = useRef<any>(null);
   const [isInitialized, setIsInitialized] = useState(false);
@@ -52,17 +53,12 @@ const RoomDesigner = () => {
       
       {viewMode === '3d' && (
         <Canvas 
-          shadows={false} // Disable shadows for better performance
+          shadows={false} 
           gl={{ antialias: false, alpha: false, powerPreference: 'low-power' }}
-          dpr={[0.5, isMobile ? 1 : 1.5]} // Reduce DPR for better performance
+          dpr={[0.5, isMobile ? 1 : 1.5]}
           camera={{ position: [cameraDistance, cameraDistance, cameraDistance], fov: isMobile ? 60 : 50 }}
           style={{ background: '#f8fafc' }}
-          onCreated={({ gl }) => {
-            // Optimize WebGL renderer
-            gl.setPixelRatio(Math.min(1.5, window.devicePixelRatio));
-            gl.setClearColor('#f8fafc', 1);
-          }}
-          performance={{ min: 0.5 }} // Performance optimization
+          performance={{ min: 0.5 }}
         >
           <color attach="background" args={['#f8fafc']} />
           
@@ -93,6 +89,17 @@ const RoomDesigner = () => {
           <ThreeDView />
         </Canvas>
       )}
+
+      {/* Tool mode helper message */}
+      <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 bg-white px-3 py-1.5 rounded-full text-xs shadow-md opacity-80 pointer-events-none">
+        {currentToolMode === 'select' && "Click and drag to move objects. Select items to edit properties."}
+        {currentToolMode === 'wall' && "Click to start a wall, click again to end."}
+        {currentToolMode === 'door' && "Click near a wall to place a door."}
+        {currentToolMode === 'window' && "Click near a wall to place a window."}
+        {currentToolMode === 'cabinet' && "Click to place a cabinet."}
+        {currentToolMode === 'appliance' && "Click to place an appliance."}
+        {currentToolMode === 'room' && "Define room dimensions in the dialog."}
+      </div>
     </div>
   );
 };

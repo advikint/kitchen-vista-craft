@@ -2,8 +2,7 @@
 import { useRef, useState } from "react";
 import { KonvaEventObject } from "konva/lib/Node";
 import { Node, NodeConfig } from "konva/lib/Node";
-import { useKitchenStore } from "@/store/kitchenStore";
-import { v4 as uuidv4 } from 'uuid';
+import { useKitchenStore, Point } from "@/store/kitchenStore";
 import { toast } from "sonner";
 
 const useItemInteractions = () => {
@@ -13,28 +12,31 @@ const useItemInteractions = () => {
     cabinets,
     appliances,
     walls,
+    doors,
+    windows,
     updateCabinet,
     updateAppliance,
-    addCabinet,
-    addAppliance,
+    updateDoor,
+    updateWindow,
     removeCabinet,
-    removeAppliance
+    removeAppliance,
+    removeDoor,
+    removeWindow
   } = useKitchenStore();
   
   const isDragging = useRef(false);
-  const [draggedItemPosition, setDraggedItemPosition] = useState({ x: 0, y: 0 });
   const [isNearWall, setIsNearWall] = useState(false);
   const [nearestWallId, setNearestWallId] = useState<string | null>(null);
 
   // Handle selecting an item
-  const handleItemSelect = (id: string, e: KonvaEventObject<MouseEvent, Node<NodeConfig>>) => {
+  const handleItemSelect = (id: string, e: KonvaEventObject<MouseEvent | TouchEvent>) => {
     e.cancelBubble = true;
     setSelectedItemId(id);
   };
 
   // Check if a point is near a wall
   const checkNearWall = (position: { x: number; y: number }) => {
-    const threshold = 25; // Distance threshold for snapping
+    const threshold = 25;
     let closestWall = null;
     let closestDistance = threshold;
     
@@ -69,12 +71,15 @@ const useItemInteractions = () => {
   };
 
   // Calculate snapped position to wall
-  const getSnappedPosition = (position: { x: number; y: number }, itemType: "cabinet" | "door" | "window" | "appliance", applianceType?: string) => {
+  const getSnappedPosition = (position: { x: number; y: number }, itemType: string) => {
     const nearWall = checkNearWall(position);
     
     // For regular appliances (except sink), don't snap to wall
-    if (itemType === "appliance" && applianceType !== "sink") {
-      return position;
+    if (itemType === "appliance") {
+      const appliance = appliances.find(a => a.id === selectedItemId);
+      if (appliance && appliance.type !== "sink") {
+        return position;
+      }
     }
     
     if (!nearWall) {
@@ -114,13 +119,6 @@ const useItemInteractions = () => {
     return { x: snapX, y: snapY };
   };
 
-  // Handle dragging an item
-  const handleItemDrag = (id: string, newPosition: { x: number, y: number }, itemType: "cabinet" | "door" | "window" | "appliance" = "cabinet") => {
-    const snappedPosition = getSnappedPosition(newPosition, itemType);
-    setDraggedItemPosition(snappedPosition);
-    isDragging.current = true;
-  };
-
   // Handle drag start
   const handleDragStart = () => {
     isDragging.current = true;
@@ -128,126 +126,125 @@ const useItemInteractions = () => {
 
   // Handle drag move
   const handleDragMove = (id: string, newPosition: { x: number, y: number }, itemType: "cabinet" | "door" | "window" | "appliance" = "cabinet") => {
-    handleItemDrag(id, newPosition, itemType);
+    // Just check for wall proximity during drag
+    checkNearWall(newPosition);
   };
 
   // Handle finishing a drag operation
   const handleDragEnd = (id: string, newPosition: { x: number, y: number }, itemType: "cabinet" | "door" | "window" | "appliance" = "cabinet") => {
-    if (isDragging.current) {
-      const snappedPosition = getSnappedPosition(newPosition, itemType);
-      
-      if (itemType === "cabinet") {
-        updateCabinetPosition(id, snappedPosition);
-      } else if (itemType === "appliance") {
-        updateAppliancePosition(id, snappedPosition);
+    if (!isDragging.current) return;
+    isDragging.current = false;
+    
+    const snappedPosition = getSnappedPosition(newPosition, itemType);
+    
+    switch (itemType) {
+      case "cabinet": {
+        const cabinet = cabinets.find(c => c.id === id);
+        if (cabinet) {
+          updateCabinet(id, { position: snappedPosition });
+        }
+        break;
       }
-      
-      // Show feedback for successful placement
-      if (isNearWall) {
-        toast.success(`${itemType} snapped to wall`);
+      case "appliance": {
+        const appliance = appliances.find(a => a.id === id);
+        if (appliance) {
+          updateAppliance(id, { position: snappedPosition });
+        }
+        break;
       }
-      
-      isDragging.current = false;
-      setIsNearWall(false);
-      setNearestWallId(null);
+      case "door": {
+        const door = doors.find(d => d.id === id);
+        if (door && nearestWallId) {
+          // For doors, calculate position along the wall
+          const wall = walls.find(w => w.id === nearestWallId);
+          if (wall) {
+            const position = calculatePositionAlongWall(wall, snappedPosition);
+            updateDoor(id, { wallId: nearestWallId, position });
+          }
+        }
+        break;
+      }
+      case "window": {
+        const window = windows.find(w => w.id === id);
+        if (window && nearestWallId) {
+          // For windows, calculate position along the wall
+          const wall = walls.find(w => w.id === nearestWallId);
+          if (wall) {
+            const position = calculatePositionAlongWall(wall, snappedPosition);
+            updateWindow(id, { wallId: nearestWallId, position });
+          }
+        }
+        break;
+      }
     }
-  };
-
-  // Update cabinet position
-  const updateCabinetPosition = (id: string, position: { x: number, y: number }) => {
-    updateCabinet(id, { position });
-  };
-
-  // Update appliance position
-  const updateAppliancePosition = (id: string, position: { x: number, y: number }) => {
-    updateAppliance(id, { position });
-  };
-
-  // Rotate cabinet by 90 degrees
-  const rotateCabinet = (id: string) => {
-    const cabinet = cabinets.find(c => c.id === id);
-    if (cabinet) {
-      const newRotation = (cabinet.rotation + 90) % 360;
-      updateCabinet(id, { rotation: newRotation });
-    }
-  };
-
-  // Clone a cabinet
-  const cloneCabinet = (id: string, newId: string, offset: { x: number, y: number }) => {
-    const original = cabinets.find(c => c.id === id);
-    
-    if (original) {
-      const clone = { 
-        ...original, 
-        id: newId,
-        position: { 
-          x: original.position.x + offset.x, 
-          y: original.position.y + offset.y 
-        } 
-      };
-      addCabinet(clone);
-    }
-    
-    return newId;
-  };
-
-  // Clone an appliance
-  const cloneAppliance = (id: string, newId: string, offset: { x: number, y: number }) => {
-    const original = appliances.find(a => a.id === id);
-    
-    if (original) {
-      const clone = { 
-        ...original, 
-        id: newId,
-        position: { 
-          x: original.position.x + offset.x, 
-          y: original.position.y + offset.y 
-        } 
-      };
-      addAppliance(clone);
-    }
-    
-    return newId;
-  };
-
-  // Clone an item
-  const handleCloneItem = (id: string, itemType: "cabinet" | "appliance", offset: number = 20) => {
-    const newId = uuidv4();
-    if (itemType === "cabinet") {
-      cloneCabinet(id, newId, { x: offset, y: offset });
-    } else if (itemType === "appliance") {
-      cloneAppliance(id, newId, { x: offset, y: offset });
-    }
-    return newId;
   };
   
-  // Delete an item
-  const handleDeleteItem = (id: string, itemType: "cabinet" | "appliance") => {
-    if (itemType === "cabinet") {
-      removeCabinet(id);
-    } else if (itemType === "appliance") {
-      removeAppliance(id);
+  // Calculate position along a wall (0-1)
+  const calculatePositionAlongWall = (wall: { start: Point; end: Point }, point: Point) => {
+    // Calculate vector from start to end
+    const dx = wall.end.x - wall.start.x;
+    const dy = wall.end.y - wall.start.y;
+    const length = Math.sqrt(dx * dx + dy * dy);
+    
+    if (length === 0) return 0;
+    
+    // Calculate vector from start to point
+    const px = point.x - wall.start.x;
+    const py = point.y - wall.start.y;
+    
+    // Calculate projection
+    const projection = (px * dx + py * dy) / (length * length);
+    
+    // Clamp to 0-1 range
+    return Math.max(0, Math.min(1, projection));
+  };
+
+  // Delete the selected item
+  const deleteSelectedItem = () => {
+    if (!selectedItemId) return;
+    
+    // Try to find item in different collections
+    const cabinet = cabinets.find(c => c.id === selectedItemId);
+    if (cabinet) {
+      removeCabinet(selectedItemId);
+      toast.success("Cabinet deleted");
+      setSelectedItemId(null);
+      return;
     }
-    setSelectedItemId(null);
+    
+    const appliance = appliances.find(a => a.id === selectedItemId);
+    if (appliance) {
+      removeAppliance(selectedItemId);
+      toast.success("Appliance deleted");
+      setSelectedItemId(null);
+      return;
+    }
+    
+    const door = doors.find(d => d.id === selectedItemId);
+    if (door) {
+      removeDoor(selectedItemId);
+      toast.success("Door deleted");
+      setSelectedItemId(null);
+      return;
+    }
+    
+    const window = windows.find(w => w.id === selectedItemId);
+    if (window) {
+      removeWindow(selectedItemId);
+      toast.success("Window deleted");
+      setSelectedItemId(null);
+      return;
+    }
   };
 
   return {
     handleItemSelect,
-    handleItemDrag,
     handleDragStart,
     handleDragMove,
     handleDragEnd,
-    handleCloneItem,
-    handleDeleteItem,
-    updateCabinetPosition,
-    updateAppliancePosition,
-    cloneCabinet,
-    cloneAppliance,
-    rotateCabinet,
-    selectedItemId,
+    deleteSelectedItem,
     isNearWall,
-    nearestWallId,
-    getSnappedPosition
+    nearestWallId
   };
 };
 

@@ -146,19 +146,31 @@ const DesignCatalog = () => {
             </TabsContent>
 
             <TabsContent value="cabinets" className="mt-0">
-              <CabinetCatalog searchTerm={searchQuery} onItemSelect={handleItemSelect} />
+              <CabinetCatalog 
+                searchTerm={searchQuery} 
+                onItemSelect={handleItemSelect} 
+              />
             </TabsContent>
 
             <TabsContent value="appliances" className="mt-0">
-              <ApplianceCatalog searchTerm={searchQuery} onItemSelect={handleItemSelect} />
+              <ApplianceCatalog 
+                searchTerm={searchQuery} 
+                onItemSelect={handleItemSelect} 
+              />
             </TabsContent>
             
             <TabsContent value="doors" className="mt-0">
-              <DoorCatalog searchTerm={searchQuery} onItemSelect={handleItemSelect} />
+              <DoorCatalog 
+                searchTerm={searchQuery} 
+                onItemSelect={handleItemSelect} 
+              />
             </TabsContent>
             
             <TabsContent value="windows" className="mt-0">
-              <WindowCatalog searchTerm={searchQuery} onItemSelect={handleItemSelect} />
+              <WindowCatalog 
+                searchTerm={searchQuery} 
+                onItemSelect={handleItemSelect} 
+              />
             </TabsContent>
           </ScrollArea>
         </div>
