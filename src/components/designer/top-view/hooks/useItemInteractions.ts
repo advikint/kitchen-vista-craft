@@ -69,10 +69,15 @@ const useItemInteractions = () => {
   };
 
   // Calculate snapped position to wall
-  const getSnappedPosition = (position: { x: number; y: number }, itemType: "cabinet" | "door" | "window" | "appliance") => {
+  const getSnappedPosition = (position: { x: number; y: number }, itemType: "cabinet" | "door" | "window" | "appliance", applianceType?: string) => {
     const nearWall = checkNearWall(position);
     
-    if (!nearWall || (itemType === "appliance" && itemType !== "sink")) {
+    // For regular appliances (except sink), don't snap to wall
+    if (itemType === "appliance" && applianceType !== "sink") {
+      return position;
+    }
+    
+    if (!nearWall) {
       return position;
     }
     

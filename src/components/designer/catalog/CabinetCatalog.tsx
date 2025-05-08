@@ -13,7 +13,7 @@ import CabinetDrawerTypes from "./CabinetDrawerTypes";
 
 interface CabinetCatalogProps {
   searchTerm: string;
-  onItemSelect: (itemType: string, templateData: any) => void;
+  onItemSelect?: (itemType: string, templateData: any) => void;
 }
 
 export const CabinetCatalog = ({ searchTerm, onItemSelect }: CabinetCatalogProps) => {
@@ -58,6 +58,12 @@ export const CabinetCatalog = ({ searchTerm, onItemSelect }: CabinetCatalogProps
     );
   };
 
+  const handleItemSelect = (itemType: string, templateData: any) => {
+    if (onItemSelect) {
+      onItemSelect(itemType, templateData);
+    }
+  };
+
   return (
     <div className="p-4">
       <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -75,7 +81,7 @@ export const CabinetCatalog = ({ searchTerm, onItemSelect }: CabinetCatalogProps
                 key={cabinet.name}
                 item={cabinet}
                 icon={<PackageOpen />}
-                onClick={() => onItemSelect('cabinet', {
+                onClick={() => handleItemSelect('cabinet', {
                   ...cabinet,
                   frontType: 'shutter',
                   finish: 'laminate',
@@ -88,7 +94,7 @@ export const CabinetCatalog = ({ searchTerm, onItemSelect }: CabinetCatalogProps
         </TabsContent>
 
         <TabsContent value="drawer">
-          <CabinetDrawerTypes searchTerm={searchTerm} onItemSelect={onItemSelect} />
+          <CabinetDrawerTypes searchTerm={searchTerm} onItemSelect={handleItemSelect} />
         </TabsContent>
 
         <TabsContent value="wall" className="pt-3">
@@ -98,7 +104,7 @@ export const CabinetCatalog = ({ searchTerm, onItemSelect }: CabinetCatalogProps
                 key={cabinet.name}
                 item={cabinet}
                 icon={<PackageOpen />}
-                onClick={() => onItemSelect('cabinet', {
+                onClick={() => handleItemSelect('cabinet', {
                   ...cabinet,
                   frontType: 'shutter',
                   finish: 'laminate',
@@ -117,7 +123,7 @@ export const CabinetCatalog = ({ searchTerm, onItemSelect }: CabinetCatalogProps
                 key={cabinet.name}
                 item={cabinet}
                 icon={<PackageOpen />}
-                onClick={() => onItemSelect('cabinet', {
+                onClick={() => handleItemSelect('cabinet', {
                   ...cabinet,
                   frontType: 'shutter',
                   finish: 'laminate',

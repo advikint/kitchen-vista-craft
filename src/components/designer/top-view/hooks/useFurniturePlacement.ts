@@ -46,10 +46,10 @@ export const useFurniturePlacement = (loadTemplate: (type: string) => any) => {
   };
 
   // Get snapped position for cabinet placement
-  const getSnappedCabinetPosition = (pos: { x: number; y: number }, cabinetType: string) => {
+  const getSnappedCabinetPosition = (pos: { x: number; y: number }, cabinetType: string): { position: { x: number; y: number }; rotation: number } => {
     const nearWall = findNearestWall(pos);
     
-    if (!nearWall) return pos;
+    if (!nearWall) return { position: pos, rotation: 0 };
     
     const { wall, point } = nearWall;
     const angle = Math.atan2(wall.end.y - wall.start.y, wall.end.x - wall.start.x);
@@ -85,13 +85,13 @@ export const useFurniturePlacement = (loadTemplate: (type: string) => any) => {
     }
 
     // Get snapped position if near a wall
-    const { position, rotation } = getSnappedCabinetPosition(pos, cabinetTemplate.type);
+    const snappedData = getSnappedCabinetPosition(pos, cabinetTemplate.type);
 
     // Create a new cabinet
     addCabinet({
       ...cabinetTemplate,
-      position,
-      rotation: rotation || 0
+      position: snappedData.position,
+      rotation: snappedData.rotation
     }, {});
 
     toast.success("Cabinet added");
@@ -109,20 +109,17 @@ export const useFurniturePlacement = (loadTemplate: (type: string) => any) => {
     }
 
     // Special handling for sink type appliances
-    let position = pos;
-    let rotation = 0;
+    let placementData = { position: pos, rotation: 0 };
     
     if (applianceTemplate.type === 'sink') {
-      const snapped = getSnappedCabinetPosition(pos, 'base');
-      position = snapped.position;
-      rotation = snapped.rotation;
+      placementData = getSnappedCabinetPosition(pos, 'base');
     }
 
     // Create a new appliance
     addAppliance({
       ...applianceTemplate,
-      position,
-      rotation
+      position: placementData.position,
+      rotation: placementData.rotation
     }, {});
 
     toast.success("Appliance added");

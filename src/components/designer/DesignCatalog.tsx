@@ -7,10 +7,10 @@ import { Button } from "@/components/ui/button";
 import { ToolMode } from "@/store/types";
 import { Search, Pointer, LayoutGrid } from "lucide-react";
 
-import CabinetCatalog from "./catalog/CabinetCatalog";
-import DoorCatalog from "./catalog/DoorCatalog";
-import WindowCatalog from "./catalog/WindowCatalog";
-import ApplianceCatalog from "./catalog/ApplianceCatalog";
+import { CabinetCatalog } from "./catalog/CabinetCatalog";
+import { DoorCatalog } from "./catalog/DoorCatalog";
+import { WindowCatalog } from "./catalog/WindowCatalog";
+import { ApplianceCatalog } from "./catalog/ApplianceCatalog";
 
 const DesignCatalog = () => {
   const { currentToolMode, setToolMode, setWallDialogOpen } = useKitchenStore();
@@ -121,19 +121,19 @@ const DesignCatalog = () => {
             </TabsContent>
 
             <TabsContent value="cabinets" className="mt-0">
-              <CabinetCatalog searchQuery={searchQuery} />
+              <CabinetCatalog searchTerm={searchQuery} />
             </TabsContent>
 
             <TabsContent value="appliances" className="mt-0">
-              <ApplianceCatalog searchQuery={searchQuery} />
+              <ApplianceCatalog searchTerm={searchQuery} />
             </TabsContent>
             
             <TabsContent value="doors" className="mt-0">
-              <DoorCatalog searchQuery={searchQuery} />
+              <DoorCatalog searchTerm={searchQuery} />
             </TabsContent>
             
             <TabsContent value="windows" className="mt-0">
-              <WindowCatalog searchQuery={searchQuery} />
+              <WindowCatalog searchTerm={searchQuery} />
             </TabsContent>
           </ScrollArea>
         </div>
