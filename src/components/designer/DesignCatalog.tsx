@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useKitchenStore } from "@/store/kitchenStore";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -43,6 +44,30 @@ const DesignCatalog = () => {
     setToolMode(tool);
     if (tool === 'room') {
       setWallDialogOpen(true);
+    }
+  };
+  
+  // Handle item selection from catalogs
+  const handleItemSelect = (itemType: string, templateData: any) => {
+    // Store the template data in localStorage for use by placement handlers
+    localStorage.setItem(`template_${itemType}`, JSON.stringify(templateData));
+    
+    // Set the tool mode based on the item type
+    switch (itemType) {
+      case 'cabinet':
+        setToolMode('cabinet');
+        break;
+      case 'door':
+        setToolMode('door');
+        break;
+      case 'window':
+        setToolMode('window');
+        break;
+      case 'appliance':
+        setToolMode('appliance');
+        break;
+      default:
+        break;
     }
   };
 
@@ -121,19 +146,19 @@ const DesignCatalog = () => {
             </TabsContent>
 
             <TabsContent value="cabinets" className="mt-0">
-              <CabinetCatalog searchTerm={searchQuery} />
+              <CabinetCatalog searchTerm={searchQuery} onItemSelect={handleItemSelect} />
             </TabsContent>
 
             <TabsContent value="appliances" className="mt-0">
-              <ApplianceCatalog searchTerm={searchQuery} />
+              <ApplianceCatalog searchTerm={searchQuery} onItemSelect={handleItemSelect} />
             </TabsContent>
             
             <TabsContent value="doors" className="mt-0">
-              <DoorCatalog searchTerm={searchQuery} />
+              <DoorCatalog searchTerm={searchQuery} onItemSelect={handleItemSelect} />
             </TabsContent>
             
             <TabsContent value="windows" className="mt-0">
-              <WindowCatalog searchTerm={searchQuery} />
+              <WindowCatalog searchTerm={searchQuery} onItemSelect={handleItemSelect} />
             </TabsContent>
           </ScrollArea>
         </div>
