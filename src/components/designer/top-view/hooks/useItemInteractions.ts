@@ -1,4 +1,3 @@
-
 import { useRef, useState } from "react";
 import { KonvaEventObject } from "konva/lib/Node";
 import { Node, NodeConfig } from "konva/lib/Node";
@@ -237,12 +236,28 @@ const useItemInteractions = () => {
     }
   };
 
+  // Rotate cabinet 90 degrees
+  const rotateCabinet = (id: string) => {
+    const cabinet = cabinets.find(c => c.id === id);
+    if (!cabinet) return;
+    
+    // Calculate new rotation (add 90 degrees)
+    const newRotation = (cabinet.rotation + 90) % 360;
+    
+    // Update cabinet rotation
+    updateCabinet(id, { rotation: newRotation });
+    
+    // Show success message
+    toast.success("Cabinet rotated");
+  };
+
   return {
     handleItemSelect,
     handleDragStart,
     handleDragMove,
     handleDragEnd,
     deleteSelectedItem,
+    rotateCabinet,
     isNearWall,
     nearestWallId
   };
