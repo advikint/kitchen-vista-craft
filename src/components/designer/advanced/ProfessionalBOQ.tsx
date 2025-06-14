@@ -53,7 +53,7 @@ const ProfessionalBOQ = () => {
   const { cabinets, appliances, walls, doors, windows } = useKitchenStore();
   const [selectedTab, setSelectedTab] = useState("materials");
   const [markupPercentage, setMarkupPercentage] = useState(20);
-  const [taxPercentage, setTaxPercentage] = useState(8.5);
+  const [taxPercentage, setTaxPercentage] = useState(18); // GST in India
   const [contingencyPercentage, setContingencyPercentage] = useState(10);
 
   // Generate comprehensive BOQ from kitchen design
@@ -89,8 +89,8 @@ const ProfessionalBOQ = () => {
           specification: `${cabinet.material} doors, ${cabinet.finish} finish`,
           quantity: 2,
           unit: "EA",
-          unitPrice: 45,
-          totalPrice: 90,
+          unitPrice: 3800,
+          totalPrice: 7600,
           supplier: "Door Manufacturer",
           leadTime: "3-4 weeks",
           status: 'pending'
@@ -106,8 +106,8 @@ const ProfessionalBOQ = () => {
         specification: "Hinges, handles, drawer slides",
         quantity: 1,
         unit: "SET",
-        unitPrice: 35,
-        totalPrice: 35,
+        unitPrice: 2900,
+        totalPrice: 2900,
         supplier: "Hardware Supplier",
         leadTime: "1-2 weeks",
         status: 'pending'
@@ -119,8 +119,8 @@ const ProfessionalBOQ = () => {
         task: "Cabinet Installation",
         description: `Install ${cabinet.type} cabinet`,
         hours: 2,
-        rate: 65,
-        total: 130,
+        rate: 5400,
+        total: 10800,
         skill: 'intermediate',
         phase: "Cabinet Installation"
       });
@@ -149,8 +149,8 @@ const ProfessionalBOQ = () => {
         task: "Appliance Installation",
         description: `Install ${appliance.type}`,
         hours: getApplianceInstallHours(appliance.type),
-        rate: 75,
-        total: getApplianceInstallHours(appliance.type) * 75,
+        rate: 6200,
+        total: getApplianceInstallHours(appliance.type) * 6200,
         skill: 'expert',
         phase: "Appliance Installation"
       });
@@ -170,8 +170,8 @@ const ProfessionalBOQ = () => {
         specification: "Quartz countertops, 3cm thick, eased edge",
         quantity: Math.ceil(countertopArea),
         unit: "SF",
-        unitPrice: 85,
-        totalPrice: Math.ceil(countertopArea) * 85,
+        unitPrice: 7100,
+        totalPrice: Math.ceil(countertopArea) * 7100,
         supplier: "Stone Fabricator",
         leadTime: "3-4 weeks",
         status: 'pending'
@@ -182,8 +182,8 @@ const ProfessionalBOQ = () => {
         task: "Countertop Installation",
         description: "Template, fabricate, and install countertops",
         hours: 8,
-        rate: 85,
-        total: 680,
+        rate: 7100,
+        total: 56800,
         skill: 'expert',
         phase: "Countertop Installation"
       });
@@ -199,8 +199,8 @@ const ProfessionalBOQ = () => {
       specification: "GFCI outlets, under-cabinet lighting, appliance circuits",
       quantity: electricalOutlets,
       unit: "EA",
-      unitPrice: 125,
-      totalPrice: electricalOutlets * 125,
+      unitPrice: 10400,
+      totalPrice: electricalOutlets * 10400,
       supplier: "Electrical Contractor",
       leadTime: "1-2 weeks",
       status: 'pending'
@@ -211,8 +211,8 @@ const ProfessionalBOQ = () => {
       task: "Electrical Installation",
       description: "Install outlets, lighting, and appliance circuits",
       hours: 12,
-      rate: 95,
-      total: 1140,
+      rate: 7900,
+      total: 94800,
       skill: 'expert',
       phase: "Electrical Work"
     });
@@ -228,8 +228,8 @@ const ProfessionalBOQ = () => {
         specification: "Supply lines, drain, shut-off valves",
         quantity: 1,
         unit: "LS",
-        unitPrice: 450,
-        totalPrice: 450,
+        unitPrice: 37500,
+        totalPrice: 37500,
         supplier: "Plumbing Contractor",
         leadTime: "1 week",
         status: 'pending'
@@ -240,8 +240,8 @@ const ProfessionalBOQ = () => {
         task: "Plumbing Installation",
         description: "Install supply lines and drainage",
         hours: 6,
-        rate: 85,
-        total: 510,
+        rate: 7100,
+        total: 42600,
         skill: 'expert',
         phase: "Plumbing Work"
       });
@@ -250,14 +250,14 @@ const ProfessionalBOQ = () => {
     return { materials: boqItems, labor: laborItems };
   }, [cabinets, appliances]);
 
-  // Helper functions
+  // Helper functions (Prices in Indian Rupees)
   const calculateCabinetPrice = (cabinet: any) => {
     const basePrice = {
-      'base': 180,
-      'wall': 120,
-      'tall': 280,
-      'specialty': 350
-    }[cabinet.type] || 180;
+      'base': 15000,
+      'wall': 10000,
+      'tall': 23000,
+      'specialty': 29000
+    }[cabinet.type] || 15000;
 
     const sizeMultiplier = (cabinet.width * cabinet.height) / 720; // Base size 24"x30"
     const finishMultiplier = {
@@ -273,15 +273,15 @@ const ProfessionalBOQ = () => {
 
   const getAppliancePrice = (type: string) => {
     const prices = {
-      'sink': 350,
-      'stove': 1200,
-      'fridge': 2500,
-      'dishwasher': 650,
-      'oven': 1800,
-      'microwave': 400,
-      'hood': 450
+      'sink': 29000,
+      'stove': 100000,
+      'fridge': 210000,
+      'dishwasher': 54000,
+      'oven': 150000,
+      'microwave': 33000,
+      'hood': 37000
     };
-    return prices[type as keyof typeof prices] || 500;
+    return prices[type as keyof typeof prices] || 42000;
   };
 
   const getApplianceInstallHours = (type: string) => {
@@ -363,7 +363,7 @@ const ProfessionalBOQ = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600">Materials</p>
-                  <p className="text-2xl font-bold">${materialTotal.toLocaleString()}</p>
+                  <p className="text-2xl font-bold">₹{materialTotal.toLocaleString('en-IN')}</p>
                 </div>
                 <Package className="h-8 w-8 text-blue-500" />
               </div>
@@ -375,7 +375,7 @@ const ProfessionalBOQ = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600">Labor</p>
-                  <p className="text-2xl font-bold">${laborTotal.toLocaleString()}</p>
+                  <p className="text-2xl font-bold">₹{laborTotal.toLocaleString('en-IN')}</p>
                 </div>
                 <Wrench className="h-8 w-8 text-green-500" />
               </div>
@@ -399,7 +399,7 @@ const ProfessionalBOQ = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600">Grand Total</p>
-                  <p className="text-2xl font-bold">${grandTotal.toLocaleString()}</p>
+                  <p className="text-2xl font-bold">₹{grandTotal.toLocaleString('en-IN')}</p>
                 </div>
                 <DollarSign className="h-8 w-8 text-red-500" />
               </div>
@@ -447,8 +447,8 @@ const ProfessionalBOQ = () => {
                           <TableCell className="text-sm text-gray-600">{item.specification}</TableCell>
                           <TableCell>{item.quantity}</TableCell>
                           <TableCell>{item.unit}</TableCell>
-                          <TableCell>${item.unitPrice}</TableCell>
-                          <TableCell className="font-medium">${item.totalPrice}</TableCell>
+                          <TableCell>₹{item.unitPrice.toLocaleString('en-IN')}</TableCell>
+                          <TableCell className="font-medium">₹{item.totalPrice.toLocaleString('en-IN')}</TableCell>
                           <TableCell>
                             <Badge variant={
                               item.status === 'pending' ? 'secondary' :
@@ -493,8 +493,8 @@ const ProfessionalBOQ = () => {
                           <TableCell className="font-medium">{item.task}</TableCell>
                           <TableCell className="text-sm text-gray-600">{item.description}</TableCell>
                           <TableCell>{item.hours}</TableCell>
-                          <TableCell>${item.rate}/hr</TableCell>
-                          <TableCell className="font-medium">${item.total}</TableCell>
+                          <TableCell>₹{item.rate.toLocaleString('en-IN')}/hr</TableCell>
+                          <TableCell className="font-medium">₹{item.total.toLocaleString('en-IN')}</TableCell>
                           <TableCell>
                             <Badge variant={
                               item.skill === 'basic' ? 'secondary' :
@@ -522,33 +522,33 @@ const ProfessionalBOQ = () => {
                 <CardContent className="space-y-4">
                   <div className="flex justify-between">
                     <span>Materials Subtotal:</span>
-                    <span className="font-medium">${materialTotal.toLocaleString()}</span>
+                    <span className="font-medium">₹{materialTotal.toLocaleString('en-IN')}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Labor Subtotal:</span>
-                    <span className="font-medium">${laborTotal.toLocaleString()}</span>
+                    <span className="font-medium">₹{laborTotal.toLocaleString('en-IN')}</span>
                   </div>
                   <Separator />
                   <div className="flex justify-between">
                     <span>Subtotal:</span>
-                    <span className="font-medium">${subtotal.toLocaleString()}</span>
+                    <span className="font-medium">₹{subtotal.toLocaleString('en-IN')}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Markup ({markupPercentage}%):</span>
-                    <span className="font-medium">${markup.toLocaleString()}</span>
+                    <span className="font-medium">₹{markup.toLocaleString('en-IN')}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span>Tax ({taxPercentage}%):</span>
-                    <span className="font-medium">${tax.toLocaleString()}</span>
+                    <span>GST ({taxPercentage}%):</span>
+                    <span className="font-medium">₹{tax.toLocaleString('en-IN')}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Contingency ({contingencyPercentage}%):</span>
-                    <span className="font-medium">${contingency.toLocaleString()}</span>
+                    <span className="font-medium">₹{contingency.toLocaleString('en-IN')}</span>
                   </div>
                   <Separator />
                   <div className="flex justify-between text-lg font-bold">
                     <span>Grand Total:</span>
-                    <span>${grandTotal.toLocaleString()}</span>
+                    <span>₹{grandTotal.toLocaleString('en-IN')}</span>
                   </div>
                 </CardContent>
               </Card>
@@ -567,7 +567,7 @@ const ProfessionalBOQ = () => {
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-sm font-medium">Tax Percentage</label>
+                    <label className="text-sm font-medium">GST Percentage</label>
                     <Input
                       type="number"
                       value={taxPercentage}
