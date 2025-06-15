@@ -83,6 +83,27 @@ const CabinetPropertiesPanel = ({ cabinet }: CabinetPropertiesPanelProps) => {
   const handleDelete = () => {
     removeCabinet(cabinet.id);
   };
+
+  const handleToeKickHeightChange = (value: string) => {
+    const newHeight = parseInt(value);
+    updateCabinet(cabinet.id, {
+      toeKickHeight: isNaN(newHeight) ? undefined : newHeight
+    });
+  };
+
+  const handleToeKickDepthChange = (value: string) => {
+    const newDepth = parseInt(value);
+    updateCabinet(cabinet.id, {
+      toeKickDepth: isNaN(newDepth) ? undefined : newDepth
+    });
+  };
+
+  const handleShelfCountChange = (value: string) => {
+    const newCount = parseInt(value);
+    updateCabinet(cabinet.id, {
+      shelfCount: isNaN(newCount) ? undefined : Math.max(0, newCount) // Ensure non-negative
+    });
+  };
   
   return (
     <div className="p-4">
@@ -168,6 +189,22 @@ const CabinetPropertiesPanel = ({ cabinet }: CabinetPropertiesPanelProps) => {
             </div>
           )}
           
+          {/* Shelf Count (not for drawer front type) */}
+          {cabinet.frontType !== 'drawer' && (
+            <div className="space-y-1">
+              <Label htmlFor="shelfCount">Number of Shelves</Label>
+              <Input
+                id="shelfCount"
+                type="number"
+                value={cabinet.shelfCount !== undefined ? cabinet.shelfCount.toString() : ''}
+                onChange={(e) => handleShelfCountChange(e.target.value)}
+                placeholder="e.g., 1"
+                min={0}
+                max={10} // Arbitrary max, can be adjusted
+              />
+            </div>
+          )}
+
           {/* Cabinet Finish */}
           <div className="space-y-1">
             <Label htmlFor="finish">Finish</Label>
@@ -253,6 +290,39 @@ const CabinetPropertiesPanel = ({ cabinet }: CabinetPropertiesPanelProps) => {
             </div>
           </div>
           
+          {/* Toe Kick Dimensions (only for base cabinets) */}
+          {cabinet.type === 'base' && (
+            <div className="space-y-3 pt-2 border-t mt-4">
+              <Label className="text-sm font-medium">Toe Kick (cm)</Label>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <Label htmlFor="toeKickHeight" className="text-xs">Height</Label>
+                  <Input
+                    id="toeKickHeight"
+                    type="number"
+                    value={cabinet.toeKickHeight !== undefined ? cabinet.toeKickHeight.toString() : ''}
+                    onChange={(e) => handleToeKickHeightChange(e.target.value)}
+                    placeholder="e.g., 10"
+                    min={0}
+                    max={20}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="toeKickDepth" className="text-xs">Depth (Inset)</Label>
+                  <Input
+                    id="toeKickDepth"
+                    type="number"
+                    value={cabinet.toeKickDepth !== undefined ? cabinet.toeKickDepth.toString() : ''}
+                    onChange={(e) => handleToeKickDepthChange(e.target.value)}
+                    placeholder="e.g., 5"
+                    min={0}
+                    max={20}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Position information (read-only) */}
           <div className="space-y-1 border-t pt-3 mt-4">
             <Label>Position</Label>

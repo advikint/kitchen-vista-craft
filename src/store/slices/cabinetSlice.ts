@@ -65,10 +65,26 @@ export const createCabinetSlice: StateCreator<KitchenStore, [], [], CabinetSlice
     // Create the cabinet with default values for any missing properties
     const newCabinet: Cabinet = {
       id: nanoid(),
-      ...cabinetData,
-      height,
-      depth,
+      ...cabinetData, // Spread incoming data first
+      // Ensure core dimension and drawer defaults are applied
+      height, // Already defaulted if cabinetData.height was 0
+      depth,  // Already defaulted if cabinetData.depth was 0
       drawers: cabinetData.drawers || (cabinetData.frontType === 'drawer' ? 1 : undefined),
+
+      // Initialize new parametric properties with defaults if not provided
+      toeKickHeight: cabinetData.toeKickHeight !== undefined ? cabinetData.toeKickHeight :
+                     (cabinetData.type === 'base' ? 10 : undefined), // Default 10cm for base cabinets
+
+      toeKickDepth: cabinetData.toeKickDepth !== undefined ? cabinetData.toeKickDepth :
+                    (cabinetData.type === 'base' ? 5 : undefined),  // Default 5cm for base cabinets
+
+      shelfCount: cabinetData.shelfCount !== undefined ? cabinetData.shelfCount :
+                  (cabinetData.frontType === 'drawer' ? 0 : // No shelves if it's a drawer unit
+                   cabinetData.type === 'base' ? 1 :
+                   cabinetData.type === 'wall' ? 1 :
+                   cabinetData.type === 'loft' ? 1 :
+                   cabinetData.type === 'tall' ? 3 :
+                   0), // Default shelf counts based on type, 0 if not applicable
     };
     
     return {

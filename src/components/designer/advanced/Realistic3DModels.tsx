@@ -78,9 +78,9 @@ export const CabinetModel = ({ cabinet, selected = false }: { cabinet: any; sele
   };
 
   // Create procedural cabinet geometry when model isn't available
-  const createProceduralCabinet = () => {
-    const geometry = new THREE.BoxGeometry(cabinet.width, cabinet.height, cabinet.depth);
-    
+  const createProceduralCabinet = (effectiveHeight: number) => { // Renamed from actualHeight for clarity
+    // Use effectiveHeight instead of cabinet.height for the BoxGeometry
+    const geometry = new THREE.BoxGeometry(cabinet.width, effectiveHeight, cabinet.depth);
     // Create realistic materials
     const materials = {
       laminate: new THREE.MeshStandardMaterial({
@@ -192,85 +192,141 @@ export const CabinetModel = ({ cabinet, selected = false }: { cabinet: any; sele
   // Create detailed cabinet with doors, handles, etc.
   const createDetailedCabinet = () => {
     const group = new THREE.Group();
-    
+
+    const toeKickH = (cabinet.type === 'base' && cabinet.toeKickHeight !== undefined && cabinet.toeKickHeight > 0) ? cabinet.toeKickHeight : 0;
+    const toeKickD_inset = (cabinet.type === 'base' && cabinet.toeKickDepth !== undefined && cabinet.toeKickDepth > 0) ? cabinet.toeKickDepth : 0;
+
     // Main cabinet box
-    const { geometry: boxGeometry, material: boxMaterial } = createProceduralCabinet();
+    const mainBoxEffectiveHeight = cabinet.height - toeKickH;
+    const { geometry: boxGeometry, material: boxMaterial } = createProceduralCabinet(mainBoxEffectiveHeight);
     const cabinetBox = new THREE.Mesh(boxGeometry, boxMaterial);
+    cabinetBox.position.y = toeKickH / 2;
     group.add(cabinetBox);
+
+    // Add Toe Kick if applicable
+    if (toeKickH > 0) {
+      const toeKickGeometry = new THREE.BoxGeometry(
+        cabinet.width,
+        toeKickH,
+        cabinet.depth - toeKickD_inset
+      );
+      const toeKickMaterial = new THREE.MeshStandardMaterial({
+        color: new THREE.Color(cabinet.color || '#8B4513').multiplyScalar(0.5),
+        roughness: 0.8,
+        metalness: 0.1,
+      });
+      const toeKickMesh = new THREE.Mesh(toeKickGeometry, toeKickMaterial);
+      toeKickMesh.position.y = -(cabinet.height / 2) + (toeKickH / 2);
+      toeKickMesh.position.z = -toeKickD_inset / 2;
+      group.add(toeKickMesh);
+    }
+
+    const shelfThickness = 2;
+    const shelfInsetX = 2;
+    const shelfInsetZ_front = 2;
+
+    const shelfCount = (cabinet.shelfCount !== undefined && cabinet.shelfCount > 0) ? cabinet.shelfCount : 0;
+
+    if (shelfCount > 0 && cabinet.frontType !== 'drawer') {
+      const usableShelfWidth = cabinet.width - 2 * shelfInsetX;
+      const usableShelfDepth = cabinet.depth - shelfInsetZ_front;
+
+      if (usableShelfWidth > 0 && usableShelfDepth > 0) {
+        const shelfGeometry = new THREE.BoxGeometry(
+          usableShelfWidth,
+          shelfThickness,
+          usableShelfDepth
+        );
+
+        const totalShelfThickness = shelfCount * shelfThickness;
+        const remainingSpaceForGaps = mainBoxEffectiveHeight - totalShelfThickness;
+
+        if (remainingSpaceForGaps >= 0) {
+            const numberOfGaps = shelfCount + 1;
+            const gapHeight = remainingSpaceForGaps / numberOfGaps;
+
+            for (let i = 0; i < shelfCount; i++) {
+                const shelfMesh = new THREE.Mesh(shelfGeometry, boxMaterial);
+
+                const shelfCenterY = (-mainBoxEffectiveHeight / 2) + (gapHeight * (i + 1)) + (shelfThickness * i) + (shelfThickness / 2);
+
+                shelfMesh.position.set(
+                    0,
+                    shelfCenterY,
+                    -shelfInsetZ_front / 2
+                );
+                cabinetBox.add(shelfMesh);
+            }
+        }
+      }
+    }
     
     // Add doors based on front type
     if (cabinet.frontType === 'shutter') {
-      // Left door
+      const doorPanelHeight = mainBoxEffectiveHeight * 0.9;
+      const doorThickness = 2;
       const leftDoorGeometry = new THREE.BoxGeometry(
         cabinet.width * 0.48, 
-        cabinet.height * 0.9, 
-        2
+        doorPanelHeight,
+        doorThickness
       );
       const leftDoor = new THREE.Mesh(leftDoorGeometry, boxMaterial);
-      leftDoor.position.set(-cabinet.width * 0.25, 0, cabinet.depth / 2 + 1);
-      group.add(leftDoor);
+      leftDoor.position.set(-cabinet.width * 0.25, 0, cabinet.depth / 2 - doorThickness / 2); // Position front flush
+      cabinetBox.add(leftDoor);
       
-      // Right door
       const rightDoor = new THREE.Mesh(leftDoorGeometry, boxMaterial);
-      rightDoor.position.set(cabinet.width * 0.25, 0, cabinet.depth / 2 + 1);
-      group.add(rightDoor);
+      rightDoor.position.set(cabinet.width * 0.25, 0, cabinet.depth / 2 - doorThickness / 2); // Position front flush
+      cabinetBox.add(rightDoor);
       
-      // Door handles
       const handleGeometry = new THREE.CylinderGeometry(0.5, 0.5, 8);
-      const handleMaterial = new THREE.MeshStandardMaterial({
-        color: '#C0C0C0',
-        metalness: 0.8,
-        roughness: 0.2
-      });
+      const handleMaterial = new THREE.MeshStandardMaterial({color: '#C0C0C0', metalness: 0.8, roughness: 0.2});
       
       const leftHandle = new THREE.Mesh(handleGeometry, handleMaterial);
-      leftHandle.position.set(-cabinet.width * 0.35, 0, cabinet.depth / 2 + 3);
+      leftHandle.position.set(- (cabinet.width * 0.48 / 2) + 4 , 0, doorThickness / 2 + 2); // Relative to door center
+      leftDoor.add(leftHandle);
       leftHandle.rotation.z = Math.PI / 2;
-      group.add(leftHandle);
-      
+
       const rightHandle = new THREE.Mesh(handleGeometry, handleMaterial);
-      rightHandle.position.set(cabinet.width * 0.35, 0, cabinet.depth / 2 + 3);
+      rightHandle.position.set((cabinet.width * 0.48 / 2) - 4, 0, doorThickness / 2 + 2); // Relative to door center
+      rightDoor.add(rightHandle);
       rightHandle.rotation.z = Math.PI / 2;
-      group.add(rightHandle);
     }
     
     // Add drawers for drawer cabinets
     if (cabinet.frontType === 'drawer') {
       const drawerCount = cabinet.drawers && cabinet.drawers > 0 ? cabinet.drawers : 1;
-      const drawerHeight = cabinet.height / drawerCount;
-      
+      const drawerEffectiveTotalHeight = mainBoxEffectiveHeight;
+      const singleDrawerFaceHeight = drawerEffectiveTotalHeight / drawerCount;
+      const drawerFrontThickness = 2;
+
       for (let i = 0; i < drawerCount; i++) {
         const drawerGeometry = new THREE.BoxGeometry(
           cabinet.width * 0.95,
-          drawerHeight * 0.8,
-          2
+          singleDrawerFaceHeight * 0.8,
+          drawerFrontThickness
         );
         const drawer = new THREE.Mesh(drawerGeometry, boxMaterial);
         drawer.position.set(
           0,
-          cabinet.height / 2 - drawerHeight * (i + 0.5),
-          cabinet.depth / 2 + 1
+          (mainBoxEffectiveHeight / 2) - (singleDrawerFaceHeight * (i + 0.5)) + (singleDrawerFaceHeight * 0.1), // Adjust Y to align top of drawer face
+          cabinet.depth / 2 - drawerFrontThickness / 2 // Position front flush
         );
-        group.add(drawer);
+        cabinetBox.add(drawer);
         
-        // Drawer handle
         const handleGeometry = new THREE.CylinderGeometry(0.3, 0.3, cabinet.width * 0.3);
-        const handleMaterial = new THREE.MeshStandardMaterial({
-          color: '#C0C0C0',
-          metalness: 0.8,
-          roughness: 0.2
-        });
-        
+        const handleMaterial = new THREE.MeshStandardMaterial({color: '#C0C0C0',metalness: 0.8,roughness: 0.2});
         const handle = new THREE.Mesh(handleGeometry, handleMaterial);
-        handle.position.set(0, cabinet.height / 2 - drawerHeight * (i + 0.5), cabinet.depth / 2 + 3);
-        handle.rotation.z = Math.PI / 2;
-        group.add(handle);
+        handle.position.set(0, 0, drawerFrontThickness / 2 + 2);
+        handle.rotation.x = Math.PI / 2; // Rotate around X for horizontal handle
+        drawer.add(handle);
       }
     }
     
     return group;
   };
 
+  // Ensure useMemo dependency array includes new properties if they are accessed directly from `cabinet`
+  // Since `cabinet` object itself is a dependency, changes to its properties will trigger re-computation.
   const proceduralCabinetGroup = useMemo(() => createDetailedCabinet(), [cabinet]);
   const modelPath = getModelPath();
 

@@ -79,6 +79,11 @@ export interface Cabinet {
   color: string;
   drawers?: number;  // Number of drawers (for drawer cabinets)
   special?: string;  // Special drawer type (mixed, file, deep, etc.)
+
+  // New parameters for advanced parametrics
+  toeKickHeight?: number;
+  toeKickDepth?: number;
+  shelfCount?: number;
 }
 
 export type ApplianceType = 'sink' | 'stove' | 'fridge' | 'dishwasher' | 'oven' | 'microwave' | 'hood';
