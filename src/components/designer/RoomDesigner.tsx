@@ -46,9 +46,9 @@ const RoomDesigner = () => {
   };
 
   const qualitySettings = {
-    low: { dpr: [0.5, 1], antialias: false, shadows: false },
-    medium: { dpr: [1, 1.5], antialias: true, shadows: true },
-    high: { dpr: [1, 2], antialias: true, shadows: true }
+    low: { dpr: [0.5, 1] as [number, number], antialias: false, shadows: false },
+    medium: { dpr: [1, 1.5] as [number, number], antialias: true, shadows: true },
+    high: { dpr: [1, 2] as [number, number], antialias: true, shadows: true }
   };
 
   const currentQuality = qualitySettings[renderQuality];
@@ -69,8 +69,7 @@ const RoomDesigner = () => {
             gl={{ 
               antialias: currentQuality.antialias, 
               alpha: false, 
-              powerPreference: 'high-performance',
-              physicallyCorrectLights: true
+              powerPreference: 'high-performance'
             }}
             dpr={currentQuality.dpr}
             camera={{ 

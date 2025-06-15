@@ -6,8 +6,8 @@ import * as THREE from "three";
 import { Suspense } from "react";
 import { Environment, ContactShadows, SoftShadows } from "@react-three/drei";
 import Room3D from "./Room3D";
-import Cabinet3D from "./Cabinet3D";
-import Appliance3D from "./Appliance3D";
+import RealisticCabinet3D from "./RealisticCabinet3D";
+import RealisticAppliance3D from "./RealisticAppliance3D";
 import Wall3D from "./Wall3D";
 import Door3D from "./Door3D";
 import Window3D from "./Window3D";
@@ -114,9 +114,9 @@ const Advanced3DScene = () => {
           );
         })}
         
-        {/* Cabinets with detailed models */}
+        {/* Realistic Cabinets with GLB models */}
         {cabinets.map((cabinet) => (
-          <Cabinet3D 
+          <RealisticCabinet3D 
             key={cabinet.id} 
             cabinet={cabinet}
             isSelected={selectedItemId === cabinet.id}
@@ -124,9 +124,9 @@ const Advanced3DScene = () => {
           />
         ))}
         
-        {/* Appliances with brand-specific models */}
+        {/* Realistic Appliances with GLB models */}
         {appliances.map((appliance) => (
-          <Appliance3D 
+          <RealisticAppliance3D 
             key={appliance.id} 
             appliance={appliance}
             isSelected={selectedItemId === appliance.id}
