@@ -331,8 +331,8 @@ const ProfessionalBOQ = () => {
   };
 
   const exportToPDF = () => {
+    // TODO: Implement PDF export functionality. This would typically involve using a library like jsPDF or react-pdf to generate the document content based on the BOQ data.
     // Implementation would generate PDF report
-    console.log("Exporting to PDF...");
   };
 
   return (

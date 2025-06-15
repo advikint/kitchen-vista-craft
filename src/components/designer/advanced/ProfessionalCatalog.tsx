@@ -985,12 +985,12 @@ const ProfessionalCatalog = () => {
   }, [allItems, searchTerm, selectedCategory, selectedManufacturer, priceRange, sortBy]);
 
   const handleAddToProject = (item: any) => {
-    console.log("Adding to project:", item);
+    // TODO: Implement logic to add the selected item to the kitchen design (e.g., update Zustand store)
     // Implementation would add item to the kitchen design
   };
 
   const handleViewDetails = (item: any) => {
-    console.log("Viewing details:", item);
+    // TODO: Implement logic to display detailed information for the selected item (e.g., open a modal or navigate to a detail page)
     // Implementation would show detailed product information
   };
 

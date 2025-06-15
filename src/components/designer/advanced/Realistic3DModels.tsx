@@ -1,7 +1,47 @@
 import { useRef, useMemo } from "react";
-import { useGLTF, useTexture } from "@react-three/drei";
+import { useGLTF } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
+
+// Helper component to manage GLTF loading and fallback for Cabinets
+const CabinetModelRenderer = ({ modelPath, proceduralGroup }: { modelPath: string | null; proceduralGroup: THREE.Group }) => {
+  if (modelPath) {
+    try {
+      useGLTF.preload(modelPath); // Preload the model
+      const { scene } = useGLTF(modelPath); // Call useGLTF hook
+      if (scene) {
+        return <primitive object={scene.clone()} />;
+      }
+    } catch (error) {
+      console.error(`Failed to load cabinet model from ${modelPath}, falling back to procedural generation.`, error);
+      // Fallback to procedural model if loading fails
+    }
+  } else {
+    // console.log("No valid model path found for cabinet, using procedural generation."); // Optionally quiet this log
+  }
+  // Render procedural group if no path or if GLTF loading failed
+  return <primitive object={proceduralGroup} />;
+};
+
+// Helper component to manage GLTF loading and fallback for Appliances
+const ApplianceModelRenderer = ({ modelPath, proceduralGroup }: { modelPath: string | null; proceduralGroup: THREE.Group }) => {
+  if (modelPath) {
+    try {
+      useGLTF.preload(modelPath); // Preload the model
+      const { scene } = useGLTF(modelPath); // Call useGLTF hook
+      if (scene) {
+        return <primitive object={scene.clone()} />;
+      }
+    } catch (error) {
+      console.error(`Failed to load appliance model from ${modelPath}, falling back to procedural generation.`, error);
+      // Fallback to procedural model if loading fails
+    }
+  } else {
+    // console.log("No valid model path found for appliance, using procedural generation."); // Optionally quiet this log
+  }
+  // Render procedural group if no path or if GLTF loading failed
+  return <primitive object={proceduralGroup} />;
+};
 
 // Professional 3D Model Loader Component
 export const CabinetModel = ({ cabinet, selected = false }: { cabinet: any; selected?: boolean }) => {
@@ -231,7 +271,8 @@ export const CabinetModel = ({ cabinet, selected = false }: { cabinet: any; sele
     return group;
   };
 
-  const cabinetGroup = useMemo(() => createDetailedCabinet(), [cabinet]);
+  const proceduralCabinetGroup = useMemo(() => createDetailedCabinet(), [cabinet]);
+  const modelPath = getModelPath();
 
   // Animation for selected state
   useFrame((state) => {
@@ -246,7 +287,7 @@ export const CabinetModel = ({ cabinet, selected = false }: { cabinet: any; sele
       position={[cabinet.position.x, cabinet.height / 2, cabinet.position.y]}
       rotation={[0, cabinet.rotation || 0, 0]}
     >
-      <primitive object={cabinetGroup} />
+      <CabinetModelRenderer modelPath={modelPath} proceduralGroup={proceduralCabinetGroup} />
       
       {/* Selection indicator */}
       {selected && (
@@ -262,6 +303,23 @@ export const CabinetModel = ({ cabinet, selected = false }: { cabinet: any; sele
 export const ApplianceModel = ({ appliance, selected = false }: { appliance: any; selected?: boolean }) => {
   const meshRef = useRef<THREE.Group>(null);
 
+  const getModelPathAppliance = (currentAppliance: any): string | null => {
+    // Example mapping - expand as actual models become available
+    if (currentAppliance.type === "dishwasher") {
+      if (currentAppliance.manufacturer === "Bosch") {
+        return "/models/appliances/bosch-dishwasher-example.glb"; // Placeholder
+      }
+      return "/models/appliances/generic-dishwasher.glb"; // Placeholder
+    }
+    if (currentAppliance.type === "fridge" && currentAppliance.manufacturer === "Samsung") {
+      return "/models/appliances/samsung-fridge-example.glb"; // Placeholder
+    }
+    // Add more specific mappings here based on type, manufacturer, model, etc.
+    // e.g., if (appliance.type === 'oven' && appliance.model === 'XYZ123') return '/models/oven-XYZ123.glb';
+    return null; // Default if no specific model path is found
+  };
+
+  // Original createRealisticAppliance function
   const createRealisticAppliance = () => {
     const group = new THREE.Group();
     
@@ -444,7 +502,8 @@ export const ApplianceModel = ({ appliance, selected = false }: { appliance: any
     return group;
   };
 
-  const applianceGroup = useMemo(() => createRealisticAppliance(), [appliance]);
+  const proceduralApplianceGroup = useMemo(() => createRealisticAppliance(), [appliance]);
+  const modelPath = getModelPathAppliance(appliance);
 
   // Animation for selected state
   useFrame((state) => {
@@ -459,7 +518,7 @@ export const ApplianceModel = ({ appliance, selected = false }: { appliance: any
       position={[appliance.position.x, appliance.height / 2, appliance.position.y]}
       rotation={[0, appliance.rotation || 0, 0]}
     >
-      <primitive object={applianceGroup} />
+      <ApplianceModelRenderer modelPath={modelPath} proceduralGroup={proceduralApplianceGroup} />
       
       {/* Selection indicator */}
       {selected && (
