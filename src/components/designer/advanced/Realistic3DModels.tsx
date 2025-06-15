@@ -3,6 +3,9 @@ import { useGLTF } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 
+const COLLISION_MATERIAL_COLOR = 0xff0000; // Red
+const COLLISION_MATERIAL_OPACITY = 0.5;
+
 // Helper component to manage GLTF loading and fallback for Cabinets
 const CabinetModelRenderer = ({ modelPath, proceduralGroup }: { modelPath: string | null; proceduralGroup: THREE.Group }) => {
   if (modelPath) {
@@ -145,10 +148,20 @@ export const CabinetModel = ({ cabinet, selected = false }: { cabinet: any; sele
   };
 
   // Create procedural cabinet geometry when model isn't available
-  const createProceduralCabinet = (effectiveHeight: number) => { // Renamed from actualHeight for clarity
-    // Use effectiveHeight instead of cabinet.height for the BoxGeometry
+  const createProceduralCabinet = (effectiveHeight: number) => {
     const geometry = new THREE.BoxGeometry(cabinet.width, effectiveHeight, cabinet.depth);
-    // Create realistic materials
+
+    if (cabinet.isColliding) {
+      return {
+        geometry,
+        material: new THREE.MeshStandardMaterial({
+          color: COLLISION_MATERIAL_COLOR,
+          transparent: true,
+          opacity: COLLISION_MATERIAL_OPACITY,
+        })
+      };
+    }
+
     const materials = {
       laminate: new THREE.MeshStandardMaterial({
         color: new THREE.Color(cabinet.color || '#8B4513'),
@@ -263,25 +276,26 @@ export const CabinetModel = ({ cabinet, selected = false }: { cabinet: any; sele
     const toeKickH = (cabinet.type === 'base' && cabinet.toeKickHeight !== undefined && cabinet.toeKickHeight > 0) ? cabinet.toeKickHeight : 0;
     const toeKickD_inset = (cabinet.type === 'base' && cabinet.toeKickDepth !== undefined && cabinet.toeKickDepth > 0) ? cabinet.toeKickDepth : 0;
 
-    // Main cabinet box
     const mainBoxEffectiveHeight = cabinet.height - toeKickH;
+    // boxMaterial will be the collision material if cabinet.isColliding is true
     const { geometry: boxGeometry, material: boxMaterial } = createProceduralCabinet(mainBoxEffectiveHeight);
     const cabinetBox = new THREE.Mesh(boxGeometry, boxMaterial);
     cabinetBox.position.y = toeKickH / 2;
     group.add(cabinetBox);
 
-    // Add Toe Kick if applicable
     if (toeKickH > 0) {
-      const toeKickGeometry = new THREE.BoxGeometry(
-        cabinet.width,
-        toeKickH,
-        cabinet.depth - toeKickD_inset
-      );
+      let toeKickMaterialColor = new THREE.Color(cabinet.color || "#8B4513").multiplyScalar(0.7);
+      if (cabinet.isColliding) {
+        toeKickMaterialColor = new THREE.Color(COLLISION_MATERIAL_COLOR);
+      }
       const toeKickMaterial = new THREE.MeshStandardMaterial({
-        color: new THREE.Color(cabinet.color || '#8B4513').multiplyScalar(0.5),
+        color: toeKickMaterialColor,
         roughness: 0.8,
         metalness: 0.1,
+        transparent: !!cabinet.isColliding,
+        opacity: cabinet.isColliding ? COLLISION_MATERIAL_OPACITY : 1.0,
       });
+      const toeKickGeometry = new THREE.BoxGeometry(cabinet.width, toeKickH, cabinet.depth - toeKickD_inset);
       const toeKickMesh = new THREE.Mesh(toeKickGeometry, toeKickMaterial);
       toeKickMesh.position.y = -(cabinet.height / 2) + (toeKickH / 2);
       toeKickMesh.position.z = -toeKickD_inset / 2;
@@ -291,57 +305,47 @@ export const CabinetModel = ({ cabinet, selected = false }: { cabinet: any; sele
     const shelfThickness = 2;
     const shelfInsetX = 2;
     const shelfInsetZ_front = 2;
-
     const shelfCount = (cabinet.shelfCount !== undefined && cabinet.shelfCount > 0) ? cabinet.shelfCount : 0;
 
     if (shelfCount > 0 && cabinet.frontType !== 'drawer') {
       const usableShelfWidth = cabinet.width - 2 * shelfInsetX;
       const usableShelfDepth = cabinet.depth - shelfInsetZ_front;
-
       if (usableShelfWidth > 0 && usableShelfDepth > 0) {
-        const shelfGeometry = new THREE.BoxGeometry(
-          usableShelfWidth,
-          shelfThickness,
-          usableShelfDepth
-        );
-
+        const shelfGeometry = new THREE.BoxGeometry(usableShelfWidth, shelfThickness, usableShelfDepth);
         const totalShelfThickness = shelfCount * shelfThickness;
         const remainingSpaceForGaps = mainBoxEffectiveHeight - totalShelfThickness;
-
         if (remainingSpaceForGaps >= 0) {
             const numberOfGaps = shelfCount + 1;
             const gapHeight = remainingSpaceForGaps / numberOfGaps;
-
             for (let i = 0; i < shelfCount; i++) {
+                // Shelves use boxMaterial, which will be collision material if cabinet is colliding
                 const shelfMesh = new THREE.Mesh(shelfGeometry, boxMaterial);
-
                 const shelfCenterY = (-mainBoxEffectiveHeight / 2) + (gapHeight * (i + 1)) + (shelfThickness * i) + (shelfThickness / 2);
-
-                shelfMesh.position.set(
-                    0,
-                    shelfCenterY,
-                    -shelfInsetZ_front / 2
-                );
+                shelfMesh.position.set(0, shelfCenterY, -shelfInsetZ_front / 2 );
                 cabinetBox.add(shelfMesh);
             }
         }
       }
     }
     
-    // Add doors based on front type
-    const stileThickness = 2; // Default stile thickness for positioning, actual is in createShakerFrontMesh
-    const handleMaterial = new THREE.MeshStandardMaterial({color: '#C0C0C0', metalness: 0.8, roughness: 0.2});
+    const stileThickness = 2;
+    const handleStandardMaterial = new THREE.MeshStandardMaterial({color: '#C0C0C0', metalness: 0.8, roughness: 0.2});
+    const handleCollisionMaterial = new THREE.MeshStandardMaterial({
+      color: COLLISION_MATERIAL_COLOR, transparent: true, opacity: COLLISION_MATERIAL_OPACITY, metalness: 0.0, roughness: 0.5
+    });
+    const handleMaterialToUse = cabinet.isColliding ? handleCollisionMaterial : handleStandardMaterial;
 
     if (cabinet.frontType === 'shutter') {
       const doorWidth = cabinet.width * 0.48;
-      const doorHeight = mainBoxEffectiveHeight * 0.9; // Use effective height for door panel itself
+      const doorHeight = mainBoxEffectiveHeight * 0.9;
       let leftDoorMesh, rightDoorMesh;
 
       if (cabinet.doorStyle === 'shaker') {
-        leftDoorMesh = createShakerFrontMesh(doorWidth, doorHeight, boxMaterial);
-        rightDoorMesh = createShakerFrontMesh(doorWidth, doorHeight, boxMaterial);
-      } else { // Slab
-        const slabDoorGeom = new THREE.BoxGeometry(doorWidth, doorHeight, stileThickness); // Use stileThickness for slab thickness
+        // Pass boxMaterial which is already collision-aware
+        leftDoorMesh = createShakerFrontMesh(doorWidth, doorHeight, boxMaterial, 5, stileThickness);
+        rightDoorMesh = createShakerFrontMesh(doorWidth, doorHeight, boxMaterial, 5, stileThickness);
+      } else {
+        const slabDoorGeom = new THREE.BoxGeometry(doorWidth, doorHeight, stileThickness);
         leftDoorMesh = new THREE.Mesh(slabDoorGeom, boxMaterial);
         rightDoorMesh = new THREE.Mesh(slabDoorGeom, boxMaterial);
       }
@@ -352,13 +356,13 @@ export const CabinetModel = ({ cabinet, selected = false }: { cabinet: any; sele
       cabinetBox.add(rightDoorMesh);
       
       const handleGeom = new THREE.CylinderGeometry(0.2, 0.2, doorHeight * 0.2, 8);
-      const leftHandle = new THREE.Mesh(handleGeom, handleMaterial);
-      const rightHandle = new THREE.Mesh(handleGeom, handleMaterial);
+      const leftHandle = new THREE.Mesh(handleGeom, handleMaterialToUse);
+      const rightHandle = new THREE.Mesh(handleGeom, handleMaterialToUse);
 
       if (cabinet.doorStyle === 'shaker') {
-        leftHandle.position.set(doorWidth/2 - 5/2, 0, stileThickness / 2 + 1); // On outer stile
-        rightHandle.position.set(-doorWidth/2 + 5/2, 0, stileThickness / 2 + 1); // On outer stile
-      } else { // Slab
+        leftHandle.position.set(doorWidth/2 - 5/2 -1, 0, stileThickness / 2 + 1);
+        rightHandle.position.set(-doorWidth/2 + 5/2 +1, 0, stileThickness / 2 + 1);
+      } else {
         leftHandle.position.set(doorWidth/2 - 5, 0, stileThickness / 2 + 1);
         rightHandle.position.set(-doorWidth/2 + 5, 0, stileThickness / 2 + 1);
       }
@@ -375,8 +379,8 @@ export const CabinetModel = ({ cabinet, selected = false }: { cabinet: any; sele
         let drawerFaceMesh;
 
         if (cabinet.doorStyle === 'shaker') {
-          drawerFaceMesh = createShakerFrontMesh(drawerFaceWidth, drawerFaceHeight, boxMaterial);
-        } else { // Slab
+          drawerFaceMesh = createShakerFrontMesh(drawerFaceWidth, drawerFaceHeight, boxMaterial, 4, stileThickness); // Smaller stile for drawers
+        } else {
           const slabDrawerGeom = new THREE.BoxGeometry(drawerFaceWidth, drawerFaceHeight, stileThickness);
           drawerFaceMesh = new THREE.Mesh(slabDrawerGeom, boxMaterial);
         }
@@ -389,37 +393,43 @@ export const CabinetModel = ({ cabinet, selected = false }: { cabinet: any; sele
         cabinetBox.add(drawerFaceMesh);
         
         const handleGeom = new THREE.CylinderGeometry(0.15, 0.15, drawerFaceWidth * 0.3, 6);
-        const handle = new THREE.Mesh(handleGeom, handleMaterial);
+        const handle = new THREE.Mesh(handleGeom, handleMaterialToUse);
         handle.position.set(0, 0, stileThickness / 2 + 1);
         handle.rotation.x = Math.PI / 2;
         drawerFaceMesh.add(handle);
       }
     } else if (cabinet.frontType === 'glass') {
-      // Assuming glass doors are similar to shutter in setup (e.g., double doors if wide)
-      const doorWidth = cabinet.width * (cabinet.category === 'standard-wall' ? 0.95 : 0.48); // Single panel for some wall, double for others
+      const doorWidth = cabinet.width * (cabinet.category === 'standard-wall' ? 0.95 : 0.48);
       const doorHeight = mainBoxEffectiveHeight * 0.9;
       let glassDoorMesh;
-
+      // For glass, the frame material (boxMaterial) will show collision. The glass panel itself has its own material.
       if (cabinet.doorStyle === 'shaker') {
         glassDoorMesh = createShakerFrontMesh(doorWidth, doorHeight, boxMaterial, 5, stileThickness, 1.2, true);
-      } else { // Slab glass door
-        const glassMaterial = new THREE.MeshPhysicalMaterial({
-            color: new THREE.Color(boxMaterial.color).multiplyScalar(0.8), // Slightly darken for frame effect
-            roughness: 0.1, transmission: 0.9, thickness: 1, transparent: true, opacity: 0.3,
+      } else {
+        // Slab glass door: frame is boxMaterial, inner panel is glass
+        const glassSlabGroup = new THREE.Group();
+        const frameGeom = new THREE.BoxGeometry(doorWidth, doorHeight, stileThickness/1.5); // Thinner frame for slab glass
+        const frameMesh = new THREE.Mesh(frameGeom, boxMaterial);
+        glassSlabGroup.add(frameMesh);
+
+        const glassPanelGeom = new THREE.BoxGeometry(doorWidth - 2, doorHeight - 2, stileThickness/2 - 0.5); // Inset glass
+        const glassPanelMaterial = new THREE.MeshPhysicalMaterial({
+            color: cabinet.isColliding ? new THREE.Color(COLLISION_MATERIAL_COLOR) : new THREE.Color(0xAADDEE),
+            roughness: 0.05, transmission: 0.95, thickness: 0.5, transparent: true, opacity: cabinet.isColliding ? COLLISION_MATERIAL_OPACITY : 0.4,
         });
-        const slabGlassGeom = new THREE.BoxGeometry(doorWidth, doorHeight, stileThickness/2); // Thinner glass door
-        glassDoorMesh = new THREE.Mesh(slabGlassGeom, glassMaterial);
+        const glassPanelMesh = new THREE.Mesh(glassPanelGeom, glassPanelMaterial);
+        glassPanelMesh.position.z = 0.25; // Slightly front
+        frameMesh.add(glassPanelMesh); // Add as child so it's relative
+        glassDoorMesh = glassSlabGroup;
       }
 
-      // Simplified positioning for single panel glass door for now
-      glassDoorMesh.position.set(0, 0, cabinet.depth / 2 + stileThickness / 4);
+      glassDoorMesh.position.set(0, 0, cabinet.depth / 2 + stileThickness / 2);
       cabinetBox.add(glassDoorMesh);
 
-      // Add handle (optional, can be different for glass)
       const handleGeom = new THREE.CylinderGeometry(0.2, 0.2, 5, 8);
-      const handle = new THREE.Mesh(handleGeom, handleMaterial);
+      const handle = new THREE.Mesh(handleGeom, handleMaterialToUse);
       if (cabinet.doorStyle === 'shaker') {
-        handle.position.set(doorWidth/2 - 5/2, 0, stileThickness / 2 + 1);
+        handle.position.set(doorWidth/2 - 5/2 -1, 0, stileThickness / 2 + 1);
       } else {
         handle.position.set(doorWidth/2 - 5, 0, stileThickness / 2 + 1);
       }
@@ -482,14 +492,164 @@ export const ApplianceModel = ({ appliance, selected = false }: { appliance: any
   // Original createRealisticAppliance function
   const createRealisticAppliance = () => {
     const group = new THREE.Group();
-    
-    // Base appliance geometry
     const geometry = new THREE.BoxGeometry(appliance.width, appliance.height, appliance.depth);
+    const config = applianceConfigs[appliance.type as keyof typeof applianceConfigs] || applianceConfigs.sink;
+
+    let mainMaterial;
+    if (appliance.isColliding) {
+      mainMaterial = new THREE.MeshStandardMaterial({
+        color: COLLISION_MATERIAL_COLOR,
+        transparent: true,
+        opacity: COLLISION_MATERIAL_OPACITY,
+      });
+    } else {
+      mainMaterial = new THREE.MeshStandardMaterial({
+        color: config.color,
+        metalness: config.metalness,
+        roughness: config.roughness,
+      });
+    }
+    const mainBody = new THREE.Mesh(geometry, mainMaterial);
+    group.add(mainBody);
+
+    // Update details to also use collision material if needed
+    const details = config.details(appliance.isColliding); // Pass collision state
+    details.forEach(detail => {
+      if (appliance.isColliding && detail instanceof THREE.Mesh) {
+        // Attempt to unify detail material for collision state
+        // This is a simplified approach; complex details might need specific handling
+        detail.material = new THREE.MeshStandardMaterial({
+          color: COLLISION_MATERIAL_COLOR,
+          transparent: true,
+          opacity: COLLISION_MATERIAL_OPACITY,
+        });
+      }
+      group.add(detail)
+    });
+
+    return group;
+  };
+
+  // Appliance-specific materials and details
+  // Details functions now accept an isColliding flag
+  const applianceConfigs = {
+    sink: {
+      color: '#E5E5E5',
+      metalness: 0.8,
+      roughness: 0.2,
+      details: (isColliding?: boolean) => {
+        const basinMaterial = isColliding ?
+          new THREE.MeshStandardMaterial({ color: COLLISION_MATERIAL_COLOR, transparent: true, opacity: COLLISION_MATERIAL_OPACITY }) :
+          new THREE.MeshStandardMaterial({ color: '#F0F0F0', metalness: 0.9, roughness: 0.1 });
+        const basinGeometry = new THREE.CylinderGeometry(appliance.width * 0.3, appliance.width * 0.3, appliance.height * 0.3);
+        const basin = new THREE.Mesh(basinGeometry, basinMaterial);
+        basin.position.set(0, appliance.height * 0.2, 0);
+        return [basin];
+      }
+    },
+    stove: {
+      color: '#2C2C2C',
+      metalness: 0.7,
+      roughness: 0.3,
+      details: (isColliding?: boolean) => {
+        const details = [];
+        const burnerMaterial = isColliding ?
+          new THREE.MeshStandardMaterial({ color: COLLISION_MATERIAL_COLOR, transparent: true, opacity: COLLISION_MATERIAL_OPACITY }) :
+          new THREE.MeshStandardMaterial({ color: '#1A1A1A', metalness: 0.8, roughness: 0.2 });
+        for (let i = 0; i < 4; i++) {
+          const burnerGeometry = new THREE.CylinderGeometry(3, 3, 1);
+          const burner = new THREE.Mesh(burnerGeometry, burnerMaterial);
+          burner.position.set(
+            (i % 2 - 0.5) * appliance.width * 0.3,
+            appliance.height / 2 + 1,
+            (Math.floor(i / 2) - 0.5) * appliance.depth * 0.3
+          );
+          details.push(burner);
+        }
+        return details;
+      }
+    },
+    fridge: {
+      color: '#F8F8F8',
+      metalness: 0.1,
+      roughness: 0.4,
+      details: (isColliding?: boolean) => {
+        const details = [];
+        const handleDetailMaterial = isColliding ?
+          new THREE.MeshStandardMaterial({ color: COLLISION_MATERIAL_COLOR, transparent: true, opacity: COLLISION_MATERIAL_OPACITY }) :
+          new THREE.MeshStandardMaterial({ color: '#C0C0C0', metalness: 0.8, roughness: 0.2 });
+        const handleGeometry = new THREE.BoxGeometry(2, 20, 3);
+        const leftHandle = new THREE.Mesh(handleGeometry, handleDetailMaterial);
+        leftHandle.position.set(-appliance.width * 0.4, 0, appliance.depth / 2 + 2);
+        details.push(leftHandle);
+        const rightHandle = new THREE.Mesh(handleGeometry, handleDetailMaterial);
+        rightHandle.position.set(appliance.width * 0.4, 0, appliance.depth / 2 + 2);
+        details.push(rightHandle);
+        return details;
+      }
+    },
+    dishwasher: {
+      color: '#E0E0E0',
+      metalness: 0.6,
+      roughness: 0.3,
+      details: (isColliding?: boolean) => {
+        const panelMaterial = isColliding ?
+          new THREE.MeshStandardMaterial({ color: COLLISION_MATERIAL_COLOR, transparent: true, opacity: COLLISION_MATERIAL_OPACITY }) :
+          new THREE.MeshStandardMaterial({ color: '#1A1A1A', metalness: 0.1, roughness: 0.8 });
+        const panelGeometry = new THREE.BoxGeometry(appliance.width * 0.8, 5, 1);
+        const panel = new THREE.Mesh(panelGeometry, panelMaterial);
+        panel.position.set(0, appliance.height / 2 - 10, appliance.depth / 2 + 1);
+        return [panel];
+      }
+    },
+    oven: {
+      color: '#1A1A1A',
+      metalness: 0.7,
+      roughness: 0.3,
+      details: (isColliding?: boolean) => {
+        const windowMaterial = isColliding ?
+          new THREE.MeshStandardMaterial({ color: COLLISION_MATERIAL_COLOR, transparent: true, opacity: COLLISION_MATERIAL_OPACITY }) :
+          new THREE.MeshPhysicalMaterial({ color: '#000000', metalness: 0.0, roughness: 0.0, transmission: 0.8, thickness: 0.5});
+        const windowGeometry = new THREE.BoxGeometry(appliance.width * 0.6, appliance.height * 0.4, 0.5);
+        const window = new THREE.Mesh(windowGeometry, windowMaterial);
+        window.position.set(0, 0, appliance.depth / 2 + 1);
+        return [window];
+      }
+    },
+    microwave: {
+      color: '#2C2C2C',
+      metalness: 0.6,
+      roughness: 0.4,
+      details: (isColliding?: boolean) => {
+        const doorMaterial = isColliding ?
+          new THREE.MeshStandardMaterial({ color: COLLISION_MATERIAL_COLOR, transparent: true, opacity: COLLISION_MATERIAL_OPACITY }) :
+          new THREE.MeshStandardMaterial({ color: '#3C3C3C', metalness: 0.5, roughness: 0.5 });
+        const doorGeometry = new THREE.BoxGeometry(appliance.width * 0.8, appliance.height * 0.6, 1);
+        const door = new THREE.Mesh(doorGeometry, doorMaterial);
+        door.position.set(0, 0, appliance.depth / 2 + 1);
+        return [door];
+      }
+    },
+    hood: {
+      color: '#C0C0C0',
+      metalness: 0.8,
+      roughness: 0.2,
+      details: (isColliding?: boolean) => {
+        const grillMaterial = isColliding ?
+          new THREE.MeshStandardMaterial({ color: COLLISION_MATERIAL_COLOR, transparent: true, opacity: COLLISION_MATERIAL_OPACITY }) :
+          new THREE.MeshStandardMaterial({ color: '#808080', metalness: 0.9, roughness: 0.1 });
+        const grillGeometry = new THREE.CylinderGeometry(appliance.width * 0.3, appliance.width * 0.3, 2);
+        const grill = new THREE.Mesh(grillGeometry, grillMaterial);
+        grill.position.set(0, -appliance.height / 2 + 5, 0);
+        return [grill];
+      }
+    }
+  };
     
-    // Appliance-specific materials and details
-    const applianceConfigs = {
-      sink: {
-        color: '#E5E5E5',
+  // Appliance-specific materials and details
+  const applianceConfigs = {
+    sink: {
+      color: '#E5E5E5',
         metalness: 0.8,
         roughness: 0.2,
         details: () => {

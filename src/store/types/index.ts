@@ -87,6 +87,7 @@ export interface Cabinet {
 
   // New parameter for door style
   doorStyle?: 'slab' | 'shaker';
+  isColliding?: boolean; // New property
 }
 
 export type ApplianceType = 'sink' | 'stove' | 'fridge' | 'dishwasher' | 'oven' | 'microwave' | 'hood';
@@ -102,6 +103,7 @@ export interface Appliance {
   brand?: string;
   model?: string;
   color?: string;
+  isColliding?: boolean; // New property
 }
 
 // Utility types for better type safety in functions

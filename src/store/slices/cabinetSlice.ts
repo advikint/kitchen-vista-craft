@@ -3,6 +3,7 @@ import { StateCreator } from 'zustand';
 import { nanoid } from 'nanoid';
 import { KitchenStore } from '../types/storeTypes';
 import { Cabinet, CabinetDimensions, CabinetProperties, Point } from '../types';
+import { updateAllCollisions } from '../utils/collisionUtils';
 
 export interface CabinetSlice {
   cabinets: Cabinet[];
@@ -87,20 +88,31 @@ export const createCabinetSlice: StateCreator<KitchenStore, [], [], CabinetSlice
                    0), // Default shelf counts based on type, 0 if not applicable
 
       doorStyle: cabinetData.doorStyle || 'slab', // Default to 'slab' if not provided
+      isColliding: false, // Initialize as not colliding
     };
     
+    const newCabinetsArray = [...state.cabinets, newCabinet];
+    const { updatedCabinets, updatedAppliances } = updateAllCollisions(newCabinetsArray, state.appliances);
     return {
-      cabinets: [...state.cabinets, newCabinet]
+      cabinets: updatedCabinets,
+      appliances: updatedAppliances,
+      selectedItemId: newCabinet.id,
+      currentToolMode: 'select',
     };
   }),
   
-  updateCabinetPosition: (id, position) => set((state) => ({
-    cabinets: state.cabinets.map(cab => 
+  updateCabinetPosition: (id, position) => set((state) => {
+    const updatedCabinetsIntermediate = state.cabinets.map(cab =>
       cab.id === id ? { ...cab, position } : cab
-    )
-  })),
+    );
+    const { updatedCabinets, updatedAppliances } = updateAllCollisions(updatedCabinetsIntermediate, state.appliances);
+    return { cabinets: updatedCabinets, appliances: updatedAppliances };
+  }),
   
   updateCabinetRotation: (id, rotation) => set((state) => ({
+    // Note: Rotation also affects collision, should ideally re-calculate
+    // For now, keeping it simple as per direct instructions for position update.
+    // TODO: Add collision update for rotation changes if precise AABB is needed.
     cabinets: state.cabinets.map(cab => 
       cab.id === id ? { ...cab, rotation } : cab
     )
@@ -118,9 +130,15 @@ export const createCabinetSlice: StateCreator<KitchenStore, [], [], CabinetSlice
     )
   })),
   
-  deleteCabinet: (id) => set((state) => ({
-    cabinets: state.cabinets.filter(cab => cab.id !== id)
-  })),
+  deleteCabinet: (id) => set((state) => {
+    const remainingCabinets = state.cabinets.filter(cab => cab.id !== id);
+    const { updatedCabinets, updatedAppliances } = updateAllCollisions(remainingCabinets, state.appliances);
+    return {
+        cabinets: updatedCabinets,
+        appliances: updatedAppliances,
+        selectedItemId: null
+    };
+  }),
   
   duplicateCabinet: (id) => set((state) => {
     const cabinetToDuplicate = state.cabinets.find(cab => cab.id === id);

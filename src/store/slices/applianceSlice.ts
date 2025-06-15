@@ -1,50 +1,75 @@
 
-import { v4 as uuidv4 } from 'uuid';
+import { nanoid } from 'nanoid'; // Changed from uuidv4 for consistency
 import { StateCreator } from 'zustand';
 import { KitchenStore } from '../types/storeTypes';
-import { Appliance } from '../types';
+import { Appliance, Point } from '../types'; // Added Point for position update
+import { updateAllCollisions } from '../utils/collisionUtils';
 
 export interface ApplianceSlice {
   appliances: Appliance[];
-  addAppliance: (applianceOrId: Omit<Appliance, 'id'> | string, updates?: Partial<Appliance>) => void;
-  updateAppliance: (applianceOrId: Appliance | string, updates?: Partial<Appliance>) => void;
+  addAppliance: (applianceData: Omit<Appliance, 'id' | 'isColliding'>) => void; // Simplified signature for this context
+  updateAppliancePosition: (id: string, position: Point) => void; // Specific updater for position
+  updateAppliance: (id: string, updates: Partial<Omit<Appliance, 'id'>>) => void; // Generic updater
   removeAppliance: (id: string) => void;
 }
 
-export const createApplianceSlice: StateCreator<KitchenStore, [], [], ApplianceSlice> = (set) => ({
+export const createApplianceSlice: StateCreator<KitchenStore, [], [], ApplianceSlice> = (set, get) => ({
   appliances: [],
   
-  addAppliance: (applianceOrId, updates) => {
-    // If only one parameter is passed and it's an object, treat it as the appliance
-    if (typeof applianceOrId === 'object') {
-      const appliance = applianceOrId;
-      set((state) => ({ 
-        appliances: [...state.appliances, { ...appliance, id: uuidv4() }] 
-      }));
-    }
-  },
+  addAppliance: (applianceData) => set((state) => {
+    const newAppliance: Appliance = {
+      id: nanoid(),
+      ...applianceData,
+      isColliding: false, // Initialize
+    };
+    const newAppliancesArray = [...state.appliances, newAppliance];
+    const { updatedCabinets, updatedAppliances } = updateAllCollisions(state.cabinets, newAppliancesArray);
+    return {
+        cabinets: updatedCabinets,
+        appliances: updatedAppliances,
+        selectedItemId: newAppliance.id,
+        currentToolMode: 'select',
+    };
+  }),
+
+  updateAppliancePosition: (id, position) => set((state) => {
+    const updatedAppliancesIntermediate = state.appliances.map(app =>
+        app.id === id ? { ...app, position } : app
+    );
+    const { updatedCabinets, updatedAppliances } = updateAllCollisions(state.cabinets, updatedAppliancesIntermediate);
+    return { cabinets: updatedCabinets, appliances: updatedAppliances };
+  }),
   
-  updateAppliance: (applianceOrId, updates) => {
-    if (typeof applianceOrId === 'string' && updates) {
-      // Two parameter version: updateAppliance(id, updates)
-      const id = applianceOrId;
-      set((state) => ({
-        appliances: state.appliances.map(appliance => 
-          appliance.id === id ? { ...appliance, ...updates } : appliance
-        )
-      }));
-    } else if (typeof applianceOrId === 'object') {
-      // One parameter version: updateAppliance(appliance)
-      const appliance = applianceOrId as Appliance;
-      set((state) => ({
-        appliances: state.appliances.map(a => 
-          a.id === appliance.id ? { ...a, ...appliance } : a
-        )
-      }));
+  // Generic update function, if position is updated, it should also trigger collision
+  // For simplicity, this example assumes major collision-affecting changes go via specific updaters like updateAppliancePosition
+  // or a more comprehensive update action.
+  updateAppliance: (id, updates) => set((state) => {
+    let collisionCheckNeeded = false;
+    const updatedAppliancesIntermediate = state.appliances.map(appliance => {
+      if (appliance.id === id) {
+        if (updates.position || updates.width || updates.height || updates.depth || updates.rotation) {
+          collisionCheckNeeded = true;
+        }
+        return { ...appliance, ...updates };
+      }
+      return appliance;
+    });
+
+    if (collisionCheckNeeded) {
+      const { updatedCabinets, updatedAppliances } = updateAllCollisions(state.cabinets, updatedAppliancesIntermediate);
+      return { cabinets: updatedCabinets, appliances: updatedAppliances };
+    } else {
+      return { appliances: updatedAppliancesIntermediate };
     }
-  },
+  }),
   
-  removeAppliance: (id) => set((state) => ({
-    appliances: state.appliances.filter(appliance => appliance.id !== id)
-  })),
+  removeAppliance: (id: string) => set((state) => {
+    const remainingAppliances = state.appliances.filter(app => app.id !== id);
+    const { updatedCabinets, updatedAppliances } = updateAllCollisions(state.cabinets, remainingAppliances);
+    return {
+        cabinets: updatedCabinets,
+        appliances: updatedAppliances,
+        selectedItemId: null
+    };
+  }),
 });
