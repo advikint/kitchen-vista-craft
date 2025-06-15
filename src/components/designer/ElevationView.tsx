@@ -4,6 +4,33 @@ import { useKitchenStore } from "@/store/kitchenStore";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
+// Helper to normalize angle to 0-2PI
+const normalizeAngle = (radians: number): number => {
+  let angle = radians % (2 * Math.PI);
+  if (angle < 0) {
+    angle += 2 * Math.PI;
+  }
+  return angle;
+};
+
+// Helper to check if two angles are approximately parallel or perpendicular
+const areAnglesApproximatelyEqual = (angle1: number, angle2: number, tolerance: number = 0.1): boolean => {
+  const diff = Math.abs(normalizeAngle(angle1) - normalizeAngle(angle2));
+  return diff < tolerance || Math.abs(diff - 2 * Math.PI) < tolerance;
+};
+
+const areAnglesPerpendicular = (angle1: number, angle2: number, tolerance: number = 0.1): boolean => {
+  const diff = Math.abs(normalizeAngle(angle1) - normalizeAngle(angle2));
+  return Math.abs(diff - Math.PI / 2) < tolerance || Math.abs(diff - 3 * Math.PI / 2) < tolerance;
+};
+
+interface OrientedItem<T> {
+  item: T;
+  orientation: 'front' | 'side' | 'obscured'; // 'side' for now, left/right can be later
+  // distanceToWallLine: number; // For Z-ordering if needed later
+  projectionOnWall: number; // For X positioning on canvas
+}
+
 const ElevationView = () => {
   const { 
     room, walls, doors, windows, cabinets, appliances,
@@ -78,12 +105,12 @@ const ElevationView = () => {
     wallWindows.forEach(window => drawWindowElevation(ctx, window, wall));
     
     // Draw cabinets that are against this wall
-    const relevantCabinets = findCabinetsForWall(wall);
-    relevantCabinets.forEach(cabinet => drawCabinetElevation(ctx, cabinet, wall));
+    const relevantCabinets = findCabinetsForWall(wall, cabinets);
+    relevantCabinets.forEach(orientedCabinet => drawCabinetElevation(ctx, orientedCabinet, wall));
     
     // Draw appliances that are against this wall
-    const relevantAppliances = findAppliancesForWall(wall);
-    relevantAppliances.forEach(appliance => drawApplianceElevation(ctx, appliance, wall));
+    const relevantAppliances = findAppliancesForWall(wall, appliances); // Pass allAppliances
+    relevantAppliances.forEach(orientedAppliance => drawApplianceElevation(ctx, orientedAppliance, wall)); // Pass orientedAppliance
     
     // Draw dimensions if needed
     if (showDimensions) {
@@ -112,12 +139,12 @@ const ElevationView = () => {
     const wallHeight = wall.height || 240;
     
     // Draw wall
-    ctx.fillStyle = "#f3f4f6";
+    ctx.fillStyle = "#f3f4f6"; // Light gray background for wall
     ctx.fillRect(-wallLength / 2, -wallHeight / 2, wallLength, wallHeight);
     
     // Wall outline
-    ctx.strokeStyle = "#6b7280";
-    ctx.lineWidth = 2;
+    ctx.strokeStyle = "#374151"; // Darker gray
+    ctx.lineWidth = 3; // Thicker
     ctx.strokeRect(-wallLength / 2, -wallHeight / 2, wallLength, wallHeight);
     
     // Floor line
@@ -149,6 +176,41 @@ const ElevationView = () => {
     ctx.strokeStyle = "#3b82f6";
     ctx.lineWidth = 2;
     ctx.strokeRect(doorPositionX, wallHeight / 2 - door.height, door.width, door.height);
+
+    // Frame
+    const frameInset = 3; // cm
+    ctx.strokeStyle = "#9CA3AF"; // Lighter for frame
+    ctx.lineWidth = 1.0;
+    ctx.strokeRect(
+      doorPositionX + frameInset,
+      wallHeight / 2 - door.height + frameInset,
+      door.width - 2 * frameInset,
+      door.height - 2 * frameInset
+    );
+
+    // Door Swing Arc (Simple one-direction swing)
+    const doorEdgeX = doorPositionX + door.width;
+    const doorTopY = wallHeight / 2 - door.height;
+    // const doorBottomY = wallHeight / 2; // Unused in current arc logic
+
+    ctx.setLineDash([2, 2]);
+    ctx.strokeStyle = "#9CA3AF";
+    ctx.lineWidth = 0.75;
+    ctx.beginPath();
+    ctx.moveTo(doorEdgeX, doorTopY); // Hinge point assumed on the left edge of the door rect (doorPositionX)
+    // Corrected arc: Hinges on left (doorPositionX), swings open from right edge (doorEdgeX)
+    // The arc should start from the unhinged edge.
+    // If hinge is on left: ctx.arc(doorPositionX, doorTopY + door.height/2, door.width, 0, -Math.PI / 4, true);
+    // For simplicity, let's draw from the right edge (doorEdgeX) as if hinged on the left.
+    // The provided logic seems to hinge it at doorPositionX, doorTopY (top-left of door)
+    // and the arc starts from doorEdgeX, doorTopY (top-right of door).
+    // Let's assume hinge is on the left side (doorPositionX)
+    ctx.arc(doorPositionX, doorTopY + door.height, door.width, -Math.PI/2, -Math.PI/4, false); // Arc from bottom-left around left hinge
+    // A more common representation might be:
+    // ctx.moveTo(doorPositionX + door.width, doorPositionY + door.height); // Start at bottom-right if hinged on left
+    // ctx.arc(doorPositionX, doorPositionY + door.height, door.width, 0, -Math.PI / 4, true);
+    ctx.stroke();
+    ctx.setLineDash([]);
   };
   
   const drawWindowElevation = (ctx: CanvasRenderingContext2D, window: any, wall: any) => {
@@ -174,289 +236,356 @@ const ElevationView = () => {
     ctx.strokeRect(windowPositionX, windowPositionY, window.width, window.height);
     
     // Window panes
+    ctx.strokeStyle = "#7dd3fc"; // Or a slightly darker shade of it
+    ctx.lineWidth = 0.75;
     ctx.beginPath();
     ctx.moveTo(windowPositionX + window.width / 2, windowPositionY);
     ctx.lineTo(windowPositionX + window.width / 2, windowPositionY + window.height);
     ctx.moveTo(windowPositionX, windowPositionY + window.height / 2);
     ctx.lineTo(windowPositionX + window.width, windowPositionY + window.height / 2);
-    ctx.strokeStyle = "#7dd3fc";
     ctx.stroke();
+
+    // Frame
+    const frameInset = 3; // cm
+    // ctx.strokeStyle = "#7dd3fc"; // Already set, or choose a frame-specific color
+    ctx.lineWidth = 1.0; // Thinner than main outline, but thicker than panes
+    ctx.strokeRect(
+      windowPositionX + frameInset,
+      windowPositionY + frameInset,
+      window.width - 2 * frameInset,
+      window.height - 2 * frameInset
+    );
   };
   
-  const findCabinetsForWall = (wall: any) => {
-    // Simple implementation - find cabinets close to the wall
-    // A more robust implementation would consider rotation and exact positioning
-    const dx = wall.end.x - wall.start.x;
-    const dy = wall.end.y - wall.start.y;
-    const wallAngle = Math.atan2(dy, dx);
-    const wallNormal = { x: -Math.sin(wallAngle), y: Math.cos(wallAngle) };
-    
-    return cabinets.filter(cabinet => {
-      // Check if cabinet is close to the wall line
-      const cabToWallStart = {
-        x: cabinet.position.x - wall.start.x,
-        y: cabinet.position.y - wall.start.y
-      };
-      
-      // Project cabinet position onto wall normal
-      const distanceToWall = Math.abs(
-        cabToWallStart.x * wallNormal.x + cabToWallStart.y * wallNormal.y
-      );
-      
-      // Project cabinet position onto wall direction
-      const wallDir = { x: Math.cos(wallAngle), y: Math.sin(wallAngle) };
-      const projectionOnWall = 
-        cabToWallStart.x * wallDir.x + cabToWallStart.y * wallDir.y;
-      
-      // Calculate wall length
-      const wallLength = Math.sqrt(dx * dx + dy * dy);
-      
-      // Cabinet is close to wall and within wall length
-      return distanceToWall < cabinet.depth + 10 && 
-             projectionOnWall >= 0 && 
-             projectionOnWall <= wallLength;
-    });
-  };
-  
-  const findAppliancesForWall = (wall: any) => {
-    // Similar to findCabinetsForWall
-    const dx = wall.end.x - wall.start.x;
-    const dy = wall.end.y - wall.start.y;
-    const wallAngle = Math.atan2(dy, dx);
-    const wallNormal = { x: -Math.sin(wallAngle), y: Math.cos(wallAngle) };
-    
-    return appliances.filter(appliance => {
-      const appToWallStart = {
-        x: appliance.position.x - wall.start.x,
-        y: appliance.position.y - wall.start.y
-      };
-      
-      const distanceToWall = Math.abs(
-        appToWallStart.x * wallNormal.x + appToWallStart.y * wallNormal.y
-      );
-      
-      const wallDir = { x: Math.cos(wallAngle), y: Math.sin(wallAngle) };
-      const projectionOnWall = 
-        appToWallStart.x * wallDir.x + appToWallStart.y * wallDir.y;
-      
-      const wallLength = Math.sqrt(dx * dx + dy * dy);
-      
-      return distanceToWall < appliance.depth + 10 && 
-             projectionOnWall >= 0 && 
-             projectionOnWall <= wallLength;
-    });
-  };
-  
-  const drawCabinetElevation = (ctx: CanvasRenderingContext2D, cabinet: any, wall: any) => {
-    // Calculate wall length
-    const dx = wall.end.x - wall.start.x;
-    const dy = wall.end.y - wall.start.y;
-    const wallLength = Math.sqrt(dx * dx + dy * dy);
-    
-    // Wall height
-    const wallHeight = wall.height || 240;
-    
-    // Determine cabinet position along the wall
-    // This is a simplification - actual position would need more complex calculations
-    const wallAngle = Math.atan2(dy, dx);
-    const wallDir = { x: Math.cos(wallAngle), y: Math.sin(wallAngle) };
-    
+// Update findCabinetsForWall
+const findCabinetsForWall = (wall: any, allCabinets: any[]): OrientedItem<any>[] => {
+  const dx = wall.end.x - wall.start.x;
+  const dy = wall.end.y - wall.start.y;
+  const wallLength = Math.sqrt(dx * dx + dy * dy);
+  if (wallLength === 0) return [];
+  const wallAngle = Math.atan2(dy, dx); // Angle of the wall line itself
+
+  const relevantItems: OrientedItem<any>[] = [];
+
+  allCabinets.forEach(cabinet => {
     const cabToWallStart = {
       x: cabinet.position.x - wall.start.x,
-      y: cabinet.position.y - wall.start.y
+      y: cabinet.position.y - wall.start.y,
     };
+
+    const normalX = -dy / wallLength;
+    const normalY = dx / wallLength;
     
-    const projectionOnWall = 
-      cabToWallStart.x * wallDir.x + cabToWallStart.y * wallDir.y;
-    
-    const cabinetPositionX = -wallLength / 2 + projectionOnWall - cabinet.width / 2;
-    
-    // Base cabinets sit on the floor, wall cabinets are elevated
-    let cabinetPositionY;
-    if (cabinet.type === 'base') {
-      cabinetPositionY = wallHeight / 2 - cabinet.height;
-    } else if (cabinet.type === 'wall') {
-      cabinetPositionY = wallHeight / 2 - cabinet.height - 150; // 150cm from floor
-    } else if (cabinet.type === 'tall') {
-      cabinetPositionY = wallHeight / 2 - cabinet.height;
-    } else {
-      // Island cabinets won't show in elevation
-      return;
+    const distanceToWallLine = Math.abs(
+        (cabinet.position.x - wall.start.x) * normalX +
+        (cabinet.position.y - wall.start.y) * normalY
+    );
+
+    const wallDirX = dx / wallLength;
+    const wallDirY = dy / wallLength;
+    const projectionOnWall = cabToWallStart.x * wallDirX + cabToWallStart.y * wallDirY;
+
+    if (projectionOnWall >= -cabinet.width / 2 &&
+        projectionOnWall <= wallLength + cabinet.width / 2 &&
+        distanceToWallLine < (cabinet.depth / 2) + 20) {
+
+      const cabinetGlobalAngle = normalizeAngle((cabinet.rotation || 0) * Math.PI / 180);
+      let orientation: 'front' | 'side' | 'obscured' = 'obscured';
+
+      if (areAnglesApproximatelyEqual(cabinetGlobalAngle, wallAngle) || areAnglesApproximatelyEqual(cabinetGlobalAngle, normalizeAngle(wallAngle + Math.PI))) {
+        orientation = 'front';
+      } else if (areAnglesPerpendicular(cabinetGlobalAngle, wallAngle)) {
+        orientation = 'side';
+      }
+
+      if (orientation !== 'obscured') {
+         relevantItems.push({ item: cabinet, orientation, projectionOnWall });
+      }
     }
+  });
+  return relevantItems;
+};
+
+const findAppliancesForWall = (wall: any, allAppliances: any[]): OrientedItem<any>[] => {
+  const dx = wall.end.x - wall.start.x;
+  const dy = wall.end.y - wall.start.y;
+  const wallLength = Math.sqrt(dx * dx + dy * dy);
+  if (wallLength === 0) return [];
+  const wallAngle = Math.atan2(dy, dx);
+
+  const relevantItems: OrientedItem<any>[] = [];
+
+  allAppliances.forEach(appliance => {
+    const itemToWallStart = {
+      x: appliance.position.x - wall.start.x,
+      y: appliance.position.y - wall.start.y,
+    };
+
+    const normalX = -dy / wallLength;
+    const normalY = dx / wallLength;
     
-    // Draw cabinet
-    ctx.fillStyle = "#f9fafb";
-    ctx.fillRect(cabinetPositionX, cabinetPositionY, cabinet.width, cabinet.height);
+    const distanceToWallLine = Math.abs(
+        (appliance.position.x - wall.start.x) * normalX +
+        (appliance.position.y - wall.start.y) * normalY
+    );
+
+    const wallDirX = dx / wallLength;
+    const wallDirY = dy / wallLength;
+    const projectionOnWall = itemToWallStart.x * wallDirX + itemToWallStart.y * wallDirY;
+
+    // Check if appliance is within wall segment bounds and close enough
+    if (projectionOnWall >= -appliance.width / 2 &&
+        projectionOnWall <= wallLength + appliance.width / 2 &&
+        distanceToWallLine < (appliance.depth / 2) + 20) {
+
+      const applianceGlobalAngle = normalizeAngle((appliance.rotation || 0) * Math.PI / 180);
+      let orientation: 'front' | 'side' | 'obscured' = 'obscured';
+
+      if (areAnglesApproximatelyEqual(applianceGlobalAngle, wallAngle) || areAnglesApproximatelyEqual(applianceGlobalAngle, normalizeAngle(wallAngle + Math.PI))) {
+        orientation = 'front';
+      } else if (areAnglesPerpendicular(applianceGlobalAngle, wallAngle)) {
+        orientation = 'side';
+      }
+
+      if (orientation !== 'obscured') {
+         relevantItems.push({ item: appliance, orientation, projectionOnWall });
+      }
+    }
+  });
+  return relevantItems;
+};
+
+const drawCabinetElevation = (ctx: CanvasRenderingContext2D, orientedCabinet: OrientedItem<any>, wall: any) => {
+  const cabinet = orientedCabinet.item;
+  const orientation = orientedCabinet.orientation;
+  const projectionOnWall = orientedCabinet.projectionOnWall; // This is cabinet's center projection
+
+  const dx = wall.end.x - wall.start.x;
+  const dy = wall.end.y - wall.start.y;
+  const wallLength = Math.sqrt(dx * dx + dy * dy);
+  const wallHeight = wall.height || 240;
+
+  let cabinetPositionY;
+  if (cabinet.type === 'base') {
+    cabinetPositionY = wallHeight / 2 - cabinet.height;
+  } else if (cabinet.type === 'wall' || cabinet.type === 'loft') {
+    cabinetPositionY = wallHeight / 2 - cabinet.height - 150;
+  } else if (cabinet.type === 'tall') {
+    cabinetPositionY = wallHeight / 2 - cabinet.height;
+  } else {
+    return;
+  }
+
+  let cabinetDisplayX;
+  const doorInset = 4; // Inset from cabinet edge for panels
+  const innerInset = 2; // For simple bevel effect
+
+  if (orientation === 'front') {
+    cabinetDisplayX = -wallLength / 2 + projectionOnWall - cabinet.width / 2;
     
-    // Cabinet outline
-    ctx.strokeStyle = "#6b7280";
-    ctx.lineWidth = 1;
-    ctx.strokeRect(cabinetPositionX, cabinetPositionY, cabinet.width, cabinet.height);
+    ctx.fillStyle = cabinet.color || "#f9fafb"; // Use cabinet's color
+    ctx.fillRect(cabinetDisplayX, cabinetPositionY, cabinet.width, cabinet.height);
     
-    // Draw countertop for base cabinets
+    ctx.strokeStyle = "#6B7280";
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(cabinetDisplayX, cabinetPositionY, cabinet.width, cabinet.height); // Main outline after fill
+
     if (cabinet.type === 'base') {
       ctx.fillStyle = "#9ca3af";
-      ctx.fillRect(
-        cabinetPositionX - 2, 
-        cabinetPositionY, 
-        cabinet.width + 4, 
-        4
-      );
+      ctx.fillRect(cabinetDisplayX - 2, cabinetPositionY, cabinet.width + 4, 4);
     }
     
-    // Draw interior details based on cabinet category
-    if (cabinet.category === 'drawer') {
-      const drawers = 3;
+    ctx.strokeStyle = "#9CA3AF"; // Lighter for internal lines
+    ctx.lineWidth = 1.0;
+
+    if (cabinet.frontType === 'drawer') {
+      const drawers = cabinet.drawers || (cabinet.type === 'base' ? 3 : 2);
       const drawerHeight = cabinet.height / drawers;
-      
       for (let i = 0; i < drawers; i++) {
-        ctx.strokeRect(
-          cabinetPositionX + 2, 
-          cabinetPositionY + i * drawerHeight + 2, 
-          cabinet.width - 4, 
-          drawerHeight - 4
-        );
-        
-        // Drawer handles
-        ctx.fillStyle = "#6b7280";
-        ctx.fillRect(
-          cabinetPositionX + cabinet.width / 2 - 10, 
-          cabinetPositionY + i * drawerHeight + drawerHeight / 2, 
-          20, 
+        const drawerPanelX = cabinetDisplayX + doorInset;
+        const drawerPanelY = cabinetPositionY + i * drawerHeight + doorInset / 2;
+        const drawerPanelWidth = cabinet.width - 2 * doorInset;
+        const drawerPanelHeight = drawerHeight - doorInset;
+
+        ctx.strokeRect(drawerPanelX, drawerPanelY, drawerPanelWidth, drawerPanelHeight);
+        if (drawerPanelWidth > 2 * innerInset && drawerPanelHeight > 2 * innerInset) {
+           ctx.strokeRect(
+               drawerPanelX + innerInset,
+               drawerPanelY + innerInset,
+               drawerPanelWidth - 2 * innerInset,
+               drawerPanelHeight - 2 * innerInset
+           );
+        }
+        ctx.fillStyle = "#6B7280"; // Handle color
+        ctx.fillRect( // Centered handle
+          drawerPanelX + drawerPanelWidth / 2 - 15,
+          drawerPanelY + drawerPanelHeight / 2 - 1,
+          30,
           2
         );
       }
-    } else if (cabinet.category === 'shutter') {
-      // Door outline
-      ctx.strokeRect(
-        cabinetPositionX + 2, 
-        cabinetPositionY + 2, 
-        cabinet.width - 4, 
-        cabinet.height - 4
-      );
-      
-      // Door handle
-      ctx.fillStyle = "#6b7280";
-      ctx.fillRect(
-        cabinetPositionX + cabinet.width - 10, 
-        cabinetPositionY + cabinet.height / 2 - 10, 
-        2, 
-        20
-      );
+    } else if (cabinet.frontType === 'shutter') {
+      const panelWidth = cabinet.width - 2 * doorInset;
+      const panelHeight = cabinet.height - 2 * doorInset;
+      ctx.strokeRect(cabinetDisplayX + doorInset, cabinetPositionY + doorInset, panelWidth, panelHeight);
+
+      if (panelWidth > 2 * innerInset && panelHeight > 2 * innerInset) {
+         ctx.strokeRect(
+             cabinetDisplayX + doorInset + innerInset,
+             cabinetPositionY + doorInset + innerInset,
+             panelWidth - 2 * innerInset,
+             panelHeight - 2 * innerInset
+         );
+      }
+      ctx.fillStyle = "#6B7280";
+      if (cabinet.width > 50) {
+         ctx.fillRect(cabinetDisplayX + doorInset + panelWidth / 4 - 1, cabinetPositionY + doorInset + panelHeight / 2 - 10, 2, 20);
+         ctx.fillRect(cabinetDisplayX + doorInset + panelWidth * 3/4 -1, cabinetPositionY + doorInset + panelHeight / 2 - 10, 2, 20);
+      } else {
+         ctx.fillRect(cabinetDisplayX + doorInset + panelWidth - 10, cabinetPositionY + doorInset + panelHeight / 2 - 10, 2, 20);
+      }
+    } else if (cabinet.frontType === 'glass') {
+        ctx.strokeRect(cabinetDisplayX + doorInset, cabinetPositionY + doorInset, cabinet.width - 2 * doorInset, cabinet.height - 2 * doorInset); // Frame
+        
+        const glassMargin = 10;
+        ctx.fillStyle = "rgba(173, 216, 230, 0.4)";
+        ctx.fillRect(
+            cabinetDisplayX + doorInset + glassMargin,
+            cabinetPositionY + doorInset + glassMargin,
+            cabinet.width - 2 * (doorInset + glassMargin),
+            cabinet.height - 2 * (doorInset + glassMargin)
+        );
+        ctx.strokeStyle = "#A5C0C8";
+        ctx.strokeRect(
+            cabinetDisplayX + doorInset + glassMargin,
+            cabinetPositionY + doorInset + glassMargin,
+            cabinet.width - 2 * (doorInset + glassMargin),
+            cabinet.height - 2 * (doorInset + glassMargin)
+        );
+        ctx.fillStyle = "#6B7280";
+        ctx.fillRect(cabinetDisplayX + cabinet.width - 2 * doorInset - 10, cabinetPositionY + cabinet.height / 2 - 10, 2, 20);
     }
-  };
+
+  } else if (orientation === 'side') {
+    cabinetDisplayX = -wallLength / 2 + projectionOnWall - cabinet.depth / 2;
+
+    ctx.fillStyle = cabinet.color || "#f9fafb";
+    ctx.fillRect(cabinetDisplayX, cabinetPositionY, cabinet.depth, cabinet.height);
+    ctx.strokeStyle = "#6B7280";
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(cabinetDisplayX, cabinetPositionY, cabinet.depth, cabinet.height);
+
+    ctx.setLineDash([3, 3]);
+    ctx.strokeStyle = "#9CA3AF";
+    ctx.lineWidth = 0.75;
+
+    const projectionLength = Math.min(cabinet.width / 4, 20);
+    const angle = Math.PI / 4;
+
+    ctx.beginPath();
+    ctx.moveTo(cabinetDisplayX + cabinet.depth, cabinetPositionY);
+    ctx.lineTo(cabinetDisplayX + cabinet.depth + Math.cos(angle) * projectionLength, cabinetPositionY - Math.sin(angle) * projectionLength);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(cabinetDisplayX + cabinet.depth, cabinetPositionY + cabinet.height);
+    ctx.lineTo(cabinetDisplayX + cabinet.depth + Math.cos(angle) * projectionLength, cabinetPositionY + cabinet.height - Math.sin(angle) * projectionLength);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(cabinetDisplayX + cabinet.depth + Math.cos(angle) * projectionLength, cabinetPositionY - Math.sin(angle) * projectionLength);
+    ctx.lineTo(cabinetDisplayX + cabinet.depth + Math.cos(angle) * projectionLength, cabinetPositionY + cabinet.height - Math.sin(angle) * projectionLength);
+    ctx.stroke();
+
+    ctx.setLineDash([]);
+  }
+};
   
-  const drawApplianceElevation = (ctx: CanvasRenderingContext2D, appliance: any, wall: any) => {
-    // Calculate wall length
-    const dx = wall.end.x - wall.start.x;
-    const dy = wall.end.y - wall.start.y;
-    const wallLength = Math.sqrt(dx * dx + dy * dy);
+const drawApplianceElevation = (ctx: CanvasRenderingContext2D, orientedAppliance: OrientedItem<any>, wall: any) => {
+  const appliance = orientedAppliance.item;
+  const orientation = orientedAppliance.orientation;
+  const projectionOnWall = orientedAppliance.projectionOnWall; // Appliance center projection
+
+  const dx = wall.end.x - wall.start.x;
+  const dy = wall.end.y - wall.start.y;
+  const wallLength = Math.sqrt(dx * dx + dy * dy);
+  const wallHeight = wall.height || 240;
+
+  let appliancePositionY = wallHeight / 2 - appliance.height;
+  let applianceDisplayX;
+
+  if (orientation === 'front') {
+    applianceDisplayX = -wallLength / 2 + projectionOnWall - appliance.width / 2;
     
-    // Wall height
-    const wallHeight = wall.height || 240;
+    ctx.fillStyle = appliance.color || "#e5e7eb"; // Use appliance's color
+    ctx.fillRect(applianceDisplayX, appliancePositionY, appliance.width, appliance.height);
     
-    // Determine appliance position along the wall
-    const wallAngle = Math.atan2(dy, dx);
-    const wallDir = { x: Math.cos(wallAngle), y: Math.sin(wallAngle) };
-    
-    const appToWallStart = {
-      x: appliance.position.x - wall.start.x,
-      y: appliance.position.y - wall.start.y
-    };
-    
-    const projectionOnWall = 
-      appToWallStart.x * wallDir.x + appToWallStart.y * wallDir.y;
-    
-    const appliancePositionX = -wallLength / 2 + projectionOnWall - appliance.width / 2;
-    const appliancePositionY = wallHeight / 2 - appliance.height;
-    
-    // Draw appliance
-    ctx.fillStyle = "#e5e7eb";
-    ctx.fillRect(appliancePositionX, appliancePositionY, appliance.width, appliance.height);
-    
-    // Appliance outline
-    ctx.strokeStyle = "#6b7280";
-    ctx.lineWidth = 1;
-    ctx.strokeRect(appliancePositionX, appliancePositionY, appliance.width, appliance.height);
-    
-    // Draw appliance details based on type
+    ctx.strokeStyle = "#6B7280";
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(applianceDisplayX, appliancePositionY, appliance.width, appliance.height); // Main outline after fill
+
+    ctx.strokeStyle = "#9CA3AF";
+    ctx.lineWidth = 1.0;
+
     if (appliance.type === 'sink') {
-      // Sink basin
-      ctx.fillStyle = "#9ca3af";
-      ctx.fillRect(
-        appliancePositionX + 5, 
-        appliancePositionY + 5, 
-        appliance.width - 10, 
-        20
-      );
-      
-      // Faucet
+      ctx.fillStyle = "#cad1d9";
+      ctx.fillRect(applianceDisplayX + 5, appliancePositionY + 5, appliance.width - 10, 20);
+      ctx.strokeRect(applianceDisplayX + 5, appliancePositionY + 5, appliance.width - 10, 20);
+
       ctx.beginPath();
-      ctx.moveTo(appliancePositionX + appliance.width / 2, appliancePositionY + 5);
-      ctx.lineTo(appliancePositionX + appliance.width / 2, appliancePositionY - 15);
-      ctx.arc(
-        appliancePositionX + appliance.width / 2 - 10, 
-        appliancePositionY - 15, 
-        10, 
-        0, 
-        Math.PI, 
-        true
-      );
-      ctx.strokeStyle = "#6b7280";
+      ctx.moveTo(applianceDisplayX + appliance.width / 2, appliancePositionY + 5);
+      ctx.lineTo(applianceDisplayX + appliance.width / 2, appliancePositionY - 15);
+      ctx.arc(applianceDisplayX + appliance.width / 2 - 10, appliancePositionY - 15, 10, 0, Math.PI, true);
       ctx.stroke();
     } else if (appliance.type === 'stove') {
-      // Burners
       ctx.fillStyle = "#4b5563";
       const burnerRadius = 5;
-      ctx.beginPath();
-      ctx.arc(
-        appliancePositionX + appliance.width / 4, 
-        appliancePositionY + 15, 
-        burnerRadius, 
-        0, 
-        Math.PI * 2
-      );
-      ctx.fill();
-      
-      ctx.beginPath();
-      ctx.arc(
-        appliancePositionX + appliance.width * 3 / 4, 
-        appliancePositionY + 15, 
-        burnerRadius, 
-        0, 
-        Math.PI * 2
-      );
-      ctx.fill();
-      
-      ctx.beginPath();
-      ctx.arc(
-        appliancePositionX + appliance.width / 4, 
-        appliancePositionY + 40, 
-        burnerRadius, 
-        0, 
-        Math.PI * 2
-      );
-      ctx.fill();
-      
-      ctx.beginPath();
-      ctx.arc(
-        appliancePositionX + appliance.width * 3 / 4, 
-        appliancePositionY + 40, 
-        burnerRadius, 
-        0, 
-        Math.PI * 2
-      );
-      ctx.fill();
-      
-      // Controls
-      ctx.fillRect(
-        appliancePositionX + 10, 
-        appliancePositionY + appliance.height - 15, 
-        appliance.width - 20, 
-        10
-      );
+      for(let i=0; i < 2; i++) {
+        for(let j=0; j < 2; j++) {
+          ctx.beginPath();
+          ctx.arc(applianceDisplayX + appliance.width * (i*0.5 + 0.25) , appliancePositionY + 15 + j*25, burnerRadius,0,Math.PI*2);
+          ctx.fill();
+        }
+      }
+      ctx.fillStyle = "#4b5563";
+      ctx.fillRect(applianceDisplayX + 10, appliancePositionY + appliance.height - 15, appliance.width - 20, 10);
+      ctx.strokeRect(applianceDisplayX + 10, appliancePositionY + appliance.height - 15, appliance.width - 20, 10);
     }
-  };
+
+  } else if (orientation === 'side') {
+    applianceDisplayX = -wallLength / 2 + projectionOnWall - appliance.depth / 2;
+
+    ctx.fillStyle = appliance.color || "#e5e7eb";
+    ctx.fillRect(applianceDisplayX, appliancePositionY, appliance.depth, appliance.height);
+    ctx.strokeStyle = "#6B7280";
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(applianceDisplayX, appliancePositionY, appliance.depth, appliance.height);
+
+    ctx.setLineDash([3, 3]);
+    ctx.strokeStyle = "#9CA3AF";
+    ctx.lineWidth = 0.75;
+
+    const projectionLength = Math.min(appliance.width / 4, 20);
+    const angle = Math.PI / 4;
+
+    ctx.beginPath();
+    ctx.moveTo(applianceDisplayX + appliance.depth, appliancePositionY);
+    ctx.lineTo(applianceDisplayX + appliance.depth + Math.cos(angle) * projectionLength, appliancePositionY - Math.sin(angle) * projectionLength);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(applianceDisplayX + appliance.depth, appliancePositionY + appliance.height);
+    ctx.lineTo(applianceDisplayX + appliance.depth + Math.cos(angle) * projectionLength, appliancePositionY + appliance.height - Math.sin(angle) * projectionLength);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(applianceDisplayX + appliance.depth + Math.cos(angle) * projectionLength, appliancePositionY - Math.sin(angle) * projectionLength);
+    ctx.lineTo(applianceDisplayX + appliance.depth + Math.cos(angle) * projectionLength, appliancePositionY + appliance.height - Math.sin(angle) * projectionLength);
+    ctx.stroke();
+
+    ctx.setLineDash([]);
+  }
+};
   
   const drawDimensionsElevation = (ctx: CanvasRenderingContext2D, wall: any) => {
     // Calculate wall length
