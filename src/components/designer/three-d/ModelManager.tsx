@@ -6,6 +6,7 @@ export interface ModelAsset {
   name: string;
   category: 'cabinet' | 'appliance' | 'fixture';
   type: string;
+  subCategory?: string;
   dimensions: {
     width: number;
     height: number;
@@ -14,38 +15,119 @@ export interface ModelAsset {
   materials?: string[];
   brand?: string;
   price?: number;
+  modelFile?: string;
 }
 
 export const useModelManager = () => {
-  // Cabinet models library
+  // Comprehensive cabinet models library
   const cabinetModels: ModelAsset[] = [
+    // Base Cabinets
     {
-      url: '/models/cabinets/modern-base-cabinet.glb',
-      name: 'Modern Base Cabinet',
+      url: '/models/cabinets/base-standard.glb',
+      name: 'Standard Base Cabinet',
       category: 'cabinet',
       type: 'base',
+      subCategory: 'standard-base',
       dimensions: { width: 60, height: 85, depth: 60 },
-      materials: ['oak', 'maple', 'white']
+      materials: ['laminate', 'veneer', 'acrylic']
     },
     {
-      url: '/models/cabinets/shaker-wall-cabinet.glb',
-      name: 'Shaker Wall Cabinet',
+      url: '/models/cabinets/base-sink.glb',
+      name: 'Sink Base Cabinet',
+      category: 'cabinet',
+      type: 'base',
+      subCategory: 'sink-base',
+      dimensions: { width: 90, height: 85, depth: 60 },
+      materials: ['laminate', 'veneer']
+    },
+    {
+      url: '/models/cabinets/base-drawer.glb',
+      name: 'Drawer Base Cabinet',
+      category: 'cabinet',
+      type: 'base',
+      subCategory: 'drawer-base',
+      dimensions: { width: 60, height: 85, depth: 60 },
+      materials: ['laminate', 'veneer', 'acrylic']
+    },
+    {
+      url: '/models/cabinets/base-corner.glb',
+      name: 'Corner Base Cabinet',
+      category: 'cabinet',
+      type: 'base',
+      subCategory: 'corner-base',
+      dimensions: { width: 90, height: 85, depth: 90 },
+      materials: ['laminate', 'veneer']
+    },
+    
+    // Wall Cabinets
+    {
+      url: '/models/cabinets/wall-standard.glb',
+      name: 'Standard Wall Cabinet',
       category: 'cabinet',
       type: 'wall',
+      subCategory: 'standard-wall',
       dimensions: { width: 60, height: 70, depth: 35 },
-      materials: ['oak', 'cherry', 'white']
+      materials: ['laminate', 'veneer', 'acrylic']
     },
     {
-      url: '/models/cabinets/tall-pantry-cabinet.glb',
-      name: 'Tall Pantry Cabinet',
+      url: '/models/cabinets/wall-open-shelf.glb',
+      name: 'Open Shelf Wall Cabinet',
+      category: 'cabinet',
+      type: 'wall',
+      subCategory: 'open-shelf',
+      dimensions: { width: 60, height: 70, depth: 35 },
+      materials: ['laminate', 'veneer']
+    },
+    {
+      url: '/models/cabinets/wall-glass.glb',
+      name: 'Glass Door Wall Cabinet',
+      category: 'cabinet',
+      type: 'wall',
+      subCategory: 'glass-wall',
+      dimensions: { width: 60, height: 70, depth: 35 },
+      materials: ['laminate', 'veneer']
+    },
+    {
+      url: '/models/cabinets/wall-corner.glb',
+      name: 'Corner Wall Cabinet',
+      category: 'cabinet',
+      type: 'wall',
+      subCategory: 'corner-wall',
+      dimensions: { width: 60, height: 70, depth: 60 },
+      materials: ['laminate', 'veneer']
+    },
+    
+    // Tall Cabinets
+    {
+      url: '/models/cabinets/tall-pantry.glb',
+      name: 'Pantry Tall Cabinet',
       category: 'cabinet',
       type: 'tall',
-      dimensions: { width: 60, height: 220, depth: 60 },
-      materials: ['oak', 'maple', 'walnut']
+      subCategory: 'pantry-tall',
+      dimensions: { width: 60, height: 210, depth: 60 },
+      materials: ['laminate', 'veneer']
+    },
+    {
+      url: '/models/cabinets/tall-oven.glb',
+      name: 'Oven Housing Tall Cabinet',
+      category: 'cabinet',
+      type: 'tall',
+      subCategory: 'oven-tall',
+      dimensions: { width: 60, height: 210, depth: 60 },
+      materials: ['laminate', 'veneer']
+    },
+    {
+      url: '/models/cabinets/tall-fridge.glb',
+      name: 'Fridge Housing Tall Cabinet',
+      category: 'cabinet',
+      type: 'tall',
+      subCategory: 'fridge-tall',
+      dimensions: { width: 60, height: 210, depth: 60 },
+      materials: ['laminate', 'veneer']
     }
   ];
 
-  // Appliance models library
+  // Appliance models library (enhanced)
   const applianceModels: ModelAsset[] = [
     {
       url: '/models/appliances/samsung-refrigerator.glb',
@@ -53,7 +135,8 @@ export const useModelManager = () => {
       category: 'appliance',
       type: 'fridge',
       dimensions: { width: 90, height: 180, depth: 70 },
-      brand: 'Samsung'
+      brand: 'Samsung',
+      price: 2500
     },
     {
       url: '/models/appliances/bosch-dishwasher.glb',
@@ -61,7 +144,8 @@ export const useModelManager = () => {
       category: 'appliance',
       type: 'dishwasher',
       dimensions: { width: 60, height: 85, depth: 55 },
-      brand: 'Bosch'
+      brand: 'Bosch',
+      price: 800
     },
     {
       url: '/models/appliances/ge-range.glb',
@@ -69,12 +153,26 @@ export const useModelManager = () => {
       category: 'appliance',
       type: 'stove',
       dimensions: { width: 75, height: 95, depth: 70 },
-      brand: 'GE'
+      brand: 'GE',
+      price: 1200
+    },
+    {
+      url: '/models/appliances/kitchen-sink.glb',
+      name: 'Stainless Steel Kitchen Sink',
+      category: 'appliance',
+      type: 'sink',
+      dimensions: { width: 80, height: 20, depth: 50 },
+      brand: 'Kohler',
+      price: 400
     }
   ];
 
-  const getModelByType = (category: 'cabinet' | 'appliance', type: string): ModelAsset | undefined => {
+  const getModelByType = (category: 'cabinet' | 'appliance', type: string, subCategory?: string): ModelAsset | undefined => {
     const models = category === 'cabinet' ? cabinetModels : applianceModels;
+    
+    if (subCategory) {
+      return models.find(model => model.type === type && model.subCategory === subCategory);
+    }
     return models.find(model => model.type === type);
   };
 
@@ -82,8 +180,29 @@ export const useModelManager = () => {
     return category === 'cabinet' ? cabinetModels : applianceModels;
   };
 
+  const getCabinetModelsByType = (type: string): ModelAsset[] => {
+    return cabinetModels.filter(model => model.type === type);
+  };
+
   const getAllModels = (): ModelAsset[] => {
     return [...cabinetModels, ...applianceModels];
+  };
+
+  // Generate GLB file structure for download
+  const generateModelStructure = () => {
+    return {
+      cabinets: {
+        base: cabinetModels.filter(m => m.type === 'base'),
+        wall: cabinetModels.filter(m => m.type === 'wall'),
+        tall: cabinetModels.filter(m => m.type === 'tall')
+      },
+      appliances: applianceModels,
+      requiredDirectories: [
+        '/public/models/cabinets/',
+        '/public/models/appliances/',
+        '/public/draco/'
+      ]
+    };
   };
 
   return {
@@ -91,7 +210,9 @@ export const useModelManager = () => {
     applianceModels,
     getModelByType,
     getModelsByCategory,
-    getAllModels
+    getCabinetModelsByType,
+    getAllModels,
+    generateModelStructure
   };
 };
 

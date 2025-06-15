@@ -3,8 +3,9 @@ import { useMemo, useRef, Suspense } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { Cabinet } from "@/store/types";
-import { Text, Box } from "@react-three/drei";
+import { Text } from "@react-three/drei";
 import ModelLoader from "./ModelLoader";
+import CabinetModelGenerator from "./CabinetModelGenerator";
 
 interface RealisticCabinet3DProps {
   cabinet: Cabinet;
@@ -24,20 +25,31 @@ const RealisticCabinet3D = ({ cabinet, isSelected, onClick }: RealisticCabinet3D
   });
 
   const getModelUrl = () => {
-    // Map cabinet types to GLB model URLs
+    // Map cabinet types and categories to GLB model URLs
     const modelMap: Record<string, string> = {
-      'base': '/models/cabinets/base-cabinet.glb',
-      'wall': '/models/cabinets/wall-cabinet.glb',
-      'tall': '/models/cabinets/tall-cabinet.glb',
-      'corner': '/models/cabinets/corner-cabinet.glb'
+      'base-standard-base': '/models/cabinets/base-standard.glb',
+      'base-sink-base': '/models/cabinets/base-sink.glb',
+      'base-drawer-base': '/models/cabinets/base-drawer.glb',
+      'base-corner-base': '/models/cabinets/base-corner.glb',
+      'base-cooktop-base': '/models/cabinets/base-cooktop.glb',
+      'wall-standard-wall': '/models/cabinets/wall-standard.glb',
+      'wall-open-shelf': '/models/cabinets/wall-open-shelf.glb',
+      'wall-microwave-wall': '/models/cabinets/wall-microwave.glb',
+      'wall-corner-wall': '/models/cabinets/wall-corner.glb',
+      'wall-glass-wall': '/models/cabinets/wall-glass.glb',
+      'tall-pantry-tall': '/models/cabinets/tall-pantry.glb',
+      'tall-oven-tall': '/models/cabinets/tall-oven.glb',
+      'tall-fridge-tall': '/models/cabinets/tall-fridge.glb',
+      'tall-broom-tall': '/models/cabinets/tall-broom.glb'
     };
     
-    return modelMap[cabinet.type] || modelMap.base;
+    const key = `${cabinet.type}-${cabinet.category}`;
+    return modelMap[key] || modelMap[`${cabinet.type}-standard-${cabinet.type}`];
   };
 
   const modelScale = useMemo(() => {
     // Scale model to match cabinet dimensions
-    const baseScale = 0.1; // Adjust based on your model size
+    const baseScale = 0.01; // Adjust based on your model size
     return [
       (cabinet.width / 100) * baseScale,
       (cabinet.height / 100) * baseScale,
@@ -45,33 +57,13 @@ const RealisticCabinet3D = ({ cabinet, isSelected, onClick }: RealisticCabinet3D
     ] as [number, number, number];
   }, [cabinet.width, cabinet.height, cabinet.depth]);
 
+  // Use procedural cabinet as fallback
   const fallbackCabinet = () => (
-    <group>
-      {/* Fallback basic cabinet when model fails to load */}
-      <Box 
-        args={[cabinet.width, cabinet.height, cabinet.depth]}
-        position={[0, 0, 0]}
-        onClick={onClick}
-      >
-        <meshStandardMaterial 
-          color={cabinet.color} 
-          roughness={0.4} 
-          metalness={0.1} 
-        />
-      </Box>
-      
-      {/* Door handles */}
-      <Box 
-        args={[2, 8, 3]}
-        position={[cabinet.width / 2 - 5, 0, cabinet.depth / 2 + 2]}
-      >
-        <meshStandardMaterial 
-          color="#8a8a8a" 
-          roughness={0.2} 
-          metalness={0.8} 
-        />
-      </Box>
-    </group>
+    <CabinetModelGenerator 
+      cabinet={cabinet}
+      isSelected={isSelected}
+      onClick={onClick}
+    />
   );
 
   return (
