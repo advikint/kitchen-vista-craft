@@ -6,8 +6,11 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
+// import { Separator } from "@/components/ui/separator"; // Separator seems unused in the provided new logic, can be kept or removed.
 import { Search, Filter, Star, Download, Eye, ShoppingCart } from "lucide-react";
+import { useKitchenStore, CabinetType, CabinetCategory, CabinetFinish, CabinetFrontType, ApplianceType } from "@/store/kitchenStore";
+
+const INCH_TO_CM = 2.54;
 
 // Professional manufacturer catalog data (Prices in Indian Rupees)
 const PROFESSIONAL_CATALOG = {
@@ -1165,8 +1168,94 @@ const ProfessionalCatalog = () => {
   }, [allItems, searchTerm, selectedCategory, selectedManufacturer, priceRange, sortBy]);
 
   const handleAddToProject = (item: any) => {
-    // TODO: Implement logic to add the selected item to the kitchen design (e.g., update Zustand store)
-    // Implementation would add item to the kitchen design
+    const store = useKitchenStore.getState();
+    const position = { x: 50, y: 50 }; // Default position in cm
+    const rotation = 0;
+
+    // List of known cabinet types to differentiate from appliance types
+    const cabinetTypesList: CabinetType[] = ['base', 'wall', 'tall', 'specialty', 'loft'];
+    // List of known appliance types
+    const applianceTypesList: ApplianceType[] = ['sink', 'stove', 'fridge', 'dishwasher', 'oven', 'microwave', 'hood'];
+
+    // Determine item type based on catalog structure (cabinets vs appliances)
+    // This logic assumes 'item' has a 'type' field that matches either CabinetType or ApplianceType
+    // and the 'category' field in catalog for cabinets maps to CabinetCategory.
+    // The PROFESSIONAL_CATALOG structure has item.type for cabinets (e.g. 'base', 'wall')
+    // and item.category for appliances (e.g. 'dishwasher', 'fridge').
+    // The provided new function uses item.type for both, so we need to ensure catalog data is consistent
+    // or adjust the property access here.
+    // For this implementation, we'll assume item.type correctly holds the specific type like 'base' or 'dishwasher'.
+    // The catalog data structure has `product.type` added during flattening in `allItems` useMemo.
+
+    if (cabinetTypesList.includes(item.type as CabinetType)) {
+      // It's a cabinet
+      const catalogDimensions = item.dimensions || {};
+      const cabinetData = {
+        name: item.name || "Unnamed Cabinet",
+        model: item.model || "",
+        manufacturer: item.manufacturer || "",
+        type: item.type as CabinetType,
+        category: item.subcategory as CabinetCategory, // Using subcategory from catalog for more specific CabinetCategory
+        frontType: (item.frontType || 'shutter') as CabinetFrontType,
+        material: item.material || "Generic",
+
+        finish: (item.finish && typeof item.finish === 'string' && item.finish.toLowerCase().includes('acrylic')) ? 'acrylic' :
+                (item.finish && typeof item.finish === 'string' && item.finish.toLowerCase().includes('veneer')) ? 'veneer' :
+                (item.finish && typeof item.finish === 'string' && item.finish.toLowerCase().includes('matte')) ? 'matte' :
+                (item.finish && typeof item.finish === 'string' && item.finish.toLowerCase().includes('gloss')) ? 'gloss' :
+                'laminate' as CabinetFinish,
+        color: (item.color || (item.finish && typeof item.finish === 'string' && item.finish.toLowerCase().includes('white')) ? '#FFFFFF' : '#F0F0F0') as string,
+
+        position,
+        rotation,
+        width: Math.round((catalogDimensions.width || 60) * INCH_TO_CM),
+        height: Math.round((catalogDimensions.height || 30) * INCH_TO_CM),
+        depth: Math.round((catalogDimensions.depth || 24) * INCH_TO_CM),
+        drawers: item.drawers,
+
+        // Optional properties from catalog
+        // price: item.price, // Price not directly in store's Cabinet model
+        // description: item.description, // Description not directly in store's Cabinet model
+        // features: item.features, // Features not directly in store's Cabinet model
+        // leadTime: item.leadTime, // LeadTime not directly in store's Cabinet model
+      };
+      store.addCabinet(cabinetData);
+      console.log("Adding cabinet to project:", cabinetData);
+
+    } else if (applianceTypesList.includes(item.type as ApplianceType)) {
+      // It's an appliance (assuming item.type for appliances is like 'dishwasher', 'fridge')
+      // The catalog structure uses item.category for this, but flattened items have 'type'
+      const catalogDimensions = item.dimensions || {};
+      const applianceData = {
+        name: item.name || "Unnamed Appliance",
+        model: item.model || "",
+        // manufacturer: item.manufacturer, // Not directly in store's Appliance model, use brand
+        type: item.type as ApplianceType,
+        // material: item.material, // Not directly in store's Appliance model
+
+        color: (item.color || (item.finish && typeof item.finish === 'string' && item.finish.toLowerCase().includes('stainless')) ? '#C0C0C0' :
+               (item.finish && typeof item.finish === 'string' && item.finish.toLowerCase().includes('black')) ? '#333333' :
+               '#D3D3D3') as string,
+
+        position,
+        rotation,
+        width: Math.round((catalogDimensions.width || 24) * INCH_TO_CM),
+        height: Math.round((catalogDimensions.height || 34) * INCH_TO_CM),
+        depth: Math.round((catalogDimensions.depth || 24) * INCH_TO_CM),
+
+        brand: item.manufacturer, // Map manufacturer to brand
+        // Optional properties from catalog
+        // price: item.price,
+        // description: item.description,
+        // features: item.features,
+        // leadTime: item.leadTime,
+      };
+      store.addAppliance(applianceData);
+      console.log("Adding appliance to project:", applianceData);
+
+    } else {
+      console.warn("Unknown item type from catalog:", item.type, item);
+    }
   };
 
   const handleViewDetails = (item: any) => {
