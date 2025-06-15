@@ -37,7 +37,12 @@ export interface Door {
   width: number;
   height: number;
   type: DoorType;
-  color: string;
+  color: string; // Existing: can be used for door slab & frame color
+
+  // New parameters for basic parametric doors
+  doorThickness?: number; // Thickness of the door slab itself
+  frameThickness?: number; // Thickness of the frame sections (jambs, head)
+  frameDepth?: number;     // Depth of the frame, often related to wall thickness
 }
 
 export type WindowType = 'standard' | 'sliding' | 'fixed' | 'louvered';

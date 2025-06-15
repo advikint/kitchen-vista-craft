@@ -13,6 +13,7 @@ import { useKitchenStore } from "@/store/kitchenStore";
 import * as THREE from "three";
 import { Suspense } from "react";
 import { CabinetModel, ApplianceModel, CountertopModel, FlooringModel } from "./Realistic3DModels";
+import ParametricDoorModel from '../objects/ParametricDoorModel'; // Added import
 
 // Professional lighting setup
 const ProfessionalLighting = () => {
@@ -108,7 +109,7 @@ const ProfessionalGrid = () => {
 
 // Main enhanced 3D view component
 const AdvancedThreeDView = () => {
-  const { room, walls, cabinets, appliances, showDimensions, selectedObject } = useKitchenStore();
+  const { room, walls, doors, cabinets, appliances, showDimensions, selectedObject } = useKitchenStore(); // Added doors
 
   return (
     <div className="w-full h-full bg-gradient-to-b from-blue-50 to-white">
@@ -169,6 +170,33 @@ const AdvancedThreeDView = () => {
               selected={selectedObject?.id === appliance.id}
             />
           ))}
+
+          {/* Parametric Doors */}
+          {doors.map((door) => {
+            const wall = walls.find(w => w.id === door.wallId);
+            if (!wall) return null;
+
+            const wallDx = wall.end.x - wall.start.x;
+            const wallDy = wall.end.y - wall.start.y;
+            // const wallLength = Math.sqrt(wallDx * wallDx + wallDy * wallDy); // Not directly needed for position
+            const wallAngleRad = Math.atan2(wallDy, wallDx);
+
+            const doorCenterXonWall = wall.start.x + wallDx * door.position;
+            const doorCenterZonWall = wall.start.y + wallDy * door.position;
+
+            const doorPosition = new THREE.Vector3(doorCenterXonWall, 0, doorCenterZonWall);
+            const doorRotation = new THREE.Euler(0, wallAngleRad, 0);
+
+            return (
+              <group
+                key={door.id}
+                position={doorPosition}
+                rotation={doorRotation}
+              >
+                <ParametricDoorModel door={door} />
+              </group>
+            );
+          })}
           
           {/* Professional camera controls */}
           <OrbitControls

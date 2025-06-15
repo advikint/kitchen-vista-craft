@@ -5,6 +5,13 @@ import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import * as THREE from "three";
 
+// Door drawing constants
+const DOOR_FRAME_THICKNESS_2D_DEFAULT = 5; // cm, if door.frameThickness is undefined
+const DOOR_SLAB_LINE_WEIGHT = 1.5;
+const DOOR_FRAME_LINE_WEIGHT = 1;
+const DOOR_DETAIL_LINE_WEIGHT = 0.75;
+const DOOR_SWING_LINE_DASH = [3, 3];
+
 // Helper to normalize angle to 0-2PI
 const normalizeAngle = (radians: number): number => {
   let angle = radians % (2 * Math.PI);
@@ -157,52 +164,126 @@ const ElevationView = () => {
     ctx.stroke();
   };
   
-  const drawDoorElevation = (ctx: CanvasRenderingContext2D, door: any, wall: any) => {
-    // Calculate wall length
-    const dx = wall.end.x - wall.start.x;
-    const dy = wall.end.y - wall.start.y;
-    const wallLength = Math.sqrt(dx * dx + dy * dy);
-    
-    // Wall height
-    const wallHeight = wall.height || 240;
-    
-    // Door position along wall
-    const doorPositionX = -wallLength / 2 + door.position * wallLength - door.width / 2;
-    
-    // Draw door
-    ctx.fillStyle = "#bfdbfe";
-    ctx.fillRect(doorPositionX, wallHeight / 2 - door.height, door.width, door.height);
-    
-    // Door outline
-    ctx.strokeStyle = "#3b82f6";
-    ctx.lineWidth = 2;
-    ctx.strokeRect(doorPositionX, wallHeight / 2 - door.height, door.width, door.height);
+  const drawDoorElevation = (ctx: CanvasRenderingContext2D, door: Door, wall: any) => {
+  const wallLength = Math.sqrt(Math.pow(wall.end.x - wall.start.x, 2) + Math.pow(wall.end.y - wall.start.y, 2));
+  const wallHeight = wall.height || 240;
 
-    // Frame
-    const frameInset = 3;
-    ctx.strokeStyle = "#9CA3AF";
-    ctx.lineWidth = 1.0;
-    ctx.strokeRect(
-      doorPositionX + frameInset,
-      wallHeight / 2 - door.height + frameInset,
-      door.width - 2 * frameInset,
-      door.height - 2 * frameInset
-    );
+  const dWidth = door.width || 80;
+  const dHeight = door.height || 200;
+  const dType = door.type || 'standard';
+  const dColorString = door.color || '#B88A69';
+  const dColor = new THREE.Color(dColorString);
+  const fThickness = door.frameThickness || DOOR_FRAME_THICKNESS_2D_DEFAULT;
 
-    // Door Swing Arc
-    const doorHingeX = doorPositionX;
-    const doorSwingStartX = doorPositionX + door.width;
-    const doorBottomY = wallHeight / 2;
+  const doorOpeningCenterX = -wallLength / 2 + door.position * wallLength;
+  const doorOpeningLeftX = doorOpeningCenterX - dWidth / 2;
+  const doorOpeningRightX = doorOpeningCenterX + dWidth / 2;
+  const doorOpeningTopY = wallHeight / 2 - dHeight;
+  const doorOpeningBottomY = wallHeight / 2;
 
-    ctx.setLineDash([2, 2]);
-    ctx.strokeStyle = "#9CA3AF";
-    ctx.lineWidth = 0.75;
+  ctx.save();
+
+  // 1. Draw Door Frame
+  const frameColorStyle = dColor.clone().multiplyScalar(0.7).getStyle();
+  ctx.fillStyle = frameColorStyle;
+  ctx.strokeStyle = frameColorStyle;
+  ctx.lineWidth = DOOR_FRAME_LINE_WEIGHT;
+
+  const frameOuterLeft = doorOpeningLeftX - fThickness;
+  const frameOuterTop = doorOpeningTopY - fThickness;
+
+  ctx.beginPath();
+  ctx.rect(frameOuterLeft, frameOuterTop, dWidth + 2 * fThickness, fThickness); // Lintel
+  ctx.rect(frameOuterLeft, frameOuterTop + fThickness, fThickness, dHeight); // Left Jamb
+  ctx.rect(doorOpeningRightX, frameOuterTop + fThickness, fThickness, dHeight); // Right Jamb
+  ctx.fill(); // Fill all frame parts at once
+  ctx.stroke(); // Stroke all frame parts
+
+  // 2. Draw Door Slab / Specific Type Details
+  ctx.fillStyle = dColor.getStyle();
+  ctx.strokeStyle = dColor.clone().multiplyScalar(0.85).getStyle();
+  ctx.lineWidth = DOOR_SLAB_LINE_WEIGHT;
+
+  if (dType === 'standard') {
+    ctx.fillRect(doorOpeningLeftX, doorOpeningTopY, dWidth, dHeight);
+    ctx.strokeRect(doorOpeningLeftX, doorOpeningTopY, dWidth, dHeight);
+
+    ctx.setLineDash(DOOR_SWING_LINE_DASH);
+    ctx.lineWidth = DOOR_DETAIL_LINE_WEIGHT;
+    ctx.strokeStyle = "#6B7280";
     ctx.beginPath();
-    ctx.moveTo(doorSwingStartX, doorBottomY);
-    ctx.arc(doorHingeX, doorBottomY, door.width, 0, -Math.PI / 4, true);
+    const hingeX = doorOpeningLeftX;
+    const hingeY = doorOpeningBottomY;
+    ctx.moveTo(doorOpeningRightX, doorOpeningBottomY);
+    ctx.arc(hingeX, hingeY, dWidth, 0, -Math.PI / 2, true);
     ctx.stroke();
     ctx.setLineDash([]);
-  };
+
+    ctx.fillStyle = "#6B7280";
+    ctx.beginPath();
+    ctx.arc(doorOpeningLeftX + dWidth - 12, doorOpeningTopY + dHeight / 2, 3, 0, 2 * Math.PI);
+    ctx.fill();
+
+  } else if (dType === 'sliding') {
+    ctx.fillRect(doorOpeningLeftX, doorOpeningTopY, dWidth, dHeight);
+    ctx.strokeRect(doorOpeningLeftX, doorOpeningTopY, dWidth, dHeight);
+
+    ctx.lineWidth = DOOR_DETAIL_LINE_WEIGHT;
+    ctx.strokeStyle = "#6B7280";
+    ctx.beginPath();
+    const arrowY = doorOpeningTopY + 10;
+    ctx.moveTo(doorOpeningLeftX + dWidth * 0.2, arrowY);
+    ctx.lineTo(doorOpeningLeftX + dWidth * 0.8, arrowY);
+    ctx.moveTo(doorOpeningLeftX + dWidth * 0.8 - 8, arrowY - 4);
+    ctx.lineTo(doorOpeningLeftX + dWidth * 0.8, arrowY);
+    ctx.lineTo(doorOpeningLeftX + dWidth * 0.8 - 8, arrowY + 4);
+    ctx.stroke();
+
+  } else if (dType === 'pocket') {
+    const visiblePartWidth = dWidth * 0.3;
+    ctx.fillStyle = dColor.getStyle();
+    ctx.fillRect(doorOpeningLeftX, doorOpeningTopY, visiblePartWidth, dHeight);
+    ctx.strokeStyle = dColor.clone().multiplyScalar(0.85).getStyle();
+    ctx.strokeRect(doorOpeningLeftX, doorOpeningTopY, visiblePartWidth, dHeight);
+
+    ctx.setLineDash([4,2]);
+    ctx.strokeStyle = dColor.clone().multiplyScalar(0.7).getStyle();
+    ctx.strokeRect(doorOpeningLeftX + visiblePartWidth, doorOpeningTopY, dWidth - visiblePartWidth, dHeight);
+    ctx.setLineDash([]);
+
+  } else if (dType === 'folding') {
+    const panelWidth = dWidth / 2;
+    ctx.fillStyle = dColor.getStyle();
+    ctx.strokeStyle = dColor.clone().multiplyScalar(0.85).getStyle();
+
+    ctx.beginPath();
+    ctx.moveTo(doorOpeningLeftX, doorOpeningBottomY);
+    ctx.lineTo(doorOpeningLeftX, doorOpeningTopY);
+    ctx.lineTo(doorOpeningLeftX + panelWidth - 5, doorOpeningTopY + 10);
+    ctx.lineTo(doorOpeningLeftX + panelWidth - 5, doorOpeningBottomY - 10);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(doorOpeningRightX, doorOpeningBottomY);
+    ctx.lineTo(doorOpeningRightX, doorOpeningTopY);
+    ctx.lineTo(doorOpeningRightX - panelWidth + 5, doorOpeningTopY + 10);
+    ctx.lineTo(doorOpeningRightX - panelWidth + 5, doorOpeningBottomY - 10);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(doorOpeningCenterX, doorOpeningTopY + 10);
+    ctx.lineTo(doorOpeningCenterX, doorOpeningBottomY -10);
+    ctx.strokeStyle = dColor.clone().multiplyScalar(0.7).getStyle();
+    ctx.lineWidth = 0.5;
+    ctx.stroke();
+  }
+
+  ctx.restore();
+};
   
   const drawWindowElevation = (ctx: CanvasRenderingContext2D, window: any, wall: any) => {
     // Calculate wall length
@@ -360,7 +441,7 @@ const drawCabinetElevation = (ctx: CanvasRenderingContext2D, orientedCabinet: Or
   const toeKickD_inset = (cabinet.type === 'base' && cabinet.toeKickDepth !== undefined && cabinet.toeKickDepth > 0) ? cabinet.toeKickDepth : 0;
   const mainBoxEffectiveHeight = cabinet.height - toeKickH;
 
-  let topY_mainBox;
+  let topY_mainBox; // Y-coordinate for the TOP of the main cabinet box (excluding countertop)
 
   if (cabinet.type === 'base') {
     topY_mainBox = wallHeight / 2 - cabinet.height + toeKickH;
@@ -393,12 +474,14 @@ const drawCabinetElevation = (ctx: CanvasRenderingContext2D, orientedCabinet: Or
   if (orientation === 'front') {
     cabinetDisplayX = -wallLength / 2 + projectionOnWall - cabinet.width / 2;
 
+    // Draw Main Cabinet Box
     ctx.fillStyle = cabinetBaseColor;
     ctx.fillRect(cabinetDisplayX, topY_mainBox, cabinet.width, mainBoxEffectiveHeight);
     ctx.strokeStyle = "#6B7280";
     ctx.lineWidth = 1.5;
     ctx.strokeRect(cabinetDisplayX, topY_mainBox, cabinet.width, mainBoxEffectiveHeight);
 
+    // Draw Toe Kick
     if (toeKickH > 0) {
       ctx.fillStyle = new THREE.Color(cabinetBaseColor).multiplyScalar(0.7).getStyle();
       ctx.fillRect(cabinetDisplayX, topY_mainBox + mainBoxEffectiveHeight, cabinet.width, toeKickH);
@@ -407,6 +490,7 @@ const drawCabinetElevation = (ctx: CanvasRenderingContext2D, orientedCabinet: Or
       ctx.strokeRect(cabinetDisplayX, topY_mainBox + mainBoxEffectiveHeight, cabinet.width, toeKickH);
     }
     
+    // Draw countertop for base cabinets
     if (cabinet.type === 'base') {
         ctx.fillStyle = "#9ca3af";
         const countertopHeight = 4;
@@ -418,6 +502,7 @@ const drawCabinetElevation = (ctx: CanvasRenderingContext2D, orientedCabinet: Or
         );
     }
 
+    // Draw Shelves (Front View)
     const shelfCount = (cabinet.shelfCount !== undefined && cabinet.shelfCount > 0) ? cabinet.shelfCount : 0;
     if (shelfCount > 0 && (cabinet.frontType === 'open' || cabinet.frontType === 'glass' || cabinet.frontType === 'shutter')) {
       ctx.save();
@@ -430,7 +515,9 @@ const drawCabinetElevation = (ctx: CanvasRenderingContext2D, orientedCabinet: Or
         const gapHeight = remainingSpaceForGaps / (shelfCount + 1);
         for (let i = 0; i < shelfCount; i++) {
           const shelfTopSurfaceY = topY_mainBox + (gapHeight * (i + 1)) + (SHELF_THICKNESS_FOR_CALC * i);
-          const lineY = shelfTopSurfaceY;
+          // To draw the line representing the shelf (not its thickness center):
+          const lineY = shelfTopSurfaceY; // if line is top of shelf
+
           ctx.beginPath();
           const startX = cabinetDisplayX + SHELF_INSET_X_2D;
           const endX = cabinetDisplayX + cabinet.width - SHELF_INSET_X_2D;
@@ -444,19 +531,25 @@ const drawCabinetElevation = (ctx: CanvasRenderingContext2D, orientedCabinet: Or
       ctx.restore();
     }
 
+    // Front details (doors, drawers, glass) - Y positions relative to topY_mainBox
     ctx.strokeStyle = "#9CA3AF";
     ctx.lineWidth = 1.0;
     const doorStyle = cabinet.doorStyle || 'slab';
 
     if (cabinet.frontType === 'drawer') {
       const numDrawers = cabinet.drawers && cabinet.drawers > 0 ? cabinet.drawers : 1;
-      const singleDrawerSlotHeight = mainBoxEffectiveHeight / numDrawers;
+      const singleDrawerSlotHeight = mainBoxEffectiveHeight / numDrawers; // Height of the slot for one drawer
 
       for (let i = 0; i < numDrawers; i++) {
         const drawerX = cabinetDisplayX + doorInset;
-        const drawerY = topY_mainBox + i * singleDrawerSlotHeight + doorInset / 2;
+        // Y position of the top of this drawer slot
+        const drawerSlotTopY = topY_mainBox + i * singleDrawerSlotHeight;
         const drawerActualWidth = cabinet.width - 2 * doorInset;
-        const drawerActualHeight = singleDrawerSlotHeight - doorInset;
+        // Height of the drawer front, slightly smaller than the slot to leave gaps
+        const drawerActualHeight = singleDrawerSlotHeight - ( (i < numDrawers -1) ? doorInset/2 : 0 ) - (i > 0 ? doorInset/2 : 0) ;
+        // Y position of the top of the drawer front itself
+        const drawerY = drawerSlotTopY + ( (i===0) ? 0 : doorInset/4 );
+
 
         ctx.strokeRect(drawerX, drawerY, drawerActualWidth, drawerActualHeight);
 
@@ -476,7 +569,6 @@ const drawCabinetElevation = (ctx: CanvasRenderingContext2D, orientedCabinet: Or
         );
       }
     } else if (cabinet.frontType === 'shutter') {
-      // Simplified: assuming single panel/door for shutters.
       const doorX = cabinetDisplayX + doorInset;
       const doorY = topY_mainBox + doorInset;
       const singleDoorWidth = cabinet.width - 2 * doorInset;
@@ -528,14 +620,12 @@ const drawCabinetElevation = (ctx: CanvasRenderingContext2D, orientedCabinet: Or
   } else if (orientation === 'side') {
     const itemDisplayX_side = -wallLength / 2 + projectionOnWall - cabinet.depth / 2;
 
-    // Main box side
     ctx.fillStyle = cabinetBaseColor;
     ctx.fillRect(itemDisplayX_side, topY_mainBox, cabinet.depth, mainBoxEffectiveHeight);
     ctx.strokeStyle = "#6B7280";
     ctx.lineWidth = 1.5;
     ctx.strokeRect(itemDisplayX_side, topY_mainBox, cabinet.depth, mainBoxEffectiveHeight);
 
-    // Toe Kick Side Profile
     if (toeKickH > 0) {
       const toeKickSideActualDepth = cabinet.depth - toeKickD_inset;
       ctx.fillStyle = new THREE.Color(cabinetBaseColor).multiplyScalar(0.7).getStyle();
@@ -545,7 +635,6 @@ const drawCabinetElevation = (ctx: CanvasRenderingContext2D, orientedCabinet: Or
       ctx.strokeRect(itemDisplayX_side, topY_mainBox + mainBoxEffectiveHeight, toeKickSideActualDepth, toeKickH);
     }
 
-    // Draw Shelves (Side View)
     const SHELF_LINE_COLOR_SIDE = "#BCC0C4";
     const SHELF_LINE_WIDTH_SIDE = 0.75;
     const SHELF_LINE_DASH_SIDE = [2, 2];
@@ -586,26 +675,22 @@ const drawCabinetElevation = (ctx: CanvasRenderingContext2D, orientedCabinet: Or
     ctx.lineWidth = 0.75;
 
     const projectedWidth = cabinet.width;
-    // Points of the visible side rectangle of the main box
     const x1_s = itemDisplayX_side;
-    const y1_s = topY;
+    const y1_s = topY_mainBox; // Use topY_mainBox
     const x2_s = itemDisplayX_side + cabinet.depth;
-    const y2_s = topY;
-    const y3_s = topY + mainBoxEffectiveHeight;
+    const y2_s = topY_mainBox; // Use topY_mainBox
+    const y3_s = topY_mainBox + mainBoxEffectiveHeight; // Use topY_mainBox
 
-    // Line from top-front of side, extending right
     ctx.beginPath();
     ctx.moveTo(x2_s, y2_s);
     ctx.lineTo(x2_s + projectedWidth, y2_s);
     ctx.stroke();
 
-    // Line from bottom-front of side, extending right
     ctx.beginPath();
     ctx.moveTo(x2_s, y3_s);
     ctx.lineTo(x2_s + projectedWidth, y3_s);
     ctx.stroke();
 
-    // Back vertical line connecting the two projected lines
     ctx.beginPath();
     ctx.moveTo(x2_s + projectedWidth, y2_s);
     ctx.lineTo(x2_s + projectedWidth, y3_s);
