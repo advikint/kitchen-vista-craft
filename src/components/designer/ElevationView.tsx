@@ -3,6 +3,7 @@ import { useRef, useEffect, useState } from "react";
 import { useKitchenStore } from "@/store/kitchenStore";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import * as THREE from "three";
 
 // Helper to normalize angle to 0-2PI
 const normalizeAngle = (radians: number): number => {
@@ -178,8 +179,8 @@ const ElevationView = () => {
     ctx.strokeRect(doorPositionX, wallHeight / 2 - door.height, door.width, door.height);
 
     // Frame
-    const frameInset = 3; // cm
-    ctx.strokeStyle = "#9CA3AF"; // Lighter for frame
+    const frameInset = 3;
+    ctx.strokeStyle = "#9CA3AF";
     ctx.lineWidth = 1.0;
     ctx.strokeRect(
       doorPositionX + frameInset,
@@ -188,27 +189,17 @@ const ElevationView = () => {
       door.height - 2 * frameInset
     );
 
-    // Door Swing Arc (Simple one-direction swing)
-    const doorEdgeX = doorPositionX + door.width;
-    const doorTopY = wallHeight / 2 - door.height;
-    // const doorBottomY = wallHeight / 2; // Unused in current arc logic
+    // Door Swing Arc
+    const doorHingeX = doorPositionX;
+    const doorSwingStartX = doorPositionX + door.width;
+    const doorBottomY = wallHeight / 2;
 
     ctx.setLineDash([2, 2]);
     ctx.strokeStyle = "#9CA3AF";
     ctx.lineWidth = 0.75;
     ctx.beginPath();
-    ctx.moveTo(doorEdgeX, doorTopY); // Hinge point assumed on the left edge of the door rect (doorPositionX)
-    // Corrected arc: Hinges on left (doorPositionX), swings open from right edge (doorEdgeX)
-    // The arc should start from the unhinged edge.
-    // If hinge is on left: ctx.arc(doorPositionX, doorTopY + door.height/2, door.width, 0, -Math.PI / 4, true);
-    // For simplicity, let's draw from the right edge (doorEdgeX) as if hinged on the left.
-    // The provided logic seems to hinge it at doorPositionX, doorTopY (top-left of door)
-    // and the arc starts from doorEdgeX, doorTopY (top-right of door).
-    // Let's assume hinge is on the left side (doorPositionX)
-    ctx.arc(doorPositionX, doorTopY + door.height, door.width, -Math.PI/2, -Math.PI/4, false); // Arc from bottom-left around left hinge
-    // A more common representation might be:
-    // ctx.moveTo(doorPositionX + door.width, doorPositionY + door.height); // Start at bottom-right if hinged on left
-    // ctx.arc(doorPositionX, doorPositionY + door.height, door.width, 0, -Math.PI / 4, true);
+    ctx.moveTo(doorSwingStartX, doorBottomY);
+    ctx.arc(doorHingeX, doorBottomY, door.width, 0, -Math.PI / 4, true);
     ctx.stroke();
     ctx.setLineDash([]);
   };
@@ -236,7 +227,7 @@ const ElevationView = () => {
     ctx.strokeRect(windowPositionX, windowPositionY, window.width, window.height);
     
     // Window panes
-    ctx.strokeStyle = "#7dd3fc"; // Or a slightly darker shade of it
+    ctx.strokeStyle = "#7dd3fc";
     ctx.lineWidth = 0.75;
     ctx.beginPath();
     ctx.moveTo(windowPositionX + window.width / 2, windowPositionY);
@@ -246,9 +237,9 @@ const ElevationView = () => {
     ctx.stroke();
 
     // Frame
-    const frameInset = 3; // cm
-    // ctx.strokeStyle = "#7dd3fc"; // Already set, or choose a frame-specific color
-    ctx.lineWidth = 1.0; // Thinner than main outline, but thicker than panes
+    const frameInset = 3;
+    ctx.strokeStyle = "#7AB8D4";
+    ctx.lineWidth = 1.0;
     ctx.strokeRect(
       windowPositionX + frameInset,
       windowPositionY + frameInset,
@@ -358,149 +349,272 @@ const findAppliancesForWall = (wall: any, allAppliances: any[]): OrientedItem<an
 const drawCabinetElevation = (ctx: CanvasRenderingContext2D, orientedCabinet: OrientedItem<any>, wall: any) => {
   const cabinet = orientedCabinet.item;
   const orientation = orientedCabinet.orientation;
-  const projectionOnWall = orientedCabinet.projectionOnWall; // This is cabinet's center projection
+  const projectionOnWall = orientedCabinet.projectionOnWall;
 
   const dx = wall.end.x - wall.start.x;
   const dy = wall.end.y - wall.start.y;
   const wallLength = Math.sqrt(dx * dx + dy * dy);
   const wallHeight = wall.height || 240;
 
-  let cabinetPositionY;
+  const toeKickH = (cabinet.type === 'base' && cabinet.toeKickHeight !== undefined && cabinet.toeKickHeight > 0) ? cabinet.toeKickHeight : 0;
+  const toeKickD_inset = (cabinet.type === 'base' && cabinet.toeKickDepth !== undefined && cabinet.toeKickDepth > 0) ? cabinet.toeKickDepth : 0;
+  const mainBoxEffectiveHeight = cabinet.height - toeKickH;
+
+  let topY_mainBox;
+
   if (cabinet.type === 'base') {
-    cabinetPositionY = wallHeight / 2 - cabinet.height;
-  } else if (cabinet.type === 'wall' || cabinet.type === 'loft') {
-    cabinetPositionY = wallHeight / 2 - cabinet.height - 150;
+    topY_mainBox = wallHeight / 2 - cabinet.height + toeKickH;
   } else if (cabinet.type === 'tall') {
-    cabinetPositionY = wallHeight / 2 - cabinet.height;
+    topY_mainBox = wallHeight / 2 - cabinet.height;
+  } else if (cabinet.type === 'wall') {
+    const wallCabinetBottomMountHeight = 150;
+    topY_mainBox = wallHeight / 2 - wallCabinetBottomMountHeight - mainBoxEffectiveHeight;
+  } else if (cabinet.type === 'loft') {
+    const loftBottomMountHeight = 210;
+    topY_mainBox = wallHeight / 2 - loftBottomMountHeight - mainBoxEffectiveHeight;
   } else {
     return;
   }
 
+  const cabinetBaseColor = cabinet.color || "#f9fafb";
   let cabinetDisplayX;
-  const doorInset = 4; // Inset from cabinet edge for panels
-  const innerInset = 2; // For simple bevel effect
+  const doorInset = 4;
+  const innerInset = 2;
+  const STILE_WIDTH_2D = 5; // Visual stile width for 2D Shaker representation
+
+
+  // Shelf Style Constants
+  const SHELF_LINE_COLOR = "#BCC0C4";
+  const SHELF_LINE_WIDTH = 0.75;
+  const SHELF_LINE_DASH = [2, 2];
+  const SHELF_INSET_X_2D = 2;
+  const SHELF_THICKNESS_FOR_CALC = 2;
 
   if (orientation === 'front') {
     cabinetDisplayX = -wallLength / 2 + projectionOnWall - cabinet.width / 2;
-    
-    ctx.fillStyle = cabinet.color || "#f9fafb"; // Use cabinet's color
-    ctx.fillRect(cabinetDisplayX, cabinetPositionY, cabinet.width, cabinet.height);
-    
+
+    ctx.fillStyle = cabinetBaseColor;
+    ctx.fillRect(cabinetDisplayX, topY_mainBox, cabinet.width, mainBoxEffectiveHeight);
     ctx.strokeStyle = "#6B7280";
     ctx.lineWidth = 1.5;
-    ctx.strokeRect(cabinetDisplayX, cabinetPositionY, cabinet.width, cabinet.height); // Main outline after fill
+    ctx.strokeRect(cabinetDisplayX, topY_mainBox, cabinet.width, mainBoxEffectiveHeight);
 
-    if (cabinet.type === 'base') {
-      ctx.fillStyle = "#9ca3af";
-      ctx.fillRect(cabinetDisplayX - 2, cabinetPositionY, cabinet.width + 4, 4);
+    if (toeKickH > 0) {
+      ctx.fillStyle = new THREE.Color(cabinetBaseColor).multiplyScalar(0.7).getStyle();
+      ctx.fillRect(cabinetDisplayX, topY_mainBox + mainBoxEffectiveHeight, cabinet.width, toeKickH);
+      ctx.strokeStyle = "#4A5568";
+      ctx.lineWidth = 1.0;
+      ctx.strokeRect(cabinetDisplayX, topY_mainBox + mainBoxEffectiveHeight, cabinet.width, toeKickH);
     }
     
-    ctx.strokeStyle = "#9CA3AF"; // Lighter for internal lines
+    if (cabinet.type === 'base') {
+        ctx.fillStyle = "#9ca3af";
+        const countertopHeight = 4;
+        ctx.fillRect(
+            cabinetDisplayX - 2,
+            topY_mainBox - countertopHeight,
+            cabinet.width + 4,
+            countertopHeight
+        );
+    }
+
+    const shelfCount = (cabinet.shelfCount !== undefined && cabinet.shelfCount > 0) ? cabinet.shelfCount : 0;
+    if (shelfCount > 0 && (cabinet.frontType === 'open' || cabinet.frontType === 'glass' || cabinet.frontType === 'shutter')) {
+      ctx.save();
+      ctx.strokeStyle = SHELF_LINE_COLOR;
+      ctx.lineWidth = SHELF_LINE_WIDTH;
+      ctx.setLineDash(SHELF_LINE_DASH);
+      const totalShelfPhysicalThickness = shelfCount * SHELF_THICKNESS_FOR_CALC;
+      const remainingSpaceForGaps = mainBoxEffectiveHeight - totalShelfPhysicalThickness;
+      if (remainingSpaceForGaps >= SHELF_LINE_DASH[0]) {
+        const gapHeight = remainingSpaceForGaps / (shelfCount + 1);
+        for (let i = 0; i < shelfCount; i++) {
+          const shelfTopSurfaceY = topY_mainBox + (gapHeight * (i + 1)) + (SHELF_THICKNESS_FOR_CALC * i);
+          const lineY = shelfTopSurfaceY;
+          ctx.beginPath();
+          const startX = cabinetDisplayX + SHELF_INSET_X_2D;
+          const endX = cabinetDisplayX + cabinet.width - SHELF_INSET_X_2D;
+          if (endX > startX) {
+            ctx.moveTo(startX, lineY);
+            ctx.lineTo(endX, lineY);
+          }
+          ctx.stroke();
+        }
+      }
+      ctx.restore();
+    }
+
+    ctx.strokeStyle = "#9CA3AF";
     ctx.lineWidth = 1.0;
+    const doorStyle = cabinet.doorStyle || 'slab';
 
     if (cabinet.frontType === 'drawer') {
-      const drawers = cabinet.drawers || (cabinet.type === 'base' ? 3 : 2);
-      const drawerHeight = cabinet.height / drawers;
-      for (let i = 0; i < drawers; i++) {
-        const drawerPanelX = cabinetDisplayX + doorInset;
-        const drawerPanelY = cabinetPositionY + i * drawerHeight + doorInset / 2;
-        const drawerPanelWidth = cabinet.width - 2 * doorInset;
-        const drawerPanelHeight = drawerHeight - doorInset;
+      const numDrawers = cabinet.drawers && cabinet.drawers > 0 ? cabinet.drawers : 1;
+      const singleDrawerSlotHeight = mainBoxEffectiveHeight / numDrawers;
 
-        ctx.strokeRect(drawerPanelX, drawerPanelY, drawerPanelWidth, drawerPanelHeight);
-        if (drawerPanelWidth > 2 * innerInset && drawerPanelHeight > 2 * innerInset) {
-           ctx.strokeRect(
-               drawerPanelX + innerInset,
-               drawerPanelY + innerInset,
-               drawerPanelWidth - 2 * innerInset,
-               drawerPanelHeight - 2 * innerInset
-           );
+      for (let i = 0; i < numDrawers; i++) {
+        const drawerX = cabinetDisplayX + doorInset;
+        const drawerY = topY_mainBox + i * singleDrawerSlotHeight + doorInset / 2;
+        const drawerActualWidth = cabinet.width - 2 * doorInset;
+        const drawerActualHeight = singleDrawerSlotHeight - doorInset;
+
+        ctx.strokeRect(drawerX, drawerY, drawerActualWidth, drawerActualHeight);
+
+        if (doorStyle === 'shaker' && drawerActualWidth > 2 * STILE_WIDTH_2D && drawerActualHeight > 2 * STILE_WIDTH_2D) {
+          ctx.strokeRect(
+            drawerX + STILE_WIDTH_2D,
+            drawerY + STILE_WIDTH_2D,
+            drawerActualWidth - 2 * STILE_WIDTH_2D,
+            drawerActualHeight - 2 * STILE_WIDTH_2D
+          );
         }
-        ctx.fillStyle = "#6B7280"; // Handle color
-        ctx.fillRect( // Centered handle
-          drawerPanelX + drawerPanelWidth / 2 - 15,
-          drawerPanelY + drawerPanelHeight / 2 - 1,
-          30,
-          2
+        ctx.fillStyle = "#6B7280";
+        ctx.fillRect(
+          drawerX + drawerActualWidth / 2 - 15,
+          drawerY + drawerActualHeight / 2 - 1,
+          30, 2
         );
       }
     } else if (cabinet.frontType === 'shutter') {
-      const panelWidth = cabinet.width - 2 * doorInset;
-      const panelHeight = cabinet.height - 2 * doorInset;
-      ctx.strokeRect(cabinetDisplayX + doorInset, cabinetPositionY + doorInset, panelWidth, panelHeight);
+      // Simplified: assuming single panel/door for shutters.
+      const doorX = cabinetDisplayX + doorInset;
+      const doorY = topY_mainBox + doorInset;
+      const singleDoorWidth = cabinet.width - 2 * doorInset;
+      const doorActualHeight = mainBoxEffectiveHeight - 2 * doorInset;
 
-      if (panelWidth > 2 * innerInset && panelHeight > 2 * innerInset) {
+      ctx.strokeRect(doorX, doorY, singleDoorWidth, doorActualHeight);
+
+      if (doorStyle === 'shaker' && singleDoorWidth > 2 * STILE_WIDTH_2D && doorActualHeight > 2 * STILE_WIDTH_2D) {
+        ctx.strokeRect(
+          doorX + STILE_WIDTH_2D,
+          doorY + STILE_WIDTH_2D,
+          singleDoorWidth - 2 * STILE_WIDTH_2D,
+          doorActualHeight - 2 * STILE_WIDTH_2D
+        );
+      }
+      ctx.fillStyle = "#6B7280";
+      ctx.fillRect(doorX + singleDoorWidth - 10 - (doorStyle === 'shaker' ? STILE_WIDTH_2D / 2 : 0), doorY + doorActualHeight / 2 - 10, 2, 20);
+
+    } else if (cabinet.frontType === 'glass') {
+      const glassDoorX = cabinetDisplayX + doorInset;
+      const glassDoorY = topY_mainBox + doorInset;
+      const glassDoorWidth = cabinet.width - 2 * doorInset;
+      const glassDoorHeight = mainBoxEffectiveHeight - 2 * doorInset;
+
+      ctx.strokeRect(glassDoorX, glassDoorY, glassDoorWidth, glassDoorHeight); // Frame
+
+      const glassMargin = (doorStyle === 'shaker') ? STILE_WIDTH_2D : 3;
+
+      if (glassDoorWidth > 2 * glassMargin && glassDoorHeight > 2 * glassMargin) {
+         ctx.fillStyle = "rgba(173, 216, 230, 0.4)";
+         ctx.fillRect(
+             glassDoorX + glassMargin,
+             glassDoorY + glassMargin,
+             glassDoorWidth - 2 * glassMargin,
+             glassDoorHeight - 2 * glassMargin
+         );
+         ctx.strokeStyle = "#A5C0C8";
          ctx.strokeRect(
-             cabinetDisplayX + doorInset + innerInset,
-             cabinetPositionY + doorInset + innerInset,
-             panelWidth - 2 * innerInset,
-             panelHeight - 2 * innerInset
+             glassDoorX + glassMargin,
+             glassDoorY + glassMargin,
+             glassDoorWidth - 2 * glassMargin,
+             glassDoorHeight - 2 * glassMargin
          );
       }
       ctx.fillStyle = "#6B7280";
-      if (cabinet.width > 50) {
-         ctx.fillRect(cabinetDisplayX + doorInset + panelWidth / 4 - 1, cabinetPositionY + doorInset + panelHeight / 2 - 10, 2, 20);
-         ctx.fillRect(cabinetDisplayX + doorInset + panelWidth * 3/4 -1, cabinetPositionY + doorInset + panelHeight / 2 - 10, 2, 20);
-      } else {
-         ctx.fillRect(cabinetDisplayX + doorInset + panelWidth - 10, cabinetPositionY + doorInset + panelHeight / 2 - 10, 2, 20);
-      }
-    } else if (cabinet.frontType === 'glass') {
-        ctx.strokeRect(cabinetDisplayX + doorInset, cabinetPositionY + doorInset, cabinet.width - 2 * doorInset, cabinet.height - 2 * doorInset); // Frame
-        
-        const glassMargin = 10;
-        ctx.fillStyle = "rgba(173, 216, 230, 0.4)";
-        ctx.fillRect(
-            cabinetDisplayX + doorInset + glassMargin,
-            cabinetPositionY + doorInset + glassMargin,
-            cabinet.width - 2 * (doorInset + glassMargin),
-            cabinet.height - 2 * (doorInset + glassMargin)
-        );
-        ctx.strokeStyle = "#A5C0C8";
-        ctx.strokeRect(
-            cabinetDisplayX + doorInset + glassMargin,
-            cabinetPositionY + doorInset + glassMargin,
-            cabinet.width - 2 * (doorInset + glassMargin),
-            cabinet.height - 2 * (doorInset + glassMargin)
-        );
-        ctx.fillStyle = "#6B7280";
-        ctx.fillRect(cabinetDisplayX + cabinet.width - 2 * doorInset - 10, cabinetPositionY + cabinet.height / 2 - 10, 2, 20);
+      ctx.fillRect(glassDoorX + glassDoorWidth - 10 - (doorStyle === 'shaker' ? STILE_WIDTH_2D / 2 : 0), glassDoorY + glassDoorHeight / 2 - 10, 2, 20);
     }
 
   } else if (orientation === 'side') {
-    cabinetDisplayX = -wallLength / 2 + projectionOnWall - cabinet.depth / 2;
+    const itemDisplayX_side = -wallLength / 2 + projectionOnWall - cabinet.depth / 2;
 
-    ctx.fillStyle = cabinet.color || "#f9fafb";
-    ctx.fillRect(cabinetDisplayX, cabinetPositionY, cabinet.depth, cabinet.height);
+    // Main box side
+    ctx.fillStyle = cabinetBaseColor;
+    ctx.fillRect(itemDisplayX_side, topY_mainBox, cabinet.depth, mainBoxEffectiveHeight);
     ctx.strokeStyle = "#6B7280";
     ctx.lineWidth = 1.5;
-    ctx.strokeRect(cabinetDisplayX, cabinetPositionY, cabinet.depth, cabinet.height);
+    ctx.strokeRect(itemDisplayX_side, topY_mainBox, cabinet.depth, mainBoxEffectiveHeight);
+
+    // Toe Kick Side Profile
+    if (toeKickH > 0) {
+      const toeKickSideActualDepth = cabinet.depth - toeKickD_inset;
+      ctx.fillStyle = new THREE.Color(cabinetBaseColor).multiplyScalar(0.7).getStyle();
+      ctx.fillRect(itemDisplayX_side, topY_mainBox + mainBoxEffectiveHeight, toeKickSideActualDepth, toeKickH);
+      ctx.strokeStyle = "#4A5568";
+      ctx.lineWidth = 1.0;
+      ctx.strokeRect(itemDisplayX_side, topY_mainBox + mainBoxEffectiveHeight, toeKickSideActualDepth, toeKickH);
+    }
+
+    // Draw Shelves (Side View)
+    const SHELF_LINE_COLOR_SIDE = "#BCC0C4";
+    const SHELF_LINE_WIDTH_SIDE = 0.75;
+    const SHELF_LINE_DASH_SIDE = [2, 2];
+    const SHELF_INSET_SIDE_2D = 2;
+    const SHELF_THICKNESS_FOR_CALC_SIDE = 2;
+    const shelfCountSide = (cabinet.shelfCount !== undefined && cabinet.shelfCount > 0) ? cabinet.shelfCount : 0;
+
+    if (shelfCountSide > 0 && (cabinet.frontType === 'open' || cabinet.frontType === 'glass' || cabinet.frontType === 'shutter')) {
+      ctx.save();
+      ctx.strokeStyle = SHELF_LINE_COLOR_SIDE;
+      ctx.lineWidth = SHELF_LINE_WIDTH_SIDE;
+      ctx.setLineDash(SHELF_LINE_DASH_SIDE);
+
+      const totalShelfPhysicalThicknessSide = shelfCountSide * SHELF_THICKNESS_FOR_CALC_SIDE;
+      const remainingSpaceForGapsSide = mainBoxEffectiveHeight - totalShelfPhysicalThicknessSide;
+
+      if (remainingSpaceForGapsSide >= SHELF_LINE_DASH_SIDE[0]) {
+        const gapHeightSide = remainingSpaceForGapsSide / (shelfCountSide + 1);
+        for (let i = 0; i < shelfCountSide; i++) {
+          const shelfTopSurfaceYSide = topY_mainBox + (gapHeightSide * (i + 1)) + (SHELF_THICKNESS_FOR_CALC_SIDE * i);
+          const lineYSide = shelfTopSurfaceYSide;
+
+          ctx.beginPath();
+          const startX_side_shelf = itemDisplayX_side + SHELF_INSET_SIDE_2D;
+          const endX_side_shelf = itemDisplayX_side + cabinet.depth - SHELF_INSET_SIDE_2D;
+          if (endX_side_shelf > startX_side_shelf) {
+            ctx.moveTo(startX_side_shelf, lineYSide);
+            ctx.lineTo(endX_side_shelf, lineYSide);
+          }
+          ctx.stroke();
+        }
+      }
+      ctx.restore();
+    }
 
     ctx.setLineDash([3, 3]);
     ctx.strokeStyle = "#9CA3AF";
     ctx.lineWidth = 0.75;
 
-    const projectionLength = Math.min(cabinet.width / 4, 20);
-    const angle = Math.PI / 4;
+    const projectedWidth = cabinet.width;
+    // Points of the visible side rectangle of the main box
+    const x1_s = itemDisplayX_side;
+    const y1_s = topY;
+    const x2_s = itemDisplayX_side + cabinet.depth;
+    const y2_s = topY;
+    const y3_s = topY + mainBoxEffectiveHeight;
 
+    // Line from top-front of side, extending right
     ctx.beginPath();
-    ctx.moveTo(cabinetDisplayX + cabinet.depth, cabinetPositionY);
-    ctx.lineTo(cabinetDisplayX + cabinet.depth + Math.cos(angle) * projectionLength, cabinetPositionY - Math.sin(angle) * projectionLength);
+    ctx.moveTo(x2_s, y2_s);
+    ctx.lineTo(x2_s + projectedWidth, y2_s);
     ctx.stroke();
 
+    // Line from bottom-front of side, extending right
     ctx.beginPath();
-    ctx.moveTo(cabinetDisplayX + cabinet.depth, cabinetPositionY + cabinet.height);
-    ctx.lineTo(cabinetDisplayX + cabinet.depth + Math.cos(angle) * projectionLength, cabinetPositionY + cabinet.height - Math.sin(angle) * projectionLength);
+    ctx.moveTo(x2_s, y3_s);
+    ctx.lineTo(x2_s + projectedWidth, y3_s);
     ctx.stroke();
 
+    // Back vertical line connecting the two projected lines
     ctx.beginPath();
-    ctx.moveTo(cabinetDisplayX + cabinet.depth + Math.cos(angle) * projectionLength, cabinetPositionY - Math.sin(angle) * projectionLength);
-    ctx.lineTo(cabinetDisplayX + cabinet.depth + Math.cos(angle) * projectionLength, cabinetPositionY + cabinet.height - Math.sin(angle) * projectionLength);
+    ctx.moveTo(x2_s + projectedWidth, y2_s);
+    ctx.lineTo(x2_s + projectedWidth, y3_s);
     ctx.stroke();
 
     ctx.setLineDash([]);
   }
 };
-  
+
 const drawApplianceElevation = (ctx: CanvasRenderingContext2D, orientedAppliance: OrientedItem<any>, wall: any) => {
   const appliance = orientedAppliance.item;
   const orientation = orientedAppliance.orientation;
@@ -517,12 +631,12 @@ const drawApplianceElevation = (ctx: CanvasRenderingContext2D, orientedAppliance
   if (orientation === 'front') {
     applianceDisplayX = -wallLength / 2 + projectionOnWall - appliance.width / 2;
     
-    ctx.fillStyle = appliance.color || "#e5e7eb"; // Use appliance's color
-    ctx.fillRect(applianceDisplayX, appliancePositionY, appliance.width, appliance.height);
+    ctx.fillStyle = appliance.color || "#e5e7eb";
+    ctx.fillRect(applianceDisplayX, appliancePositionY, appliance.width, appliance.height); // Fill first
     
     ctx.strokeStyle = "#6B7280";
     ctx.lineWidth = 1.5;
-    ctx.strokeRect(applianceDisplayX, appliancePositionY, appliance.width, appliance.height); // Main outline after fill
+    ctx.strokeRect(applianceDisplayX, appliancePositionY, appliance.width, appliance.height); // Then outline
 
     ctx.strokeStyle = "#9CA3AF";
     ctx.lineWidth = 1.0;

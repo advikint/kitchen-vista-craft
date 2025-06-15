@@ -104,6 +104,12 @@ const CabinetPropertiesPanel = ({ cabinet }: CabinetPropertiesPanelProps) => {
       shelfCount: isNaN(newCount) ? undefined : Math.max(0, newCount) // Ensure non-negative
     });
   };
+
+  const handleDoorStyleChange = (value: string) => {
+    updateCabinet(cabinet.id, {
+      doorStyle: value as 'slab' | 'shaker'
+    });
+  };
   
   return (
     <div className="p-4">
@@ -202,6 +208,25 @@ const CabinetPropertiesPanel = ({ cabinet }: CabinetPropertiesPanelProps) => {
                 min={0}
                 max={10} // Arbitrary max, can be adjusted
               />
+            </div>
+          )}
+
+          {/* Door Style (only if frontType is shutter, drawer, or glass) */}
+          {(cabinet.frontType === 'shutter' || cabinet.frontType === 'drawer' || cabinet.frontType === 'glass') && (
+            <div className="space-y-1">
+              <Label htmlFor="doorStyle">Door Style</Label>
+              <Select
+                value={cabinet.doorStyle || 'slab'} // Default to 'slab' if undefined
+                onValueChange={handleDoorStyleChange}
+              >
+                <SelectTrigger id="doorStyle">
+                  <SelectValue placeholder="Select Door Style" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="slab">Slab</SelectItem>
+                  <SelectItem value="shaker">Shaker</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           )}
 

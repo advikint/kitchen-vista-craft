@@ -84,6 +84,9 @@ export interface Cabinet {
   toeKickHeight?: number;
   toeKickDepth?: number;
   shelfCount?: number;
+
+  // New parameter for door style
+  doorStyle?: 'slab' | 'shaker';
 }
 
 export type ApplianceType = 'sink' | 'stove' | 'fridge' | 'dishwasher' | 'oven' | 'microwave' | 'hood';

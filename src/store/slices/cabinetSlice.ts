@@ -85,6 +85,8 @@ export const createCabinetSlice: StateCreator<KitchenStore, [], [], CabinetSlice
                    cabinetData.type === 'loft' ? 1 :
                    cabinetData.type === 'tall' ? 3 :
                    0), // Default shelf counts based on type, 0 if not applicable
+
+      doorStyle: cabinetData.doorStyle || 'slab', // Default to 'slab' if not provided
     };
     
     return {

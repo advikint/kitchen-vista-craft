@@ -43,6 +43,73 @@ const ApplianceModelRenderer = ({ modelPath, proceduralGroup }: { modelPath: str
   return <primitive object={proceduralGroup} />;
 };
 
+// Helper function to create a Shaker style front (door or drawer)
+const createShakerFrontMesh = (
+  width: number,
+  height: number,
+  material: THREE.Material,
+  stileWidth: number = 5,
+  stileThickness: number = 2,
+  panelThickness: number = 1.2,
+  isGlass: boolean = false
+): THREE.Group => {
+  const group = new THREE.Group();
+  const frameMaterial = material;
+  const panelMaterial = material;
+
+  // Vertical Stiles (Left & Right)
+  const leftStileGeom = new THREE.BoxGeometry(stileWidth, height, stileThickness);
+  const leftStileMesh = new THREE.Mesh(leftStileGeom, frameMaterial);
+  leftStileMesh.position.x = -width / 2 + stileWidth / 2;
+  group.add(leftStileMesh);
+
+  const rightStileGeom = new THREE.BoxGeometry(stileWidth, height, stileThickness);
+  const rightStileMesh = new THREE.Mesh(rightStileGeom, frameMaterial);
+  rightStileMesh.position.x = width / 2 - stileWidth / 2;
+  group.add(rightStileMesh);
+
+  // Horizontal Rails (Top & Bottom) - fit between vertical stiles
+  const railWidth = width - 2 * stileWidth;
+  if (railWidth > 0) {
+    const topRailGeom = new THREE.BoxGeometry(railWidth, stileWidth, stileThickness);
+    const topRailMesh = new THREE.Mesh(topRailGeom, frameMaterial);
+    topRailMesh.position.y = height / 2 - stileWidth / 2;
+    group.add(topRailMesh);
+
+    const bottomRailGeom = new THREE.BoxGeometry(railWidth, stileWidth, stileThickness);
+    const bottomRailMesh = new THREE.Mesh(bottomRailGeom, frameMaterial);
+    bottomRailMesh.position.y = -height / 2 + stileWidth / 2;
+    group.add(bottomRailMesh);
+  }
+
+  // Central Panel - fits within the frame
+  const panelWidth = width - 2 * stileWidth;
+  const panelHeight = height - 2 * stileWidth;
+  if (panelWidth > 0 && panelHeight > 0) {
+    if (isGlass) {
+      const glassMaterial = new THREE.MeshPhysicalMaterial({
+         color: (material as any).color ? new THREE.Color((material as any).color) : new THREE.Color(0xffffff),
+         roughness: 0.1,
+         transmission: 0.9,
+         thickness: panelThickness / 2, // Glass is often thinner
+         transparent: true,
+         opacity: 0.3,
+      });
+      const panelGeom = new THREE.BoxGeometry(panelWidth, panelHeight, panelThickness / 2);
+      const panelMesh = new THREE.Mesh(panelGeom, glassMaterial);
+      panelMesh.position.z = 0;
+      group.add(panelMesh);
+    } else {
+      const panelGeom = new THREE.BoxGeometry(panelWidth, panelHeight, panelThickness);
+      const panelMesh = new THREE.Mesh(panelGeom, panelMaterial);
+      panelMesh.position.z = -(stileThickness - panelThickness) / 2; // Recessed
+      group.add(panelMesh);
+    }
+  }
+  return group;
+};
+
+
 // Professional 3D Model Loader Component
 export const CabinetModel = ({ cabinet, selected = false }: { cabinet: any; selected?: boolean }) => {
   const meshRef = useRef<THREE.Group>(null);
@@ -262,64 +329,101 @@ export const CabinetModel = ({ cabinet, selected = false }: { cabinet: any; sele
     }
     
     // Add doors based on front type
-    if (cabinet.frontType === 'shutter') {
-      const doorPanelHeight = mainBoxEffectiveHeight * 0.9;
-      const doorThickness = 2;
-      const leftDoorGeometry = new THREE.BoxGeometry(
-        cabinet.width * 0.48, 
-        doorPanelHeight,
-        doorThickness
-      );
-      const leftDoor = new THREE.Mesh(leftDoorGeometry, boxMaterial);
-      leftDoor.position.set(-cabinet.width * 0.25, 0, cabinet.depth / 2 - doorThickness / 2); // Position front flush
-      cabinetBox.add(leftDoor);
-      
-      const rightDoor = new THREE.Mesh(leftDoorGeometry, boxMaterial);
-      rightDoor.position.set(cabinet.width * 0.25, 0, cabinet.depth / 2 - doorThickness / 2); // Position front flush
-      cabinetBox.add(rightDoor);
-      
-      const handleGeometry = new THREE.CylinderGeometry(0.5, 0.5, 8);
-      const handleMaterial = new THREE.MeshStandardMaterial({color: '#C0C0C0', metalness: 0.8, roughness: 0.2});
-      
-      const leftHandle = new THREE.Mesh(handleGeometry, handleMaterial);
-      leftHandle.position.set(- (cabinet.width * 0.48 / 2) + 4 , 0, doorThickness / 2 + 2); // Relative to door center
-      leftDoor.add(leftHandle);
-      leftHandle.rotation.z = Math.PI / 2;
+    const stileThickness = 2; // Default stile thickness for positioning, actual is in createShakerFrontMesh
+    const handleMaterial = new THREE.MeshStandardMaterial({color: '#C0C0C0', metalness: 0.8, roughness: 0.2});
 
-      const rightHandle = new THREE.Mesh(handleGeometry, handleMaterial);
-      rightHandle.position.set((cabinet.width * 0.48 / 2) - 4, 0, doorThickness / 2 + 2); // Relative to door center
-      rightDoor.add(rightHandle);
-      rightHandle.rotation.z = Math.PI / 2;
-    }
-    
-    // Add drawers for drawer cabinets
-    if (cabinet.frontType === 'drawer') {
+    if (cabinet.frontType === 'shutter') {
+      const doorWidth = cabinet.width * 0.48;
+      const doorHeight = mainBoxEffectiveHeight * 0.9; // Use effective height for door panel itself
+      let leftDoorMesh, rightDoorMesh;
+
+      if (cabinet.doorStyle === 'shaker') {
+        leftDoorMesh = createShakerFrontMesh(doorWidth, doorHeight, boxMaterial);
+        rightDoorMesh = createShakerFrontMesh(doorWidth, doorHeight, boxMaterial);
+      } else { // Slab
+        const slabDoorGeom = new THREE.BoxGeometry(doorWidth, doorHeight, stileThickness); // Use stileThickness for slab thickness
+        leftDoorMesh = new THREE.Mesh(slabDoorGeom, boxMaterial);
+        rightDoorMesh = new THREE.Mesh(slabDoorGeom, boxMaterial);
+      }
+
+      leftDoorMesh.position.set(-cabinet.width * 0.25, 0, cabinet.depth / 2 + stileThickness / 2);
+      cabinetBox.add(leftDoorMesh);
+      rightDoorMesh.position.set(cabinet.width * 0.25, 0, cabinet.depth / 2 + stileThickness / 2);
+      cabinetBox.add(rightDoorMesh);
+      
+      const handleGeom = new THREE.CylinderGeometry(0.2, 0.2, doorHeight * 0.2, 8);
+      const leftHandle = new THREE.Mesh(handleGeom, handleMaterial);
+      const rightHandle = new THREE.Mesh(handleGeom, handleMaterial);
+
+      if (cabinet.doorStyle === 'shaker') {
+        leftHandle.position.set(doorWidth/2 - 5/2, 0, stileThickness / 2 + 1); // On outer stile
+        rightHandle.position.set(-doorWidth/2 + 5/2, 0, stileThickness / 2 + 1); // On outer stile
+      } else { // Slab
+        leftHandle.position.set(doorWidth/2 - 5, 0, stileThickness / 2 + 1);
+        rightHandle.position.set(-doorWidth/2 + 5, 0, stileThickness / 2 + 1);
+      }
+      leftDoorMesh.add(leftHandle);
+      rightDoorMesh.add(rightHandle);
+
+    } else if (cabinet.frontType === 'drawer') {
       const drawerCount = cabinet.drawers && cabinet.drawers > 0 ? cabinet.drawers : 1;
-      const drawerEffectiveTotalHeight = mainBoxEffectiveHeight;
-      const singleDrawerFaceHeight = drawerEffectiveTotalHeight / drawerCount;
-      const drawerFrontThickness = 2;
+      const singleDrawerActualHeight = mainBoxEffectiveHeight / drawerCount;
 
       for (let i = 0; i < drawerCount; i++) {
-        const drawerGeometry = new THREE.BoxGeometry(
-          cabinet.width * 0.95,
-          singleDrawerFaceHeight * 0.8,
-          drawerFrontThickness
-        );
-        const drawer = new THREE.Mesh(drawerGeometry, boxMaterial);
-        drawer.position.set(
+        const drawerFaceWidth = cabinet.width * 0.95;
+        const drawerFaceHeight = singleDrawerActualHeight * 0.8;
+        let drawerFaceMesh;
+
+        if (cabinet.doorStyle === 'shaker') {
+          drawerFaceMesh = createShakerFrontMesh(drawerFaceWidth, drawerFaceHeight, boxMaterial);
+        } else { // Slab
+          const slabDrawerGeom = new THREE.BoxGeometry(drawerFaceWidth, drawerFaceHeight, stileThickness);
+          drawerFaceMesh = new THREE.Mesh(slabDrawerGeom, boxMaterial);
+        }
+
+        drawerFaceMesh.position.set(
           0,
-          (mainBoxEffectiveHeight / 2) - (singleDrawerFaceHeight * (i + 0.5)) + (singleDrawerFaceHeight * 0.1), // Adjust Y to align top of drawer face
-          cabinet.depth / 2 - drawerFrontThickness / 2 // Position front flush
+          (mainBoxEffectiveHeight / 2) - (singleDrawerActualHeight * (i + 0.5)) + (singleDrawerActualHeight * 0.1),
+          cabinet.depth / 2 + stileThickness / 2
         );
-        cabinetBox.add(drawer);
+        cabinetBox.add(drawerFaceMesh);
         
-        const handleGeometry = new THREE.CylinderGeometry(0.3, 0.3, cabinet.width * 0.3);
-        const handleMaterial = new THREE.MeshStandardMaterial({color: '#C0C0C0',metalness: 0.8,roughness: 0.2});
-        const handle = new THREE.Mesh(handleGeometry, handleMaterial);
-        handle.position.set(0, 0, drawerFrontThickness / 2 + 2);
-        handle.rotation.x = Math.PI / 2; // Rotate around X for horizontal handle
-        drawer.add(handle);
+        const handleGeom = new THREE.CylinderGeometry(0.15, 0.15, drawerFaceWidth * 0.3, 6);
+        const handle = new THREE.Mesh(handleGeom, handleMaterial);
+        handle.position.set(0, 0, stileThickness / 2 + 1);
+        handle.rotation.x = Math.PI / 2;
+        drawerFaceMesh.add(handle);
       }
+    } else if (cabinet.frontType === 'glass') {
+      // Assuming glass doors are similar to shutter in setup (e.g., double doors if wide)
+      const doorWidth = cabinet.width * (cabinet.category === 'standard-wall' ? 0.95 : 0.48); // Single panel for some wall, double for others
+      const doorHeight = mainBoxEffectiveHeight * 0.9;
+      let glassDoorMesh;
+
+      if (cabinet.doorStyle === 'shaker') {
+        glassDoorMesh = createShakerFrontMesh(doorWidth, doorHeight, boxMaterial, 5, stileThickness, 1.2, true);
+      } else { // Slab glass door
+        const glassMaterial = new THREE.MeshPhysicalMaterial({
+            color: new THREE.Color(boxMaterial.color).multiplyScalar(0.8), // Slightly darken for frame effect
+            roughness: 0.1, transmission: 0.9, thickness: 1, transparent: true, opacity: 0.3,
+        });
+        const slabGlassGeom = new THREE.BoxGeometry(doorWidth, doorHeight, stileThickness/2); // Thinner glass door
+        glassDoorMesh = new THREE.Mesh(slabGlassGeom, glassMaterial);
+      }
+
+      // Simplified positioning for single panel glass door for now
+      glassDoorMesh.position.set(0, 0, cabinet.depth / 2 + stileThickness / 4);
+      cabinetBox.add(glassDoorMesh);
+
+      // Add handle (optional, can be different for glass)
+      const handleGeom = new THREE.CylinderGeometry(0.2, 0.2, 5, 8);
+      const handle = new THREE.Mesh(handleGeom, handleMaterial);
+      if (cabinet.doorStyle === 'shaker') {
+        handle.position.set(doorWidth/2 - 5/2, 0, stileThickness / 2 + 1);
+      } else {
+        handle.position.set(doorWidth/2 - 5, 0, stileThickness / 2 + 1);
+      }
+      glassDoorMesh.add(handle);
     }
     
     return group;
