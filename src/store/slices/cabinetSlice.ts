@@ -35,8 +35,11 @@ export const createCabinetSlice: StateCreator<KitchenStore, [], [], CabinetSlice
         case 'tall':
           height = 210;
           break;
+        case 'loft': // New case
+          height = 40; // Default height for loft cabinets
+          break;
         default:
-          height = 85;
+          height = 85; // Default to base cabinet height if type is unknown
       }
     }
     
@@ -51,8 +54,11 @@ export const createCabinetSlice: StateCreator<KitchenStore, [], [], CabinetSlice
         case 'tall':
           depth = 60;
           break;
+        case 'loft': // New case
+          depth = 35; // Default depth for loft cabinets
+          break;
         default:
-          depth = 60;
+          depth = 60; // Default to base cabinet depth if type is unknown
       }
     }
     

@@ -318,6 +318,58 @@ const PROFESSIONAL_CATALOG = {
         reviews: 423,
         availability: "In Stock",
         leadTime: "1-2 weeks"
+      },
+      {
+        id: "godrej-loft-60",
+        name: "Modular Loft Cabinet 60cm",
+        model: "Modular Pro",
+        manufacturer: "Godrej",
+        type: "loft",
+        category: "standard-wall",
+        frontType: "shutter",
+        dimensions: { width: 60, height: 40, depth: 35 },
+        price: 4500,
+        material: "Marine Plywood",
+        finish: "Laminate White",
+        description: "Compact loft cabinet for overhead storage",
+        features: ["Marine grade plywood", "Space-saving design", "5-year warranty"],
+        specifications: {
+          "Load capacity": "20 lbs per shelf",
+          "Material": "Marine plywood with laminate finish",
+          "Hardware": "Standard hinges",
+          "Assembly": "Pre-assembled"
+        },
+        images: ["/catalog/godrej-modular-wall.jpg"], // Placeholder image
+        rating: 4.2,
+        reviews: 150,
+        availability: "In Stock",
+        leadTime: "1-2 weeks"
+      },
+      {
+        id: "godrej-loft-80",
+        name: "Modular Loft Cabinet 80cm",
+        model: "Modular Pro",
+        manufacturer: "Godrej",
+        type: "loft",
+        category: "standard-wall",
+        frontType: "shutter",
+        dimensions: { width: 80, height: 40, depth: 35 },
+        price: 5200,
+        material: "Marine Plywood",
+        finish: "Laminate White",
+        description: "Wide loft cabinet for overhead storage",
+        features: ["Marine grade plywood", "Ample storage", "5-year warranty"],
+        specifications: {
+          "Load capacity": "25 lbs per shelf",
+          "Material": "Marine plywood with laminate finish",
+          "Hardware": "Standard hinges",
+          "Assembly": "Pre-assembled"
+        },
+        images: ["/catalog/godrej-modular-wall.jpg"], // Placeholder image
+        rating: 4.3,
+        reviews: 120,
+        availability: "In Stock",
+        leadTime: "1-2 weeks"
       }
     ],
     "Sleek": [
@@ -420,6 +472,57 @@ const PROFESSIONAL_CATALOG = {
         reviews: 187,
         availability: "In Stock",
         leadTime: "2-3 weeks"
+      },
+      {
+        id: "sleek-blind-corner-base-36",
+        name: "Premium Blind Corner Base",
+        model: "Premium Series",
+        manufacturer: "Sleek",
+        type: "base",
+        category: "blind-corner-base",
+        frontType: "shutter",
+        dimensions: { width: 90, height: 34, depth: 22 },
+        price: 18500,
+        material: "MDF",
+        finish: "Acrylic High Gloss",
+        description: "Base cabinet for blind corner applications, requires filler.",
+        features: ["Optimizes corner storage", "Soft-close hinges", "10-year warranty"],
+        specifications: {
+          "Material": "MDF with acrylic finish",
+          "Hardware": "Soft-close hinges",
+          "Assembly": "Pre-assembled",
+          "Note": "Requires separate filler panel for proper installation."
+        },
+        images: ["/catalog/sleek-blind-corner-base.jpg"],
+        rating: 4.3,
+        reviews: 150,
+        availability: "In Stock",
+        leadTime: "2-3 weeks"
+      },
+      {
+        id: "sleek-appliance-base-30",
+        name: "Premium Appliance Base Cabinet",
+        model: "Premium Series",
+        manufacturer: "Sleek",
+        type: "base",
+        category: "appliance-base",
+        frontType: "open",
+        dimensions: { width: 30, height: 34, depth: 22 },
+        price: 13500,
+        material: "MDF",
+        finish: "Acrylic High Gloss",
+        description: "Base cabinet for built-in under-counter appliances like ovens or microwaves.",
+        features: ["Reinforced structure", "Ventilation considerations", "10-year warranty"],
+        specifications: {
+          "Material": "MDF with acrylic finish",
+          "Appliance Opening": "Specify appliance dimensions for cutout",
+          "Assembly": "Pre-assembled"
+        },
+        images: ["/catalog/sleek-appliance-base.jpg"],
+        rating: 4.4,
+        reviews: 120,
+        availability: "Made to Order",
+        leadTime: "3-4 weeks"
       }
     ],
     "Hettich": [
@@ -497,6 +600,58 @@ const PROFESSIONAL_CATALOG = {
         reviews: 189,
         availability: "Made to Order",
         leadTime: "4-5 weeks"
+      },
+      {
+        id: "hettich-blind-corner-wall-24",
+        name: "InnoTech Blind Corner Wall Cabinet",
+        model: "InnoTech",
+        manufacturer: "Hettich",
+        type: "wall",
+        category: "blind-corner-wall",
+        frontType: "shutter",
+        dimensions: { width: 60, height: 30, depth: 12 },
+        price: 19500,
+        material: "Plywood",
+        finish: "Laminate",
+        description: "Wall cabinet for blind corner applications, requires filler.",
+        features: ["Optimizes corner storage", "Soft-close hinges", "Lifetime warranty"],
+        specifications: {
+          "Material": "18mm plywood with laminate",
+          "Hardware": "Hettich soft-close",
+          "Assembly": "Pre-assembled",
+          "Note": "Requires separate filler panel for proper installation."
+        },
+        images: ["/catalog/hettich-blind-corner-wall.jpg"],
+        rating: 4.6,
+        reviews: 95,
+        availability: "Made to Order",
+        leadTime: "4-5 weeks"
+      },
+      {
+        id: "hettich-base-pullout-spice-6",
+        name: "InnoTech Base Pullout Spice Rack",
+        model: "InnoTech",
+        manufacturer: "Hettich",
+        type: "base",
+        category: "pullout",
+        frontType: "shutter",
+        dimensions: { width: 6, height: 34, depth: 22 },
+        price: 22000,
+        material: "Plywood",
+        finish: "Laminate",
+        description: "Narrow base pullout cabinet for spices or bottles, full extension.",
+        features: ["Full extension slides", "Soft-close mechanism", "Adjustable shelves/racks"],
+        specifications: {
+          "Material": "18mm plywood with laminate",
+          "Hardware": "Hettich pullout system",
+          "Assembly": "Pre-assembled",
+          "Load Capacity": "20 kg"
+        },
+        images: ["/catalog/hettich-base-pullout.jpg"],
+        rating: 4.7,
+        reviews: 130,
+        availability: "Made to Order",
+        leadTime: "4-5 weeks"
       }
     ],
     "Hafele": [
@@ -572,6 +727,31 @@ const PROFESSIONAL_CATALOG = {
         images: ["/catalog/hafele-appliance-tall.jpg"],
         rating: 4.6,
         reviews: 134,
+        availability: "Made to Order",
+        leadTime: "6-8 weeks"
+      },
+      {
+        id: "hafele-fridge-tall-36",
+        name: "Integrated Fridge Housing Tall Cabinet",
+        model: "Appliance Housing",
+        manufacturer: "Hafele",
+        type: "tall",
+        category: "fridge-tall",
+        frontType: "open",
+        dimensions: { width: 36, height: 84, depth: 24 },
+        price: 32000,
+        material: "Plywood",
+        finish: "Laminate",
+        description: "Tall cabinet designed to house and frame a built-in refrigerator.",
+        features: ["Provides built-in look", "Ventilation considerations", "Side panels included"],
+        specifications: {
+          "Material": "18mm plywood with laminate",
+          "Appliance Opening": "Standard for 36-inch fridge, consult specs",
+          "Assembly": "Professional installation required"
+        },
+        images: ["/catalog/hafele-fridge-tall.jpg"],
+        rating: 4.5,
+        reviews: 110,
         availability: "Made to Order",
         leadTime: "6-8 weeks"
       }

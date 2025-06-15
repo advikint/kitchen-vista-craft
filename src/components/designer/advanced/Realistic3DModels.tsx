@@ -236,7 +236,7 @@ export const CabinetModel = ({ cabinet, selected = false }: { cabinet: any; sele
     
     // Add drawers for drawer cabinets
     if (cabinet.frontType === 'drawer') {
-      const drawerCount = cabinet.drawers || 3;
+      const drawerCount = cabinet.drawers && cabinet.drawers > 0 ? cabinet.drawers : 1;
       const drawerHeight = cabinet.height / drawerCount;
       
       for (let i = 0; i < drawerCount; i++) {

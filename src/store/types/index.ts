@@ -52,7 +52,7 @@ export interface Window {
   type: WindowType;
 }
 
-export type CabinetType = 'base' | 'wall' | 'tall' | 'specialty';
+export type CabinetType = 'base' | 'wall' | 'tall' | 'specialty' | 'loft';
 
 export type CabinetCategory = 
   | 'standard-base' | 'sink-base' | 'drawer-base' | 'corner-base' | 'cooktop-base' | 'blind-corner-base' | 'appliance-base'

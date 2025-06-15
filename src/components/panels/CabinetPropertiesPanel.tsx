@@ -123,6 +123,7 @@ const CabinetPropertiesPanel = ({ cabinet }: CabinetPropertiesPanelProps) => {
                 <SelectItem value="base">Base Cabinet</SelectItem>
                 <SelectItem value="wall">Wall Cabinet</SelectItem>
                 <SelectItem value="tall">Tall Cabinet</SelectItem>
+                <SelectItem value="loft">Loft Cabinet</SelectItem>
               </SelectContent>
             </Select>
           </div>
