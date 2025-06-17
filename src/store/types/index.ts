@@ -43,6 +43,7 @@ export interface Door {
   doorThickness?: number; // Thickness of the door slab itself
   frameThickness?: number; // Thickness of the frame sections (jambs, head)
   frameDepth?: number;     // Depth of the frame, often related to wall thickness
+  isColliding?: boolean; // Add this line if not present
 }
 
 export type WindowType = 'standard' | 'sliding' | 'fixed' | 'louvered';

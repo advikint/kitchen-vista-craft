@@ -1,8 +1,7 @@
-
 import { StateCreator } from 'zustand';
 import { nanoid } from 'nanoid';
 import { KitchenStore } from '../types/storeTypes';
-import { Cabinet, CabinetDimensions, CabinetProperties, Point } from '../types';
+import { Cabinet, CabinetDimensions, CabinetProperties, Point, Appliance, Door, Wall } from '../types'; // Added Appliance, Door, Wall for clarity in state usage
 import { updateAllCollisions } from '../utils/collisionUtils';
 
 export interface CabinetSlice {
@@ -12,7 +11,7 @@ export interface CabinetSlice {
   updateCabinetPosition: (id: string, position: Point) => void;
   updateCabinetRotation: (id: string, rotation: number) => void;
   updateCabinetDimensions: (id: string, dimensions: CabinetDimensions) => void;
-  updateCabinetProperties: (id: string, properties: CabinetProperties) => void;
+  updateCabinetProperties: (id: string, properties: Partial<Cabinet>) => void; // Changed to Partial<Cabinet> for broader updates
   deleteCabinet: (id: string) => void;
   duplicateCabinet: (id: string) => void;
 }
@@ -21,81 +20,56 @@ export const createCabinetSlice: StateCreator<KitchenStore, [], [], CabinetSlice
   cabinets: [],
   
   addCabinet: (cabinetData) => set((state) => {
-    // Auto-set height and depth based on cabinet type
     let height = cabinetData.height;
     let depth = cabinetData.depth;
     
-    if (height === 0) {
+    if (height === 0 || height === undefined) { // Added undefined check
       switch (cabinetData.type) {
-        case 'base':
-          height = 85;
-          break;
-        case 'wall':
-          height = 70;
-          break;
-        case 'tall':
-          height = 210;
-          break;
-        case 'loft': // New case
-          height = 40; // Default height for loft cabinets
-          break;
-        default:
-          height = 85; // Default to base cabinet height if type is unknown
+        case 'base': height = 85; break;
+        case 'wall': height = 70; break;
+        case 'tall': height = 210; break;
+        case 'loft': height = 40; break;
+        default: height = 85;
       }
     }
     
-    if (depth === 0) {
+    if (depth === 0 || depth === undefined) { // Added undefined check
       switch (cabinetData.type) {
-        case 'base':
-          depth = 60;
-          break;
-        case 'wall':
-          depth = 35;
-          break;
-        case 'tall':
-          depth = 60;
-          break;
-        case 'loft': // New case
-          depth = 35; // Default depth for loft cabinets
-          break;
-        default:
-          depth = 60; // Default to base cabinet depth if type is unknown
+        case 'base': depth = 60; break;
+        case 'wall': depth = 35; break;
+        case 'tall': depth = 60; break;
+        case 'loft': depth = 35; break;
+        default: depth = 60;
       }
     }
     
-    // Create the cabinet with default values for any missing properties
     const newCabinet: Cabinet = {
       id: nanoid(),
-      ...cabinetData, // Spread incoming data first
-      // Ensure core dimension and drawer defaults are applied
-      height, // Already defaulted if cabinetData.height was 0
-      depth,  // Already defaulted if cabinetData.depth was 0
+      ...cabinetData,
+      height,
+      depth,
       drawers: cabinetData.drawers || (cabinetData.frontType === 'drawer' ? 1 : undefined),
-
-      // Initialize new parametric properties with defaults if not provided
       toeKickHeight: cabinetData.toeKickHeight !== undefined ? cabinetData.toeKickHeight :
-                     (cabinetData.type === 'base' ? 10 : undefined), // Default 10cm for base cabinets
-
+                     (cabinetData.type === 'base' ? 10 : undefined),
       toeKickDepth: cabinetData.toeKickDepth !== undefined ? cabinetData.toeKickDepth :
-                    (cabinetData.type === 'base' ? 5 : undefined),  // Default 5cm for base cabinets
-
+                    (cabinetData.type === 'base' ? 5 : undefined),
       shelfCount: cabinetData.shelfCount !== undefined ? cabinetData.shelfCount :
-                  (cabinetData.frontType === 'drawer' ? 0 : // No shelves if it's a drawer unit
+                  (cabinetData.frontType === 'drawer' ? 0 :
                    cabinetData.type === 'base' ? 1 :
                    cabinetData.type === 'wall' ? 1 :
                    cabinetData.type === 'loft' ? 1 :
                    cabinetData.type === 'tall' ? 3 :
-                   0), // Default shelf counts based on type, 0 if not applicable
-
-      doorStyle: cabinetData.doorStyle || 'slab', // Default to 'slab' if not provided
-      isColliding: false, // Initialize as not colliding
+                   0),
+      doorStyle: cabinetData.doorStyle || 'slab',
+      isColliding: false,
     };
     
     const newCabinetsArray = [...state.cabinets, newCabinet];
-    const { updatedCabinets, updatedAppliances } = updateAllCollisions(newCabinetsArray, state.appliances);
+    const collisionResult = updateAllCollisions(newCabinetsArray, state.appliances, state.doors, state.walls);
     return {
-      cabinets: updatedCabinets,
-      appliances: updatedAppliances,
+      cabinets: collisionResult.updatedCabinets,
+      appliances: collisionResult.updatedAppliances,
+      doors: collisionResult.updatedDoors,
       selectedItemId: newCabinet.id,
       currentToolMode: 'select',
     };
@@ -105,58 +79,103 @@ export const createCabinetSlice: StateCreator<KitchenStore, [], [], CabinetSlice
     const updatedCabinetsIntermediate = state.cabinets.map(cab =>
       cab.id === id ? { ...cab, position } : cab
     );
-    const { updatedCabinets, updatedAppliances } = updateAllCollisions(updatedCabinetsIntermediate, state.appliances);
-    return { cabinets: updatedCabinets, appliances: updatedAppliances };
+    const collisionResult = updateAllCollisions(updatedCabinetsIntermediate, state.appliances, state.doors, state.walls);
+    return {
+      cabinets: collisionResult.updatedCabinets,
+      appliances: collisionResult.updatedAppliances,
+      doors: collisionResult.updatedDoors,
+    };
   }),
   
-  updateCabinetRotation: (id, rotation) => set((state) => ({
-    // Note: Rotation also affects collision, should ideally re-calculate
-    // For now, keeping it simple as per direct instructions for position update.
-    // TODO: Add collision update for rotation changes if precise AABB is needed.
-    cabinets: state.cabinets.map(cab => 
+  updateCabinetRotation: (id, rotation) => set((state) => {
+    const updatedCabinetsIntermediate = state.cabinets.map(cab =>
       cab.id === id ? { ...cab, rotation } : cab
-    )
-  })),
+    );
+    const collisionResult = updateAllCollisions(updatedCabinetsIntermediate, state.appliances, state.doors, state.walls);
+    return {
+      cabinets: collisionResult.updatedCabinets,
+      appliances: collisionResult.updatedAppliances,
+      doors: collisionResult.updatedDoors,
+    };
+  }),
   
-  updateCabinetDimensions: (id, dimensions) => set((state) => ({
-    cabinets: state.cabinets.map(cab => 
+  updateCabinetDimensions: (id, dimensions) => set((state) => {
+    const updatedCabinetsIntermediate = state.cabinets.map(cab =>
       cab.id === id ? { ...cab, ...dimensions } : cab
-    )
-  })),
+    );
+    const collisionResult = updateAllCollisions(updatedCabinetsIntermediate, state.appliances, state.doors, state.walls);
+    return {
+      cabinets: collisionResult.updatedCabinets,
+      appliances: collisionResult.updatedAppliances,
+      doors: collisionResult.updatedDoors,
+    };
+  }),
   
-  updateCabinetProperties: (id, properties) => set((state) => ({
-    cabinets: state.cabinets.map(cab => 
+  updateCabinetProperties: (id, properties) => set((state) => {
+    const updatedCabinetsIntermediate = state.cabinets.map(cab =>
       cab.id === id ? { ...cab, ...properties } : cab
-    )
-  })),
+    );
+    // Check if any collision-relevant properties were changed
+    // For cabinets, these are width, height, depth, position, rotation.
+    // Position and rotation are handled by their specific updaters.
+    // Dimensions (width, height, depth) are handled by updateCabinetDimensions.
+    // This function is more for non-geometric properties or those whose geometric impact is complex (e.g. doorStyle).
+    // For simplicity now, assume if properties can include dimensions, a check is needed.
+    // A more robust way would be to list specific properties that trigger collision.
+    let needsCollisionCheck = false;
+    const relevantProps: (keyof Cabinet)[] = ['width', 'height', 'depth']; // Add other relevant geometry props if any
+    for (const prop of relevantProps) {
+        if (properties[prop] !== undefined) {
+            needsCollisionCheck = true;
+            break;
+        }
+    }
+
+    if (needsCollisionCheck) {
+        const collisionResult = updateAllCollisions(updatedCabinetsIntermediate, state.appliances, state.doors, state.walls);
+        return {
+          cabinets: collisionResult.updatedCabinets,
+          appliances: collisionResult.updatedAppliances,
+          doors: collisionResult.updatedDoors,
+        };
+    } else {
+        return { cabinets: updatedCabinetsIntermediate };
+    }
+  }),
   
   deleteCabinet: (id) => set((state) => {
     const remainingCabinets = state.cabinets.filter(cab => cab.id !== id);
-    const { updatedCabinets, updatedAppliances } = updateAllCollisions(remainingCabinets, state.appliances);
+    const collisionResult = updateAllCollisions(remainingCabinets, state.appliances, state.doors, state.walls);
     return {
-        cabinets: updatedCabinets,
-        appliances: updatedAppliances,
-        selectedItemId: null
+        cabinets: collisionResult.updatedCabinets,
+        appliances: collisionResult.updatedAppliances,
+        doors: collisionResult.updatedDoors,
+        selectedItemId: state.selectedItemId === id ? null : state.selectedItemId,
     };
   }),
   
   duplicateCabinet: (id) => set((state) => {
     const cabinetToDuplicate = state.cabinets.find(cab => cab.id === id);
+    if (!cabinetToDuplicate) return state; // Should not happen if UI is correct
     
-    if (!cabinetToDuplicate) return state;
-    
-    // Create a duplicate with slight position offset
     const duplicatedCabinet: Cabinet = {
       ...cabinetToDuplicate,
       id: nanoid(),
       position: {
-        x: cabinetToDuplicate.position.x + 20,
-        y: cabinetToDuplicate.position.y + 20
-      }
+        x: cabinetToDuplicate.position.x + 20, // Offset
+        y: cabinetToDuplicate.position.y + 20  // Offset
+      },
+      isColliding: false, // Initial state for new cabinet
     };
     
+    const newCabinetsArray = [...state.cabinets, duplicatedCabinet];
+    const collisionResult = updateAllCollisions(newCabinetsArray, state.appliances, state.doors, state.walls);
     return {
-      cabinets: [...state.cabinets, duplicatedCabinet]
+      cabinets: collisionResult.updatedCabinets,
+      appliances: collisionResult.updatedAppliances,
+      doors: collisionResult.updatedDoors,
+      selectedItemId: duplicatedCabinet.id, // Select the new duplicated cabinet
+      currentToolMode: 'select',
     };
   })
 });

@@ -645,182 +645,27 @@ export const ApplianceModel = ({ appliance, selected = false }: { appliance: any
       }
     }
   };
-    
-  // Appliance-specific materials and details
-  const applianceConfigs = {
-    sink: {
-      color: '#E5E5E5',
-        metalness: 0.8,
-        roughness: 0.2,
-        details: () => {
-          // Add sink basin
-          const basinGeometry = new THREE.CylinderGeometry(
-            appliance.width * 0.3, 
-            appliance.width * 0.3, 
-            appliance.height * 0.3
-          );
-          const basinMaterial = new THREE.MeshStandardMaterial({
-            color: '#F0F0F0',
-            metalness: 0.9,
-            roughness: 0.1
-          });
-          const basin = new THREE.Mesh(basinGeometry, basinMaterial);
-          basin.position.set(0, appliance.height * 0.2, 0);
-          return [basin];
-        }
-      },
-      stove: {
-        color: '#2C2C2C',
-        metalness: 0.7,
-        roughness: 0.3,
-        details: () => {
-          const details = [];
-          // Add burners
-          for (let i = 0; i < 4; i++) {
-            const burnerGeometry = new THREE.CylinderGeometry(3, 3, 1);
-            const burnerMaterial = new THREE.MeshStandardMaterial({
-              color: '#1A1A1A',
-              metalness: 0.8,
-              roughness: 0.2
-            });
-            const burner = new THREE.Mesh(burnerGeometry, burnerMaterial);
-            burner.position.set(
-              (i % 2 - 0.5) * appliance.width * 0.3,
-              appliance.height / 2 + 1,
-              (Math.floor(i / 2) - 0.5) * appliance.depth * 0.3
-            );
-            details.push(burner);
-          }
-          return details;
-        }
-      },
-      fridge: {
-        color: '#F8F8F8',
-        metalness: 0.1,
-        roughness: 0.4,
-        details: () => {
-          const details = [];
-          // Add door handles
-          const handleGeometry = new THREE.BoxGeometry(2, 20, 3);
-          const handleMaterial = new THREE.MeshStandardMaterial({
-            color: '#C0C0C0',
-            metalness: 0.8,
-            roughness: 0.2
-          });
-          
-          const leftHandle = new THREE.Mesh(handleGeometry, handleMaterial);
-          leftHandle.position.set(-appliance.width * 0.4, 0, appliance.depth / 2 + 2);
-          details.push(leftHandle);
-          
-          const rightHandle = new THREE.Mesh(handleGeometry, handleMaterial);
-          rightHandle.position.set(appliance.width * 0.4, 0, appliance.depth / 2 + 2);
-          details.push(rightHandle);
-          
-          return details;
-        }
-      },
-      dishwasher: {
-        color: '#E0E0E0',
-        metalness: 0.6,
-        roughness: 0.3,
-        details: () => {
-          // Add control panel
-          const panelGeometry = new THREE.BoxGeometry(appliance.width * 0.8, 5, 1);
-          const panelMaterial = new THREE.MeshStandardMaterial({
-            color: '#1A1A1A',
-            metalness: 0.1,
-            roughness: 0.8
-          });
-          const panel = new THREE.Mesh(panelGeometry, panelMaterial);
-          panel.position.set(0, appliance.height / 2 - 10, appliance.depth / 2 + 1);
-          return [panel];
-        }
-      },
-      oven: {
-        color: '#1A1A1A',
-        metalness: 0.7,
-        roughness: 0.3,
-        details: () => {
-          // Add oven door window
-          const windowGeometry = new THREE.BoxGeometry(
-            appliance.width * 0.6,
-            appliance.height * 0.4,
-            0.5
-          );
-          const windowMaterial = new THREE.MeshPhysicalMaterial({
-            color: '#000000',
-            metalness: 0.0,
-            roughness: 0.0,
-            transmission: 0.8,
-            thickness: 0.5
-          });
-          const window = new THREE.Mesh(windowGeometry, windowMaterial);
-          window.position.set(0, 0, appliance.depth / 2 + 1);
-          return [window];
-        }
-      },
-      microwave: {
-        color: '#2C2C2C',
-        metalness: 0.6,
-        roughness: 0.4,
-        details: () => {
-          // Add microwave door
-          const doorGeometry = new THREE.BoxGeometry(
-            appliance.width * 0.8,
-            appliance.height * 0.6,
-            1
-          );
-          const doorMaterial = new THREE.MeshStandardMaterial({
-            color: '#3C3C3C',
-            metalness: 0.5,
-            roughness: 0.5
-          });
-          const door = new THREE.Mesh(doorGeometry, doorMaterial);
-          door.position.set(0, 0, appliance.depth / 2 + 1);
-          return [door];
-        }
-      },
-      hood: {
-        color: '#C0C0C0',
-        metalness: 0.8,
-        roughness: 0.2,
-        details: () => {
-          // Add hood fan grille
-          const grillGeometry = new THREE.CylinderGeometry(
-            appliance.width * 0.3,
-            appliance.width * 0.3,
-            2
-          );
-          const grillMaterial = new THREE.MeshStandardMaterial({
-            color: '#808080',
-            metalness: 0.9,
-            roughness: 0.1
-          });
-          const grill = new THREE.Mesh(grillGeometry, grillMaterial);
-          grill.position.set(0, -appliance.height / 2 + 5, 0);
-          return [grill];
-        }
-      }
-    };
 
-    const config = applianceConfigs[appliance.type as keyof typeof applianceConfigs] || applianceConfigs.sink;
-    
-    // Main appliance body
-    const material = new THREE.MeshStandardMaterial({
-      color: config.color,
-      metalness: config.metalness,
-      roughness: config.roughness
-    });
-    
-    const mainBody = new THREE.Mesh(geometry, material);
-    group.add(mainBody);
-    
-    // Add appliance-specific details
-    const details = config.details();
-    details.forEach(detail => group.add(detail));
-    
-    return group;
-  };
+  // The config variable is already defined above using the new applianceConfigs that handles isColliding.
+  // This re-declaration would cause an error and uses the old format.
+  // const config = applianceConfigs[appliance.type as keyof typeof applianceConfigs] || applianceConfigs.sink;
+
+  // Main appliance body - This logic is already covered by the createRealisticAppliance function
+  // that uses the isColliding-aware applianceConfigs.
+  // const material = new THREE.MeshStandardMaterial({
+  //   color: config.color,
+  //   metalness: config.metalness,
+  //   roughness: config.roughness
+  // });
+  // const mainBody = new THREE.Mesh(geometry, material);
+  // group.add(mainBody);
+
+  // Add appliance-specific details - Also covered by createRealisticAppliance
+  // const details = config.details();
+  // details.forEach(detail => group.add(detail));
+
+  // return group; // This is part of createRealisticAppliance
+  // }; // This is the end of createRealisticAppliance
 
   const proceduralApplianceGroup = useMemo(() => createRealisticAppliance(), [appliance]);
   const modelPath = getModelPathAppliance(appliance);
