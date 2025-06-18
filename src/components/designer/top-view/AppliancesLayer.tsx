@@ -20,8 +20,10 @@ const AppliancesLayer = ({ showDimensions }: AppliancesLayerProps) => {
   } = useItemInteractions();
   
   const getApplianceColor = (appliance: Appliance) => {
-    if (selectedItemId === appliance.id) return "#3b82f6";
+    if (appliance.isColliding) return 'rgba(255,0,0,0.5)'; // Collision indication
+    if (selectedItemId === appliance.id) return "#3b82f6"; // Blue for selected
     
+    // Default colors if not colliding and not selected
     if (appliance.type === 'sink') return "#e5e7eb";
     if (appliance.type === 'stove') return "#d1d5db";
     if (appliance.type === 'fridge') return "#f3f4f6";
@@ -57,8 +59,9 @@ const AppliancesLayer = ({ showDimensions }: AppliancesLayerProps) => {
           key={appliance.id}
           x={appliance.position.x}
           y={appliance.position.y}
-          rotation={appliance.rotation}
-          draggable
+          rotation={appliance.rotation || 0} // Ensure rotation is defined
+          draggable={true} // Explicitly true
+          // No group offset needed here if child Rect is already offset, as it is.
           onClick={(e: KonvaEventObject<MouseEvent>) => handleItemSelect(appliance.id, e)}
           onTap={(e: KonvaEventObject<MouseEvent>) => handleItemSelect(appliance.id, e)}
           onDragStart={() => handleDragStart()}

@@ -20,19 +20,21 @@ const CabinetsLayer = ({ showDimensions }: CabinetsLayerProps) => {
     nearestWallId
   } = useItemInteractions();
   
-  // Determine cabinet fill color based on type and selection state
+  // Determine cabinet fill color based on type, selection, and collision state
   const getCabinetFill = (cabinet: any, isSelected: boolean) => {
-    if (isSelected) return "#3b82f6";
+    if (cabinet.isColliding) return 'rgba(255,0,0,0.5)'; // Collision indication
+    if (isSelected) return "#3b82f6"; // Blue for selected
     
+    // Default colors based on type if not colliding and not selected
     switch (cabinet.type) {
       case "base":
-        return cabinet.frontType === 'drawer' ? "#d4e6f1" : "#aed6f1";
+        return cabinet.frontType === 'drawer' ? "#d4e6f1" : "#aed6f1"; // Light blue shades
       case "wall":
-        return "#d5f5e3";
+        return "#d5f5e3"; // Light green
       case "tall":
-        return "#fadbd8";
+        return "#fadbd8"; // Light red/pink
       default:
-        return "#e5e7eb";
+        return "#e5e7eb"; // Light grey
     }
   };
 
@@ -85,8 +87,10 @@ const CabinetsLayer = ({ showDimensions }: CabinetsLayerProps) => {
           key={cabinet.id}
           x={cabinet.position.x}
           y={cabinet.position.y}
-          rotation={cabinet.rotation}
-          draggable
+          rotation={cabinet.rotation || 0} // Ensure rotation is defined
+          draggable={true} // Explicitly true
+          offsetX={cabinet.width / 2} // Set offsetX for center-based positioning
+          offsetY={cabinet.depth / 2} // Set offsetY for center-based positioning (depth is height in 2D top view)
           onClick={(e: KonvaEventObject<MouseEvent>) => handleItemSelect(cabinet.id, e)}
           onTap={(e: KonvaEventObject<MouseEvent>) => handleItemSelect(cabinet.id, e)}
           onDragStart={() => handleDragStart()}
