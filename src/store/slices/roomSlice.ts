@@ -1,5 +1,4 @@
-
-import { v4 as uuidv4 } from 'uuid';
+import { nanoid } from 'nanoid'; // Changed from uuidv4
 import { StateCreator } from 'zustand';
 import { KitchenStore } from '../types/storeTypes';
 import { Room, Wall } from '../types';
@@ -16,10 +15,11 @@ export interface RoomSlice {
   updateWall: (id: string, updates: Partial<Wall>) => void;
   removeWall: (id: string) => void;
   resetWalls: () => void;
+  clearWalls: () => void; // New action
 }
 
 export const createRoomSlice: StateCreator<KitchenStore, [], [], RoomSlice> = (set) => ({
-  room: { width: 300, height: 400 },
+  room: { width: 300, height: 400 }, // Default room dimensions
   walls: [],
   currentWallIndex: 0,
   
@@ -29,9 +29,9 @@ export const createRoomSlice: StateCreator<KitchenStore, [], [], RoomSlice> = (s
   
   addWall: (wallData) => set((state) => {
     const newWall: Wall = { 
-      id: uuidv4(), 
+      id: nanoid(), // Changed to nanoid
       ...wallData,
-      label: wallData.label || `Wall ${state.walls.length + 1}` // Give walls a default label if none provided
+      label: wallData.label || `Wall ${state.walls.length + 1}`
     };
     return { walls: [...state.walls, newWall] };
   }),
@@ -48,52 +48,55 @@ export const createRoomSlice: StateCreator<KitchenStore, [], [], RoomSlice> = (s
     walls: state.walls.filter(wall => wall.id !== id)
   })),
   
-  resetWalls: () => set((state) => {
+  resetWalls: () => set((state) => { // This function creates a default set of 4 walls
     const { width, height } = state.room;
+    const wallHeight = 240; // Default wall height for reset scenario
+    const wallThickness = 10; // Default wall thickness
     
-    // Create four walls for the room
     const halfWidth = width / 2;
     const halfHeight = height / 2;
     
     const walls: Wall[] = [
       {
-        id: uuidv4(),
+        id: nanoid(), // Changed to nanoid
         start: { x: -halfWidth, y: -halfHeight },
         end: { x: halfWidth, y: -halfHeight },
-        height: 250,
-        thickness: 15,
-        color: '#686868',
-        label: 'North Wall'
+        height: wallHeight,
+        thickness: wallThickness,
+        color: '#DDDDDD', // Default wall color
+        label: 'Wall A'
       },
       {
-        id: uuidv4(),
+        id: nanoid(), // Changed to nanoid
         start: { x: halfWidth, y: -halfHeight },
         end: { x: halfWidth, y: halfHeight },
-        height: 250,
-        thickness: 15,
-        color: '#686868',
-        label: 'East Wall'
+        height: wallHeight,
+        thickness: wallThickness,
+        color: '#DDDDDD',
+        label: 'Wall B'
       },
       {
-        id: uuidv4(),
+        id: nanoid(), // Changed to nanoid
         start: { x: halfWidth, y: halfHeight },
         end: { x: -halfWidth, y: halfHeight },
-        height: 250,
-        thickness: 15,
-        color: '#686868',
-        label: 'South Wall'
+        height: wallHeight,
+        thickness: wallThickness,
+        color: '#DDDDDD',
+        label: 'Wall C'
       },
       {
-        id: uuidv4(),
+        id: nanoid(), // Changed to nanoid
         start: { x: -halfWidth, y: halfHeight },
         end: { x: -halfWidth, y: -halfHeight },
-        height: 250,
-        thickness: 15,
-        color: '#686868',
-        label: 'West Wall'
+        height: wallHeight,
+        thickness: wallThickness,
+        color: '#DDDDDD',
+        label: 'Wall D'
       }
     ];
     
     return { walls, currentWallIndex: 0 };
-  })
+  }),
+
+  clearWalls: () => set({ walls: [], currentWallIndex: 0 }), // Implementation of new action
 });
