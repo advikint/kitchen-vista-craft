@@ -39,6 +39,7 @@ import ProfessionalCatalog from "./ProfessionalCatalog";
 import ProfessionalMeasurements from "./ProfessionalMeasurements";
 import ProfessionalBOQ from "./ProfessionalBOQ";
 import ModelLibrary from "./ModelLibrary";
+import ElevationView from "../ElevationView"; // Added import
 
 interface Layer {
   id: string;
@@ -60,7 +61,7 @@ const ProfessionalWorkspace = () => {
     viewMode, setViewMode,
     showDimensions, toggleDimensions,
     walls, cabinets, appliances,
-    selectedObject, setSelectedObject
+    selectedObject, setSelectedObject // Renamed from selectedItemId to selectedObject if it holds more info
   } = useKitchenStore();
 
   const [leftPanelSize, setLeftPanelSize] = useState(20);
@@ -128,14 +129,7 @@ const ProfessionalWorkspace = () => {
       case '3d':
         return <AdvancedThreeDView />;
       case '2d-elevation':
-        return (
-          <div className="w-full h-full bg-gray-100 flex items-center justify-center">
-            <div className="text-center">
-              <h3 className="text-lg font-semibold mb-2">Elevation View</h3>
-              <p className="text-gray-600">Professional elevation view coming soon</p>
-            </div>
-          </div>
-        );
+        return <ElevationView />; // MODIFIED
       case '2d-top':
       default:
         return <ProfessionalMeasurements />;
@@ -420,8 +414,8 @@ const ProfessionalWorkspace = () => {
                         </CardHeader>
                         <CardContent className="space-y-3">
                           <div className="text-sm">
-                            <div className="font-medium">Type: {selectedObject.type}</div>
-                            <div>ID: {selectedObject.id}</div>
+                            <div className="font-medium">Type: {(selectedObject as any).type || 'Unknown'}</div>
+                            <div>ID: {(selectedObject as any).id}</div>
                           </div>
                           {/* Add more property controls here */}
                         </CardContent>
