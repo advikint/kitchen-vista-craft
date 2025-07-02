@@ -33,7 +33,7 @@ const CabinetModelGenerator = ({ cabinet, isSelected, onClick }: CabinetModelGen
             map: createWoodTexture()
           });
         case 'acrylic':
-          return new THREE.MeshStandardMaterial({
+          return new THREE.MeshPhysicalMaterial({
             color: baseColor,
             roughness: 0.1,
             metalness: 0.8,
@@ -47,7 +47,7 @@ const CabinetModelGenerator = ({ cabinet, isSelected, onClick }: CabinetModelGen
             metalness: 0.0
           });
         case 'gloss':
-          return new THREE.MeshStandardMaterial({
+          return new THREE.MeshPhysicalMaterial({
             color: baseColor,
             roughness: 0.05,
             metalness: 0.2,
