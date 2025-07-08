@@ -10,6 +10,7 @@ export const useFurniturePlacement = (loadTemplate: (type: string) => any) => {
 
   // Helper function to find nearest wall to a position
   const findNearestWall = (pos: { x: number; y: number }) => {
+    console.log('Finding nearest wall to position:', pos, 'Total walls:', walls.length);
     if (!walls.length) return null;
     
     const threshold = 40; // Distance threshold for snapping

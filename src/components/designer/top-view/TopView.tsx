@@ -60,7 +60,7 @@ const TopView = () => {
         ref={stageRef}
         width={stageSize.width}
         height={stageSize.height}
-        draggable={currentToolMode === 'select' as ToolMode}
+        draggable={currentToolMode === 'select' as ToolMode && !isDragging}
         onWheel={handleWheel}
         onClick={handleStageClick}
         onTap={handleStageClick}
@@ -71,6 +71,9 @@ const TopView = () => {
         onDragEnd={() => setIsDragging(false)}
         scale={{ x: scale, y: scale }}
         position={position}
+        style={{ 
+          cursor: currentToolMode === 'select' ? 'default' : 'crosshair'
+        }}
       >
         <Layer>
           <RoomGrid />
@@ -115,8 +118,8 @@ const TopView = () => {
         </div>
       )}
 
-      {/* Snap toggle */}
-      <div className="absolute top-4 right-4 bg-white rounded-md shadow-md p-2 opacity-90">
+      {/* Debug panel */}
+      <div className="absolute top-4 right-4 bg-white rounded-md shadow-md p-2 opacity-90 space-y-2">
         <label className="flex items-center text-xs cursor-pointer">
           <input
             type="checkbox"
@@ -126,6 +129,32 @@ const TopView = () => {
           />
           Snap to grid/walls
         </label>
+        
+        <button 
+          className="block w-full text-xs bg-blue-500 text-white px-2 py-1 rounded"
+          onClick={() => {
+            const { walls, addCabinet } = useKitchenStore.getState();
+            console.log('Direct placement test - walls:', walls.length);
+            if (walls.length > 0) {
+              addCabinet({
+                type: 'base',
+                category: 'standard-base',
+                frontType: 'shutter',
+                finish: 'laminate',
+                width: 60,
+                height: 85,
+                depth: 60,
+                material: 'laminate',
+                color: 'white',
+                position: { x: 0, y: 0 },
+                rotation: 0
+              });
+              console.log('Cabinet added directly!');
+            }
+          }}
+        >
+          Test Add Cabinet
+        </button>
       </div>
     </div>
   );

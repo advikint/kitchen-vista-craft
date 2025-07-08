@@ -206,6 +206,7 @@ const useTopViewHandlers = (
           break;
           
         case 'door':
+          console.log('Door placement attempt - walls available:', useKitchenStore.getState().walls.length);
           // For doors, check if near a wall
           if (isNearWall(pointerPos)) {
             handleDoorClick(pointerPos);
@@ -215,6 +216,7 @@ const useTopViewHandlers = (
           break;
           
         case 'window':
+          console.log('Window placement attempt - walls available:', useKitchenStore.getState().walls.length);
           // For windows, check if near a wall
           if (isNearWall(pointerPos)) {
             handleWindowClick(pointerPos);
@@ -224,12 +226,14 @@ const useTopViewHandlers = (
           break;
           
         case 'cabinet':
+          console.log('Cabinet placement attempt - walls available:', useKitchenStore.getState().walls.length);
           // For cabinets, try to snap to wall if close enough
           const cabinetPos = isNearWall(pointerPos) ? snapToWall(pointerPos) : snapToGrid(pointerPos);
           handleCabinetClick(cabinetPos);
           break;
           
         case 'appliance':
+          console.log('Appliance placement attempt - walls available:', useKitchenStore.getState().walls.length);
           const appliancePos = snapToGrid(pointerPos);
           handleApplianceClick(appliancePos);
           break;

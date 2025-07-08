@@ -33,6 +33,11 @@ const Editor = () => {
     if (walls.length === 0) {
       console.log('No walls found, creating default room');
       resetWalls();
+      // Check after a short delay to ensure state is updated
+      setTimeout(() => {
+        const currentWalls = useKitchenStore.getState().walls;
+        console.log('Walls after reset:', currentWalls.length, currentWalls);
+      }, 100);
     }
   }, []);
   
