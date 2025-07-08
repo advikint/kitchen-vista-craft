@@ -18,7 +18,8 @@ const Editor = () => {
     toggleDimensions, showDimensions,
     generateBOQ,
     isWallDialogOpen,
-    setWallDialogOpen
+    setWallDialogOpen,
+    walls, resetWalls
   } = useKitchenStore();
   
   const isMobile = useIsMobile();
@@ -26,6 +27,14 @@ const Editor = () => {
   const [rightPanelOpen, setRightPanelOpen] = useState(!isMobile);
   const [boqEditorOpen, setBoqEditorOpen] = useState(false);
   const [snapToGrid, setSnapToGrid] = useState(true);
+  
+  // Initialize walls on first load if none exist
+  useEffect(() => {
+    if (walls.length === 0) {
+      console.log('No walls found, creating default room');
+      resetWalls();
+    }
+  }, []);
   
   // Close panels when switching to mobile view
   useEffect(() => {
